@@ -113,7 +113,10 @@ export function pct(p, digits = 0) {
 export function ordinal(n) { return `P${n}`; }
 
 // ---------- small visual pieces ----------
-export const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+// On a slow connection or with data saver on, skip heavy effects and extra downloads
+const conn = navigator.connection || {};
+export const liteMode = () => Boolean(conn.saveData) || ["slow-2g", "2g"].includes(conn.effectiveType);
+export const reducedMotion = () => liteMode() || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 // Bars grow from zero once they're on screen; numbers count up alongside
 const io = typeof IntersectionObserver !== "undefined" ? new IntersectionObserver((entries) => {

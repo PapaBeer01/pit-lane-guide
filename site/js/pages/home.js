@@ -1,3 +1,4 @@
+import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
 import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName } from "../ui.js";
 
@@ -95,6 +96,7 @@ function startingGrid(rows, kind, raceKey) {
     slots.replaceChildren(...list.map((r, i) => {
       const d = driver(r.code);
       return h("div", { class: `slot${i === 0 ? " pole" : ""}`, style: { animationDelay: `${i * 70}ms`, "--tc": d.color }, title: d.name },
+        helmet(r.code, { size: 40 }),
         h("span", { class: "p" }, i + 1),
         h("span", { class: "code" }, h("i"), r.code),
         h("span", { class: "sub" }, r.risk ? icon("wrench", { size: 13, label: "Recent qualifying trouble" }) : null, r.sub));
@@ -137,7 +139,7 @@ function fav(ic, color, what, code, p, how) {
   const d = driver(code);
   return h("div", { class: "fav", style: { "--tc": d.color, "--k": color } },
     h("span", { class: "what" }, icon(ic, { size: 16 }), what),
-    h("span", { class: "who" }, h("i", { class: "team-dot", style: { background: d.color, width: "12px", height: "12px", boxShadow: `0 0 10px ${d.color}` } }), d.name),
+    h("a", { class: "who", href: `#/driver/${code}`, style: { color: "inherit", textDecoration: "none" } }, avatar(code, { size: 40 }), h("span", {}, d.name)),
     h("span", {}, animatedNumber(p, "pct", "big")),
     h("span", { class: "how" }, how));
 }
@@ -209,17 +211,23 @@ function scheduleSection(ev, sessions, forecast) {
 
 async function lastRaceSection() {
   const ev = lastCompleted();
-  if (!ev) return h("div");
-  const race = await load(`events/${ev.round}/R.json`);
-  if (!race) return h("div");
-  const podium = race.results.filter((r) => r.pos && r.pos <= 3);
-  const medal = ["var(--flag)", "#C9D1DB", "#D08B4E"];
+  const summary = ev ? await load("summary.json") : null;
+  const row = summary?.events.find((e) => e.round === ev.round);
+  if (!row?.podium?.length) return h("div");
+  const order = [1, 0, 2].filter((i) => row.podium[i]);       // P2, P1, P3 like a real podium
   return section(["Last race", "trophy"], null,
-    h("div", { class: "panel", style: { display: "grid", gap: "12px" } },
+    h("div", { class: "panel", style: { display: "grid", gap: "14px" } },
       h("h3", {}, ev.name),
-      h("div", { style: { display: "grid", gap: "10px" } },
-        podium.map((r, i) => h("div", { style: { display: "grid", gridTemplateColumns: "34px 1fr", alignItems: "center", gap: "10px" } },
-          h("span", { style: { font: "800 1.6rem/1 var(--font-display)", color: medal[i], transform: "skewX(-8deg)" } }, `P${r.pos}`),
-          h("span", {}, driverTag(r.code, { full: true }), r.grid ? h("span", { class: "small muted" }, ` from P${r.grid}`) : null)))),
+      h("div", { class: "podium" }, order.map((i) => {
+        const code = row.podium[i];
+        return h("a", { class: `pod p${i + 1}`, href: `#/driver/${code}` },
+          avatar(code, { size: i === 0 ? 60 : 48 }),
+          h("span", { class: "nm" }, driver(code).last || code, row.podium_grid?.[i] ? h("span", { class: "small muted", style: { display: "block", fontWeight: 400 } }, `from P${row.podium_grid[i]}`) : null),
+          h("span", { class: "block" }, i + 1));
+      })),
+      h("div", { class: "round-pill" },
+        row.pole ? h("span", { class: "chip best" }, icon("target", { size: 13 }), `Pole: ${row.pole}`) : null,
+        row.fastest ? h("span", { class: "chip" }, icon("timer", { size: 13 }), `Fastest lap: ${row.fastest}`) : null,
+        row.sc ? h("span", { class: "chip warn" }, icon("alert", { size: 13 }), `${row.sc} safety car${row.sc > 1 ? "s" : ""}`) : null),
       h("p", {}, h("a", { href: `#/race/${ev.round}/R` }, "Full results, lap chart and tyre strategies"))));
 }

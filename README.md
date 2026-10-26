@@ -42,6 +42,13 @@ When a new season starts, open `.github/workflows/site.yml` and change `F1_SEASO
 
 GitHub pauses scheduled workflows in repositories with no activity for 60 days, which can happen over the winter break. If the site stops updating, open **Actions** and click **Enable workflow**.
 
+## Built for slow mobile connections
+
+- The first visit downloads about 100 KB of app code and fonts, then a few KB of data per page. A whole season's summary is a single 3 KB file.
+- After the first visit, a service worker keeps the app on the phone: pages open instantly, data refreshes in the background, and the site still works offline with the last saved data.
+- With data saver on or on a very slow connection, the start-lights intro and chart animations are skipped.
+- Driver helmets and team badges are original illustrations drawn in the browser, so they add nothing to download. (Real driver photos and team logos are copyrighted and trademarked, so the site doesn't use them.)
+
 ## Preview locally with sample data
 
 ```bash

@@ -1,5 +1,6 @@
+import { avatar, teamBadge } from "../avatars.js";
 import { icon } from "../icons.js";
-import { driver, driverTag, empty, eventByRound, h, load, meter, pct, section, SESSION_LABEL, teamColor } from "../ui.js";
+import { driver, empty, eventByRound, h, load, meter, pct, section, SESSION_LABEL } from "../ui.js";
 
 export const title = () => "Form guide";
 
@@ -29,7 +30,8 @@ export default async function formPage() {
     h("span", {}, "Bad quali chance"));
 
   const rows = drivers.map((d) => h("div", { class: "form-row", style: { "--cols": cols } },
-    h("span", { style: { display: "grid", gap: "2px" } }, driverTag(d.code), h("span", { class: "small muted" }, driver(d.code).team)),
+    h("a", { class: "who-row", href: `#/driver/${d.code}`, style: { color: "inherit", textDecoration: "none", gap: "8px" } }, avatar(d.code, { size: 32, ring: false }),
+      h("span", { style: { display: "grid", gap: "0" } }, h("b", {}, d.code), h("span", { class: "small muted" }, driver(d.code).last))),
     d.events.map((ev) => cell(ev)),
     h("span", { class: "risk-cell" },
       h("span", { style: { fontWeight: 700, color: d.quali_fail >= 1.8 * form.grid.quali_fail ? "var(--amber)" : "var(--ink-2)" } }, pct(d.quali_fail)),
@@ -43,7 +45,7 @@ export default async function formPage() {
   const teamTable = h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data" },
     h("thead", {}, h("tr", {}, ["Team", "Practice trouble", "Bad qualifying", "Technical retirements"].map((t, i) => h("th", { scope: "col", class: i === 3 ? "num" : "" }, t)))),
     h("tbody", {}, form.teams.map((t) => h("tr", {},
-      h("td", {}, h("span", { class: "driver" }, h("i", { class: "team-dot", style: { background: teamColor(t.team), boxShadow: `0 0 8px ${teamColor(t.team)}` } }), t.team)),
+      h("td", {}, h("span", { class: "driver" }, teamBadge(t.team, { size: 24 }), t.team)),
       h("td", {}, h("span", { style: { display: "grid", gridTemplateColumns: "90px auto", gap: "8px", alignItems: "center" } }, meter(t.fp_issue / maxFp, "var(--amber)"), pct(t.fp_issue))),
       h("td", {}, h("span", { style: { display: "grid", gridTemplateColumns: "90px auto", gap: "8px", alignItems: "center" } }, meter(t.quali_fail / maxFail, "var(--purple)"), pct(t.quali_fail))),
       h("td", { class: "num" }, relByTeam[t.team]?.tech_dnfs ?? "–"))))));

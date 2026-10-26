@@ -73,6 +73,66 @@ def build_standings(data: SeasonData) -> dict:
             "races_left": len(remaining)}
 
 
+def build_summary(data: SeasonData) -> dict:
+    """One small file with every weekend's headline facts and each driver's season log.
+
+    Lets the Races, Drivers and home pages show a whole season from a single download,
+    which matters on slow mobile connections.
+    """
+    events, drivers = [], {c: {"code": c, "log": []} for c in data.entry_list()}
+    for ev in data.events:
+        done = set(data.done_keys(ev))
+        if not done:
+            continue
+        row = {"round": ev["round"]}
+        sess = {k: data.session(ev["round"], k) for k in done}
+        if "R" in sess:
+            res = sess["R"]["results"]
+            row["podium"] = [r["code"] for r in res if r.get("pos") and r["pos"] <= 3 and (r.get("class") or "").isdigit()]
+            row["podium_grid"] = [next((r.get("grid") for r in res if r["code"] == c), None) for c in row["podium"]]
+            row["fastest"] = (sess["R"].get("fastest") or {}).get("code")
+            row["sc"] = (sess["R"].get("flags") or {}).get("sc", 0)
+            row["wet"] = bool((sess["R"].get("weather") or {}).get("rain"))
+            row["dnfs"] = sum(1 for r in res if not (r.get("class") or "").isdigit())
+        if "Q" in sess:
+            row["pole"] = next((r["code"] for r in sess["Q"]["results"] if r.get("pos") == 1), None)
+        if "S" in sess:
+            row["sprint_winner"] = next((r["code"] for r in sess["S"]["results"] if r.get("pos") == 1), None)
+        events.append(row)
+        for code, d in drivers.items():
+            entry = {"round": ev["round"]}
+            for k in ("Q", "S", "R"):
+                if k in sess:
+                    r = next((x for x in sess[k]["results"] if x["code"] == code), None)
+                    if r:
+                        finished = (r.get("class") or "").isdigit() if k != "Q" else True
+                        entry[k.lower()] = r.get("pos") if finished else None
+                        if k in ("S", "R"):
+                            entry["pts"] = entry.get("pts", 0) + (r.get("points") or 0)
+                            if not finished:
+                                entry[f"{k.lower()}_out"] = True
+            d["log"].append(entry)
+    for d in drivers.values():
+        log = d["log"]
+        qs = [e["q"] for e in log if e.get("q")]
+        rs = [e["r"] for e in log if e.get("r")]
+        mate = next((m for m in data.entry_list() if m != d["code"] and data.team_of(m) == data.team_of(d["code"])), None)
+        ahead = both = 0
+        if mate:
+            mlog = {e["round"]: e for e in drivers[mate]["log"]}
+            pairs = [(e["q"], mlog[e["round"]]["q"]) for e in log if e.get("q") and mlog.get(e["round"], {}).get("q")]
+            both = len(pairs)
+            ahead = sum(1 for a, b in pairs if a < b)
+        d.update({
+            "wins": sum(1 for e in log if e.get("r") == 1), "podiums": sum(1 for e in log if e.get("r") and e["r"] <= 3),
+            "poles": sum(1 for e in log if e.get("q") == 1), "dnfs": sum(1 for e in log if e.get("r_out")),
+            "best": min(rs) if rs else None, "avg_q": round(sum(qs) / len(qs), 1) if qs else None,
+            "avg_r": round(sum(rs) / len(rs), 1) if rs else None, "points": sum(e.get("pts", 0) for e in log),
+            "mate": mate, "quali_vs_mate": [ahead, both - ahead] if mate else None,
+        })
+    return {"events": events, "drivers": list(drivers.values())}
+
+
 def run_model(now: datetime | None = None) -> list[str]:
     now = now or datetime.now(timezone.utc)
     data = SeasonData()
@@ -156,6 +216,8 @@ def run_model(now: datetime | None = None) -> list[str]:
     form = Form(past, current, data.team_of)
     write_json(config.DATA_DIR / "form.json", {"updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "sample": data.sample,
                                               **form.to_json(data.entry_list())})
+    write_json(config.DATA_DIR / "summary.json", {"updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "sample": data.sample,
+                                                 **build_summary(data)})
     write_json(config.DATA_DIR / "reliability.json", {
         "updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "sample": data.sample,
         "teams": rel.table(), "grid_risk_per_race": round(1 - (1 - rel.grid_mech) ** 57, 4),

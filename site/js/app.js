@@ -7,6 +7,8 @@ const routes = {
   race: () => import("./pages/race.js"),
   compare: () => import("./pages/compare.js"),
   form: () => import("./pages/form.js"),
+  drivers: () => import("./pages/drivers.js"),
+  driver: () => import("./pages/drivers.js").then((m) => ({ default: m.profile, title: m.profileTitle })),
   standings: () => import("./pages/standings.js"),
   learn: () => import("./pages/learn.js"),
   accuracy: () => import("./pages/accuracy.js"),
@@ -18,7 +20,7 @@ const NAV = [
   ["form", "Form", "pulse"],
   ["standings", "Standings", "trophy"],
 ];
-const navFor = { race: "races" };
+const navFor = { race: "races", drivers: "standings", driver: "standings" };
 
 function parse() {
   const raw = location.hash.replace(/^#\/?/, "");
@@ -53,15 +55,21 @@ async function render() {
   document.querySelectorAll(".nav a").forEach((a) => {
     if (a.dataset.route === navName) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
+  // show a skeleton if the page takes more than a moment (slow mobile data)
+  const slow = setTimeout(() => app.replaceChildren(h("div", { class: "skeleton-page", "aria-label": "Loading" },
+    h("div", { class: "skeleton", style: { height: "56px", width: "60%" } }),
+    h("div", { class: "skeleton" }), h("div", { class: "skeleton", style: { height: "140px" } }))), 180);
   try {
     const mod = await loader();
     const view = await mod.default(route);
+    clearTimeout(slow);
     app.classList.remove("enter");
     app.replaceChildren(view);
     void app.offsetWidth;
     app.classList.add("enter");
     document.title = mod.title ? `${mod.title(route)} | Pit Lane Guide` : "Pit Lane Guide";
   } catch (e) {
+    clearTimeout(slow);
     console.error(e);
     app.replaceChildren(h("div", { class: "panel empty" },
       h("h2", {}, icon("alert", { size: 24 }), "This page couldn't load"),
@@ -70,8 +78,25 @@ async function render() {
   }
 }
 
+function offlineNotice() {
+  if (window.__DATA__) return;                       // single-file preview: everything is already on the page
+  const bar = h("div", { class: "offline-bar", role: "status", hidden: navigator.onLine },
+    icon("alert", { size: 16 }), "You're offline. Showing the data saved on this phone; it refreshes when you reconnect.");
+  document.body.prepend(bar);
+  window.addEventListener("offline", () => { bar.hidden = false; });
+  window.addEventListener("online", () => { bar.hidden = true; render(); });
+}
+
+function registerWorker() {
+  if (window.__DATA__ || !("serviceWorker" in navigator)) return;
+  if (location.protocol !== "https:" && location.hostname !== "localhost") return;
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => { /* site still works without it */ }));
+}
+
 async function start() {
   buildChrome();
+  offlineNotice();
+  registerWorker();
   const season = await load("season.json");
   if (!season) {
     document.getElementById("app").replaceChildren(h("div", { class: "panel empty" },

@@ -1,4 +1,5 @@
 import { lineChart, trackMap } from "../charts.js";
+import { helmet } from "../avatars.js";
 import { icon } from "../icons.js";
 import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term } from "../ui.js";
 
@@ -53,6 +54,10 @@ export default async function compare(route) {
 
   const insights = buildInsights({ a, b, d, ta, vb, brkB, delta, corners });
   const overall = tb.time - ta.time;
+  const duel = h("div", { class: "duel", style: { "--a": colA, "--b": colB } },
+    h("a", { href: `#/driver/${a}`, class: "duel-side a" }, helmet(a, { size: 110 }), h("b", {}, driver(a).last), h("span", { class: "muted small" }, lapTime(ta.time))),
+    h("span", { class: "duel-vs" }, "vs"),
+    h("a", { href: `#/driver/${b}`, class: "duel-side b" }, helmet(b, { size: 110, cls: "flip" }), h("b", {}, driver(b).last), h("span", { class: "muted small" }, lapTime(tb.time))));
   const headline = h("div", { class: "callout" },
     h("p", { style: { fontWeight: 700, display: "flex", gap: "8px", alignItems: "center" } }, icon("timer", { size: 20 }), Math.abs(overall) < 0.0005 ? `${a} and ${b} were dead level.`
       : `${overall > 0 ? a : b} was ${Math.abs(overall).toFixed(3)}s faster (${lapTime(Math.min(ta.time, tb.time))} vs ${lapTime(Math.max(ta.time, tb.time))}).`),
@@ -92,7 +97,7 @@ export default async function compare(route) {
     onHover: (x) => { map?.setMarker(x); speed.setHover(x); gap.setHover(x); },
   });
 
-  view.append(headline);
+  view.append(duel, headline);
   view.append(h("div", { class: "split" },
     section(["Speed", "gauge"], "Dips are corners: the lower the dip, the slower the corner. Drag or hover to move along the lap.",
       h("div", { class: "panel", style: { display: "grid", gap: "10px" } }, keyLegend, speed.el)),
