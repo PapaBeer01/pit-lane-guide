@@ -1,5 +1,6 @@
 import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
+import { oddsSection, strategySection } from "../strategy.js";
 import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName } from "../ui.js";
 
 export const title = () => "This weekend";
@@ -51,6 +52,9 @@ export default async function home() {
 
   const view = h("div", { style: { display: "grid", gap: "34px" } }, hero);
   view.append(predictionsSection(ev, targets, preds, sessions));
+  const gp = preds.R;
+  if (gp?.strategy && !sessions.R) view.append(strategySection(gp.strategy, { title: "How the race could be won: strategy" }));
+  if (gp?.track && !sessions.R) view.append(oddsSection(gp.track));
   view.append(h("div", { class: "split" }, scheduleSection(ev, sessions, forecast), await lastRaceSection()));
   return view;
 }

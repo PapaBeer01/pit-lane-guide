@@ -1,5 +1,6 @@
 import { gapBars, lineChart, driverSeries, stintChart } from "../charts.js";
 import { icon } from "../icons.js";
+import { oddsSection, strategySection } from "../strategy.js";
 import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, section, SESSION_LABEL, term, tyre } from "../ui.js";
 import { predictionTable } from "./home.js";
 
@@ -68,6 +69,8 @@ export default async function race(route) {
       sc ? h("div", { class: "callout" }, h("p", { style: { display: "flex", gap: "8px" } }, icon(sc.pick_correct ? "check" : "target", { size: 18 }), sc.note)) : null,
       !sess ? noteList(pred.notes) : null,
       predictionTable(pred, sess)));
+    if (pred.strategy) body.append(strategySection(pred.strategy, { actual: sc?.strategy || null, title: sess ? "Strategy: expected vs actual" : "Race strategy" }));
+    if (pred.track) body.append(oddsSection(pred.track, { actual: sess ? (sess.flags || {}) : null }));
   }
   requestAnimationFrame(() => tabs.querySelector('[aria-selected="true"]')?.scrollIntoView({ inline: "center", block: "nearest" }));
   return h("div", { style: { display: "grid", gap: "20px" } }, head, tabs, body);

@@ -1,7 +1,7 @@
-import { lineChart, trackMap } from "../charts.js";
-import { helmet } from "../avatars.js";
+import { lineChart, stintChart, trackMap } from "../charts.js";
+import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
-import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term } from "../ui.js";
+import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term, tyre } from "../ui.js";
 
 export const title = () => "Compare drivers";
 const NEUTRAL = "#8A929C";
@@ -14,7 +14,7 @@ export default async function compare(route) {
   const keys = ev.sessions.filter((s) => s.tel).map((s) => s.key);
   const key = keys.includes(q.get("s")) ? q.get("s") : (keys.includes("Q") ? "Q" : keys[keys.length - 1]);
   const sess = await load(`events/${ev.round}/${key}.json`);
-  const avail = sess.results.map((r) => r.code).filter((c) => sess.telemetry.includes(c));
+  const avail = sess.results.map((r) => r.code);
   const a = avail.includes(q.get("a")) ? q.get("a") : avail[0];
   let b = avail.includes(q.get("b")) ? q.get("b") : avail[1];
   if (b === a) b = avail.find((c) => c !== a);
@@ -32,18 +32,32 @@ export default async function compare(route) {
     pick("Driver 1", a, avail.map((c) => [c, `${c}  ${driver(c).name}`]), (v) => go({ a: v })),
     pick("Driver 2", b, avail.map((c) => [c, `${c}  ${driver(c).name}`]), (v) => go({ b: v })));
 
-  const [ta, tb, circuit] = await Promise.all([
-    load(`events/${ev.round}/tel/${key}_${a}.json`), load(`events/${ev.round}/tel/${key}_${b}.json`), load(`events/${ev.round}/circuit.json`)]);
+  const hasTel = sess.telemetry.includes(a) && sess.telemetry.includes(b);
+  const [ta, tb, circuit] = hasTel ? await Promise.all([
+    load(`events/${ev.round}/tel/${key}_${a}.json`), load(`events/${ev.round}/tel/${key}_${b}.json`), load(`events/${ev.round}/circuit.json`)]) : [null, null, null];
+  const race = key === "R" || key === "S";
   const view = h("div", { style: { display: "grid", gap: "24px" } },
     h("div", { style: { display: "grid", gap: "8px" } },
-      h("h1", {}, "Why was one driver faster?"),
-      h("p", { class: "muted" }, "Pick two drivers and overlay their fastest laps. You'll see where each one braked, accelerated and carried more speed through the corners.")),
+      h("h1", {}, race ? "Who won the battle?" : "Why was one driver faster?"),
+      h("p", { class: "muted" }, race
+        ? "Pick two drivers to see their whole race side by side: where they finished, how the gap changed lap by lap, their pit stops and tyres, then their fastest laps overlaid."
+        : "Pick two drivers and overlay their fastest laps. You'll see where each one braked, accelerated and carried more speed through the corners.")),
     controls);
-  if (!ta || !tb) { view.append(empty("Lap data for one of these drivers is missing for this session.")); return view; }
 
   const colA = driver(a).color;
   const colB = driver(b).team === driver(a).team ? NEUTRAL : driver(b).color;
   const dashB = driver(b).team === driver(a).team;
+  const resA = sess.results.find((r) => r.code === a), resB = sess.results.find((r) => r.code === b);
+  const finished = (r) => /^\d+$/.test(r?.class || "") || (!race && r?.pos);
+  const sub = (r, t) => race ? (finished(r) ? `Finished P${r.pos}` : `Out on lap ${r.laps}`) : r?.pos ? `P${r.pos}, ${lapTime(t?.time ?? r.best)}` : lapTime(t?.time ?? r?.best);
+  view.append(h("div", { class: "duel", style: { "--a": colA, "--b": colB } },
+    h("a", { href: `#/driver/${a}`, class: "duel-side a" }, helmet(a, { size: 110 }), h("b", {}, driver(a).last), h("span", { class: "muted small" }, sub(resA, ta))),
+    h("span", { class: "duel-vs" }, "vs"),
+    h("a", { href: `#/driver/${b}`, class: "duel-side b" }, helmet(b, { size: 110, cls: "flip" }), h("b", {}, driver(b).last), h("span", { class: "muted small" }, sub(resB, tb)))));
+
+  if (race) view.append(...raceBattle(sess, a, b, colA, colB, dashB));
+  else if (key === "Q" || key === "SQ") view.append(qualiBattle(sess, a, b));
+  if (!hasTel) { view.append(empty("Lap telemetry for one of these drivers isn't available for this session.")); return view; }
 
   // align driver 2 onto driver 1's distance grid; build time-at-distance for both
   const d = ta.d;
@@ -54,10 +68,6 @@ export default async function compare(route) {
 
   const insights = buildInsights({ a, b, d, ta, vb, brkB, delta, corners });
   const overall = tb.time - ta.time;
-  const duel = h("div", { class: "duel", style: { "--a": colA, "--b": colB } },
-    h("a", { href: `#/driver/${a}`, class: "duel-side a" }, helmet(a, { size: 110 }), h("b", {}, driver(a).last), h("span", { class: "muted small" }, lapTime(ta.time))),
-    h("span", { class: "duel-vs" }, "vs"),
-    h("a", { href: `#/driver/${b}`, class: "duel-side b" }, helmet(b, { size: 110, cls: "flip" }), h("b", {}, driver(b).last), h("span", { class: "muted small" }, lapTime(tb.time))));
   const headline = h("div", { class: "callout" },
     h("p", { style: { fontWeight: 700, display: "flex", gap: "8px", alignItems: "center" } }, icon("timer", { size: 20 }), Math.abs(overall) < 0.0005 ? `${a} and ${b} were dead level.`
       : `${overall > 0 ? a : b} was ${Math.abs(overall).toFixed(3)}s faster (${lapTime(Math.min(ta.time, tb.time))} vs ${lapTime(Math.max(ta.time, tb.time))}).`),
@@ -97,7 +107,8 @@ export default async function compare(route) {
     onHover: (x) => { map?.setMarker(x); speed.setHover(x); gap.setHover(x); },
   });
 
-  view.append(duel, headline);
+  view.append(h("div", { class: "section-head" }, h("h2", {}, icon("gauge", { size: 24 }), "Fastest laps compared"),
+    h("p", { class: "muted" }, race ? "Each driver's single quickest lap of the race, on top of each other." : "Each driver's quickest lap of the session, on top of each other.")), headline);
   view.append(h("div", { class: "split" },
     section(["Speed", "gauge"], "Dips are corners: the lower the dip, the slower the corner. Drag or hover to move along the lap.",
       h("div", { class: "panel", style: { display: "grid", gap: "10px" } }, keyLegend, speed.el)),
@@ -167,4 +178,131 @@ function buildInsights({ a, b, d, ta, vb, brkB, delta, corners }) {
   const topA = Math.max(...ta.v), topB = Math.max(...vb);
   if (Math.abs(topA - topB) >= 2) out.push(`Top speed: ${topA > topB ? a : b} was ${Math.round(Math.abs(topA - topB))} km/h quicker on the straights (${Math.round(Math.max(topA, topB))} km/h).`);
   return out;
+}
+
+
+// ---------- race head-to-head ----------
+function cleanLaps(L) {
+  const out = [];
+  for (let i = 0; i < L.n.length; i++) {
+    if (L.t[i] && L.n[i] > 1 && !L.pi[i] && !L.po[i] && (!L.ts[i] || /^1+$/.test(L.ts[i]))) out.push(L.t[i]);
+  }
+  return out;
+}
+const median = (xs) => { if (!xs.length) return null; const s = [...xs].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+function raceBattle(sess, a, b, colA, colB, dashB) {
+  const A = sess.laps[a], B = sess.laps[b];
+  const rA = sess.results.find((r) => r.code === a), rB = sess.results.find((r) => r.code === b);
+  const done = (r) => /^\d+$/.test(r.class || "");
+  // gap on every lap both completed: session clock at the end of the lap (or summed lap times as a fallback)
+  const clock = (L) => {
+    if (L.st && L.st.some((v) => v !== null)) return Object.fromEntries(L.n.map((n, i) => [n, L.st[i]]));
+    let acc = 0; return Object.fromEntries(L.n.map((n, i) => [n, (acc += L.t[i] || 0)]));
+  };
+  const cA = clock(A), cB = clock(B);
+  const laps = A.n.filter((n) => n in cB && cA[n] !== null && cB[n] !== null);
+  const gap = laps.map((n) => [n, +(cB[n] - cA[n]).toFixed(3)]);               // > 0: a ahead
+  const pitA = A.n.filter((n, i) => A.pi[i]), pitB = B.n.filter((n, i) => B.pi[i]);
+  const sc = A.n.filter((n, i) => /4/.test(A.ts[i] || ""));
+
+  // headline facts
+  const facts = [];
+  const ahead = done(rA) && done(rB) ? (rA.pos < rB.pos ? a : b) : done(rA) ? a : done(rB) ? b : null;
+  if (ahead) {
+    const last = gap[gap.length - 1];
+    const lapsDown = Math.abs((rA.laps || 0) - (rB.laps || 0));
+    facts.push(done(rA) && done(rB)
+      ? `${ahead} finished ahead, P${Math.min(rA.pos, rB.pos)} to P${Math.max(rA.pos, rB.pos)}, ${lapsDown ? `a lap${lapsDown > 1 ? "s" : ""} clear` : `by ${Math.abs(last?.[1] ?? 0).toFixed(1)}s`}.`
+      : `${ahead} finished; ${ahead === a ? b : a} retired on lap ${(ahead === a ? rB : rA).laps}.`);
+  }
+  for (const r of [rA, rB]) {
+    if (r.grid && done(r)) {
+      const ch = r.grid - r.pos;
+      facts.push(ch > 0 ? `${r.code} gained ${ch} place${ch > 1 ? "s" : ""} from P${r.grid} on the grid.` : ch < 0 ? `${r.code} lost ${-ch} place${ch < -1 ? "s" : ""} from P${r.grid} on the grid.` : `${r.code} finished where they started, P${r.grid}.`);
+    }
+  }
+  const pA = median(cleanLaps(A)), pB = median(cleanLaps(B));
+  if (pA && pB) {
+    const d = pB - pA;
+    facts.push(Math.abs(d) < 0.03 ? "Their race pace on clean laps was almost identical." : `On clean laps ${d > 0 ? a : b} was ${Math.abs(d).toFixed(2)}s a lap quicker (typical lap ${lapTime(Math.min(pA, pB))}).`);
+  }
+  const stops = (code, pits) => {
+    const st = sess.stints?.[code] || [];
+    return pits.length ? `${code} stopped ${pits.length === 1 ? "once" : `${pits.length} times`}, on lap${pits.length > 1 ? "s" : ""} ${pits.join(" and ")} (${st.map((x) => x.c).join(" → ")}).` : `${code} didn't stop.`;
+  };
+  facts.push(stops(a, pitA), stops(b, pitB));
+  // biggest swing over 3 laps, with the likely reason
+  let swing = null;
+  for (let i = 3; i < gap.length; i++) {
+    const d = gap[i][1] - gap[i - 3][1];
+    if (!swing || Math.abs(d) > Math.abs(swing.d)) swing = { from: gap[i - 3][0], to: gap[i][0], d };
+  }
+  if (swing && Math.abs(swing.d) > 1.5) {
+    const inRange = (xs) => xs.some((n) => n > swing.from - 1 && n <= swing.to);
+    const who = swing.d > 0 ? a : b;
+    const why = inRange(pitA) || inRange(pitB) ? "around the pit stops" : inRange(sc) ? "around a safety car" : "on track";
+    facts.push(`The biggest swing came on laps ${swing.from}–${swing.to}, ${why}: ${who} gained ${Math.abs(swing.d).toFixed(1)}s.`);
+  }
+
+  const card = (r, c) => {
+    const won = ahead === r.code;
+    return h("div", { class: `battle-card${won ? " win" : ""}`, style: { "--tc": driver(r.code).color } },
+      h("div", { class: "who-row" }, avatar(r.code, { size: 40 }), h("b", {}, r.code)),
+      h("span", { class: "battle-pos" }, done(r) ? `P${r.pos}` : "DNF"),
+      h("span", { class: "battle-line" }, icon("flag", { size: 14 }), r.grid ? `Started P${r.grid}` : "Start unknown",
+        r.grid && done(r) && r.grid !== r.pos ? h("span", { class: `chip ${r.grid > r.pos ? "good" : "bad"}` }, `${r.grid > r.pos ? "▲" : "▼"}${Math.abs(r.grid - r.pos)}`) : null),
+      h("span", { class: "battle-line" }, icon("tyre", { size: 14 }), (sess.stints?.[r.code] || []).map((x) => tyre(x.c)),
+        `${Math.max(0, (sess.stints?.[r.code] || []).length - 1)} stop${(sess.stints?.[r.code] || []).length - 1 === 1 ? "" : "s"}`),
+      r.points ? h("span", { class: "battle-line" }, icon("trophy", { size: 14 }), `${r.points} points`) : null);
+  };
+
+  const gapChart = lineChart([{ id: "gap", name: "gap", color: "var(--ink)", points: gap }], {
+    height: 220, zero: 0, xLabel: "Lap", yFmt: (t) => `${t > 0 ? "+" : ""}${t.toFixed(0)}s`, aria: `Gap between ${a} and ${b} on every lap`,
+    tooltip: (x) => {
+      const p = gap.reduce((m, q) => (Math.abs(q[0] - x) < Math.abs(m[0] - x) ? q : m), gap[0]);
+      const notes = [pitA.includes(p[0]) ? `${a} pitted` : "", pitB.includes(p[0]) ? `${b} pitted` : "", sc.includes(p[0]) ? "Safety car" : ""].filter(Boolean).join(", ");
+      return `<b>Lap ${p[0]}</b><br>${p[1] >= 0 ? a : b} ahead by ${Math.abs(p[1]).toFixed(1)}s${notes ? `<br><span class="muted">${notes}</span>` : ""}`;
+    },
+  });
+  const posChart = lineChart([
+    { id: a, name: a, color: colA, points: A.n.map((n, i) => [n, A.p[i]]) },
+    { id: b, name: b, color: colB, dash: dashB, points: B.n.map((n, i) => [n, B.p[i]]) }], {
+    height: 200, invertY: true, yMin: 1, yMax: sess.results.length, yTicks: [1, 5, 10, 15, 20].filter((t) => t <= sess.results.length),
+    yFmt: (t) => `P${t}`, xLabel: "Lap", labels: true, aria: `Positions of ${a} and ${b} on every lap`,
+  });
+  const total = Math.max(A.n[A.n.length - 1] || 0, B.n[B.n.length - 1] || 0);
+  return [
+    h("div", { class: "battle" }, card(rA, colA), card(rB, colB)),
+    h("div", { class: "callout" }, noteList(facts, "chevron")),
+    section(["The gap, lap by lap", "compare"], `Above the line ${a} is ahead, below it ${b} is. Jumps usually mean a pit stop or a safety car.`,
+      h("div", { class: "panel" }, gapChart.el, pitMarks(pitA, pitB, a, b, colA, colB))),
+    section(["Positions", "chequered"], "Where each of them ran on every lap.", h("div", { class: "panel" }, posChart.el)),
+    section(["Tyres and pit stops", "tyre"], h("span", {}, "Each bar is one driver's race, coloured by ", term("compound", "tyre compound"), "."),
+      h("div", { class: "panel" }, stintChart([a, b], sess.stints || {}, total))),
+  ];
+}
+
+function pitMarks(pitA, pitB, a, b, colA, colB) {
+  return h("div", { class: "legend", style: { marginTop: "8px" } },
+    h("span", {}, icon("wrench", { size: 14 }), `${a} pitted: ${pitA.length ? pitA.map((n) => `lap ${n}`).join(", ") : "no stops"}`),
+    h("span", {}, icon("wrench", { size: 14 }), `${b} pitted: ${pitB.length ? pitB.map((n) => `lap ${n}`).join(", ") : "no stops"}`));
+}
+
+function qualiBattle(sess, a, b) {
+  const rA = sess.results.find((r) => r.code === a), rB = sess.results.find((r) => r.code === b);
+  const rows = ["Q1", "Q2", "Q3"].map((name, i) => {
+    const x = rA.q?.[i], y = rB.q?.[i];
+    const diff = x && y ? y - x : null;
+    return h("tr", {},
+      h("td", {}, name),
+      h("td", { class: "num", style: { fontWeight: diff !== null && diff > 0 ? 700 : 400 } }, x ? lapTime(x) : "Out"),
+      h("td", { class: "num", style: { fontWeight: diff !== null && diff < 0 ? 700 : 400 } }, y ? lapTime(y) : "Out"),
+      h("td", { class: "num" }, diff === null ? "" : `${diff > 0 ? a : b} by ${Math.abs(diff).toFixed(3)}s`));
+  });
+  const better = rA.pos && rB.pos ? (rA.pos < rB.pos ? a : b) : null;
+  return section(["Qualifying battle", "timer"], better ? `${better} out-qualified ${better === a ? b : a}: P${Math.min(rA.pos, rB.pos)} vs P${Math.max(rA.pos, rB.pos)}. Each part of qualifying knocks out the slowest cars.` : null,
+    h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data" },
+      h("thead", {}, h("tr", {}, ["Part", a, b, "Quicker"].map((t, i) => h("th", { class: i ? "num" : "" }, t)))),
+      h("tbody", {}, rows))));
 }

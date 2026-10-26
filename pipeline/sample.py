@@ -234,10 +234,10 @@ def circuit_json(track):
 # ---------------- sessions ----------------
 
 def empty_lapset():
-    return {"n": [], "t": [], "c": [], "l": [], "p": [], "pi": [], "po": [], "ok": [], "ts": []}
+    return {"n": [], "t": [], "c": [], "l": [], "p": [], "pi": [], "po": [], "ok": [], "ts": [], "st": []}
 
 
-def add_lap(ls, n, t, c, life, pos=None, pi=0, po=0, ts="1"):
+def add_lap(ls, n, t, c, life, pos=None, pi=0, po=0, ts="1", st=None):
     ls["n"].append(n)
     ls["t"].append(None if t is None else round(float(t), 3))
     ls["c"].append(c)
@@ -247,6 +247,7 @@ def add_lap(ls, n, t, c, life, pos=None, pi=0, po=0, ts="1"):
     ls["po"].append(po)
     ls["ok"].append(1)
     ls["ts"].append(ts)
+    ls["st"].append(None if st is None else round(float(st), 3))
 
 
 def sectors(t, rng):
@@ -477,7 +478,7 @@ def race(season, ev, key, rng, wet, grid_order, rel_state):
             if c not in lap_times or c not in new_cum:
                 continue
             t, comp, pit = lap_times[c]
-            add_lap(laps[c], lap, t, comp, life[c], pos=pos, pi=pit, po=0, ts=ts)
+            add_lap(laps[c], lap, t, comp, life[c], pos=pos, pi=pit, po=0, ts=ts, st=3600 + cum[c])
             if pit:
                 stints[c].append({"c": comp, "from": stint_start[c], "to": lap, "new": True, "age": 0})
                 stint_i[c] += 1
@@ -535,6 +536,46 @@ def session_times(race_date: str, sprint: bool):
             ("Q", at(sat, 14, 0)), ("R", at(d, 13, 0))]
 
 
+# years each 2026 venue was raced at before (sample history only; roughly matches the real calendar)
+HISTORY_YEARS = {"Shanghai": (2018, 2019, 2024, 2025), "Miami": (2022, 2023, 2024, 2025), "Madrid": (),
+                 "Las Vegas": (2023, 2024, 2025), "Lusail": (2021, 2023, 2024, 2025), "Zandvoort": (2021, 2022, 2023, 2024, 2025),
+                 "Melbourne": (2018, 2019, 2022, 2023, 2024, 2025), "Montréal": (2018, 2019, 2022, 2023, 2024, 2025),
+                 "Monaco": (2018, 2019, 2021, 2022, 2023, 2024, 2025), "Suzuka": (2018, 2019, 2022, 2023, 2024, 2025),
+                 "Marina Bay": (2018, 2019, 2022, 2023, 2024, 2025), "Austin": (2018, 2019, 2021, 2022, 2023, 2024, 2025),
+                 "Mexico City": (2018, 2019, 2021, 2022, 2023, 2024, 2025), "São Paulo": (2018, 2019, 2021, 2022, 2023, 2024, 2025)}
+
+
+def sample_track_history(rng):
+    """Simulated past races per venue (SC/VSC/red flags and strategies), labelled as sample data."""
+    from .track_history import norm_location
+    out = {y: {"year": y, "races": [], "sample": True} for y in range(2018, 2026)}
+    for ev in CALENDAR:
+        rnd, name, country, location, date, sprint, base, nlaps, km, rain = ev
+        tr = config.track_traits(location)
+        years = HISTORY_YEARS.get(location, tuple(range(2018, 2026)))
+        for y in years:
+            sc = int(rng.poisson(tr["sc"] * 1.3)) if rng.random() < tr["sc"] else 0
+            race = {"round": rnd, "location": location, "country": country, "key": norm_location(location), "name": name,
+                    "flags": {"sc": sc, "vsc": int(rng.random() < 0.35), "red": int(rng.random() < 0.1 + 0.1 * tr["street"]),
+                              "sc_laps": sorted(int(rng.integers(1, nlaps)) for _ in range(sc)), "vsc_laps": [], "red_laps": []}}
+            if y >= 2022:
+                two_stop = rng.random() < (0.25 if tr["overtake"] > 0.6 else 0.55)
+                stints = {}
+                for i in range(20):
+                    if rng.random() < (0.55 if two_stop else 0.2):
+                        a, b = sorted(rng.integers(int(nlaps * 0.25), int(nlaps * 0.75), 2))
+                        stints[f"D{i:02d}"] = [["M", 1, int(a)], ["H", int(a) + 1, int(b)], ["M", int(b) + 1, nlaps]]
+                    else:
+                        a = int(rng.integers(int(nlaps * 0.3), int(nlaps * 0.6)))
+                        first = rng.choice(["M", "H", "S"], p=[0.65, 0.2, 0.15])
+                        stints[f"D{i:02d}"] = [[str(first), 1, a], ["H" if first != "H" else "M", a + 1, nlaps]]
+                race.update({"total_laps": nlaps, "stints": stints, "pit_loss": round(float(rng.normal(21 + 3 * tr["street"], 1.2)), 1)})
+            out[y]["races"].append(race)
+    d = config.DATA_DIR.parent / "history-sample"
+    for y, data in out.items():
+        write_json(d / f"track_{y}.json", data)
+
+
 def generate():
     season = Season()
     rng = season.rng
@@ -542,6 +583,7 @@ def generate():
         shutil.rmtree(config.DATA_DIR)
     config.DATA_DIR.mkdir(parents=True)
     rel_state = {"mech": {t[0]: t[4] for t in TEAMS}, "log": []}
+    sample_track_history(np.random.default_rng(SEED + 1))
     events = []
     for ev in CALENDAR:
         rnd, name, country, location, date, sprint, base, nlaps, km, rain = ev

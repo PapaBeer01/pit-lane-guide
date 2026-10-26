@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 from pipeline import config
 from pipeline.history import load_history
+from pipeline.track_history import load_track_history
 from pipeline.store import read_json, write_json
 
 from .data import SeasonData
@@ -139,6 +140,8 @@ def run_model(now: datetime | None = None) -> list[str]:
     if not data.events:
         return ["Model: no season data yet"]
     history = load_history()
+    # sample previews keep their simulated track history next to the data folder
+    track_history = load_track_history(config.DATA_DIR.parent / "history-sample" if data.sample else None)
     problems: list[str] = []
     out_dir = config.DATA_DIR / "predictions"
     index, scores = [], []
@@ -160,13 +163,13 @@ def run_model(now: datetime | None = None) -> list[str]:
                         write_json(path, existing)
                     elif not existing:
                         # first time we see this session: a backtest, made with data from before it
-                        pred = predict(data, ev, target, rain_prob=None, now=now, history=history)
+                        pred = predict(data, ev, target, rain_prob=None, now=now, history=history, track_history=track_history)
                         pred.update({"frozen": True, "backfilled": True})
                         write_json(path, pred)
                 elif next_ev and ev["round"] == next_ev["round"]:
                     fc = data.forecast(ev["round"]) or {}
                     rain = ((fc.get("sessions") or {}).get(target) or {}).get("rain_prob")
-                    pred = predict(data, ev, target, rain_prob=rain, now=now, history=history)
+                    pred = predict(data, ev, target, rain_prob=rain, now=now, history=history, track_history=track_history)
                     if fc.get("sessions", {}).get(target):
                         pred["forecast"] = fc["sessions"][target]
                     write_json(path, pred)

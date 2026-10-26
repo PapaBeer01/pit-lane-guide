@@ -134,6 +134,8 @@ def export_laps(laps: pd.DataFrame) -> tuple[dict, dict, dict]:
             "po": [int(pd.notna(v)) for v in g.get("PitOutTime", pd.Series([None] * len(g)))],
             "ok": [int(a and not d) for a, d in zip(accurate, deleted)],
             "ts": [str(v) if pd.notna(v) else "" for v in g.get("TrackStatus", pd.Series([None] * len(g)))],
+            # session clock when the lap ended: gives the true gap between two cars on any lap
+            "st": [_sec(v) for v in g.get("Time", pd.Series([None] * len(g)))],
         }
         # stints
         st = []

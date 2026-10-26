@@ -159,6 +159,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
         # first real run: remove the preview sample data
         log.info("Removing sample data")
         shutil.rmtree(config.DATA_DIR)
+        shutil.rmtree(config.DATA_DIR.parent / "history-sample", ignore_errors=True)
         season = {}
     elif season.get("year") and season["year"] != year:
         # new season: keep last season's files in archive/<year>, start fresh
@@ -227,12 +228,18 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
         except Exception as e:
             log.warning("Forecast unavailable: %s", e)   # not a failure: keep the previous forecast
 
-    # Older seasons (fetched once, low weight)
+    # Older seasons (fetched once, low weight): results, then safety cars and strategies per track.
+    # Uses whatever time is left in this run; the rest continues next run.
     try:
         from .history import fetch_history
         fetch_history()
     except Exception as e:
         log.warning("History unavailable: %s", e)
+    try:
+        from .track_history import fetch_track_history
+        fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60)
+    except Exception as e:
+        log.warning("Track history unavailable: %s", e)
 
     for ev in events:
         for s in ev["sessions"]:

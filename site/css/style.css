@@ -468,3 +468,61 @@ a, button, summary, select, [role="tab"] { cursor: pointer; }
 /* press feedback within ~100ms, without shifting layout (UI/UX Pro checklist) */
 a:active, button:active, .tab:active, .driver-card:active, .race-row:active { filter: brightness(1.18); transition-duration: 80ms; }
 @media (max-width: 760px) { .nav { bottom: calc(10px + env(safe-area-inset-bottom)); } main, footer { padding-bottom: calc(110px + env(safe-area-inset-bottom)); } }
+
+/* ---------- strategy ---------- */
+.t-S { --tyre: var(--tyre-S); } .t-M { --tyre: var(--tyre-M); } .t-H { --tyre: var(--tyre-H); } .t-I { --tyre: var(--tyre-I); } .t-W { --tyre: var(--tyre-W); }
+.stops-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.stop-chance { background: var(--surface); box-shadow: var(--glow); border-radius: var(--r-md); padding: 10px 16px; display: grid; }
+.sc-num { font: 800 2rem/1 var(--font-display); color: var(--flag); transform: skewX(-6deg); display: inline-block; }
+.plans { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.plan { background: var(--surface); border-radius: var(--r-md); padding: 14px; display: grid; gap: 12px; box-shadow: var(--glow); animation: pop-in .45s cubic-bezier(.34, 1.4, .64, 1) both; }
+.plan.top { box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 60%, transparent), 0 0 26px color-mix(in srgb, var(--purple) 22%, transparent); }
+.plan-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.plan-name { display: flex; gap: 6px; align-items: center; font-weight: 700; }
+.plan-prob { font: 800 1.8rem/1 var(--font-display); color: var(--ink); }
+.plan.top .plan-prob { color: var(--purple); }
+.tyre-dot { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font: 800 .75rem/1 var(--font-display); color: var(--ink); background: #0d1015; box-shadow: inset 0 0 0 3.5px var(--tyre); }
+:root[data-theme="light"] .tyre-dot { background: #fff; }
+.plan-bar { display: flex; gap: 3px; height: 30px; }
+.plan-bar .stint {
+  flex: 0 0 var(--w); display: flex; align-items: center; justify-content: space-between; padding: 0 8px; border-radius: 7px;
+  background: linear-gradient(180deg, var(--tyre), color-mix(in srgb, var(--tyre) 70%, #000)); color: #111; font: 800 .9rem/1 var(--font-display);
+  transform-origin: left; animation: grow-x .7s var(--ease) both; min-width: 0; overflow: hidden;
+}
+.plan-bar .stint small { font-size: .75rem; opacity: .75; }
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.plan-meta, .hist-seqs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.hist-seqs .chip { gap: 3px; }
+.hist-seqs .tyre-dot { width: 18px; height: 18px; font-size: .65rem; box-shadow: inset 0 0 0 3px var(--tyre); }
+
+/* ---------- safety car odds ---------- */
+.odds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.odds { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.odds-ring {
+  width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; align-content: center; gap: 2px; position: relative;
+  background: conic-gradient(var(--k) calc(var(--p) * 1turn), var(--surface-3) 0); animation: ring-in 1s var(--ease) both;
+}
+.odds-ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--surface); }
+.odds-ring > * { position: relative; }
+.odds-ring .ic-wrap { color: var(--k); display: flex; }
+.odds-ring b { font: 800 1.45rem/1 var(--font-display); }
+@keyframes ring-in { from { opacity: 0; transform: rotate(-90deg) scale(.8); } to { opacity: 1; transform: none; } }
+.odds-label { font-weight: 700; font-size: .875rem; }
+.years { display: flex; gap: 6px; flex-wrap: wrap; }
+.yr { display: grid; justify-items: center; gap: 4px; background: var(--surface-2); border-radius: 10px; padding: 6px 8px; min-width: 52px; }
+.yr-y { font: 800 1rem/1 var(--font-display); color: var(--muted); }
+.yr-marks { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+.mk { font: 800 .65rem/1 var(--font-body); padding: 3px 4px; border-radius: 4px; display: inline-flex; align-items: center; }
+.mk.sc { background: var(--flag); color: var(--flag-ink); }
+.mk.vsc { background: color-mix(in srgb, var(--amber) 30%, transparent); color: var(--amber); }
+.mk.red { background: var(--red); color: #fff; }
+.mk.clean { color: var(--green); }
+@media (max-width: 420px) { .odds-ring { width: 78px; height: 78px; } .odds-ring b { font-size: 1.2rem; } }
+
+/* ---------- race head-to-head ---------- */
+.battle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.battle-card { background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 22%, var(--surface)), var(--surface) 65%); border-radius: var(--r-md); padding: 14px; display: grid; gap: 8px; box-shadow: var(--glow); }
+.battle-card.win { box-shadow: 0 0 0 2px var(--purple), 0 0 22px color-mix(in srgb, var(--purple) 30%, transparent); }
+.battle-pos { font: 800 3rem/1 var(--font-display); transform: skewX(-8deg); display: inline-block; }
+.battle-card.win .battle-pos { color: var(--purple); }
+.battle-line { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: .875rem; color: var(--ink-2); }

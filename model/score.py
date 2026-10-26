@@ -42,6 +42,25 @@ def score(pred: dict, actual: dict) -> dict | None:
         out["fastest_pick"] = fl_pick
         out["fastest_actual"] = fl
         out["fastest_correct"] = fl is not None and fl == fl_pick
+    if pred.get("strategy"):
+        from .strategy import actual_strategies
+        act = actual_strategies(actual)
+        if act:
+            ps = pred["strategy"]
+            pred_stops = int(max(ps["stops"], key=ps["stops"].get))
+            act_stops = int(max(act["stops"], key=act["stops"].get))
+            # the most likely plan with the most likely number of stops, so the two always agree
+            same = [pl for pl in ps["plans"] if pl["stops"] == pred_stops] or ps["plans"]
+            pred_seq = "-".join(same[0]["seq"]) if same else None
+            act_seq = act["common"][0][0] if act["common"] else None
+            out["strategy"] = {"pred_stops": pred_stops, "actual_stops": act_stops, "stops_right": pred_stops == act_stops,
+                               "pred_seq": pred_seq, "actual_seq": act_seq, "seq_right": pred_seq == act_seq,
+                               "actual": {"stops": act["stops"], "common": act["common"]}}
+    if pred.get("track"):
+        f = actual.get("flags") or {}
+        out["neutralisation"] = {"sc_prob": pred["track"]["sc_prob"], "sc": f.get("sc", 0),
+                                 "vsc_prob": pred["track"]["vsc_prob"], "vsc": f.get("vsc", 0),
+                                 "red_prob": pred["track"]["red_prob"], "red": f.get("red", 0)}
     out["note"] = explain(out, actual)
     return out
 

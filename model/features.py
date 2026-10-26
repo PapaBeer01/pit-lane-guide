@@ -63,6 +63,11 @@ def _clean_runs(d: dict, race: bool) -> list[list[int]]:
 
 
 def race_pace_gaps(sess: dict, min_laps: int = 4) -> dict[str, float]:
+    fit = fit_long_runs(sess, min_laps)
+    return fit["gaps"] if fit else {}
+
+
+def fit_long_runs(sess: dict, min_laps: int = 4) -> dict | None:
     """Long-run pace corrected for tyre compound, tyre age and fuel.
 
     Fits: lap_time = driver + compound + degradation x tyre_age (+ fuel/evolution x lap)
@@ -80,13 +85,13 @@ def race_pace_gaps(sess: dict, min_laps: int = 4) -> dict[str, float]:
                 if d["t"][i] <= med * 1.04:           # drop traffic / mistakes
                     rows.append((code, d["c"][i] or "?", d["l"][i] or 0, d["n"][i], d["t"][i]))
     if not rows:
-        return {}
+        return None
     drivers = sorted({r[0] for r in rows})
     counts = {c: sum(1 for r in rows if r[0] == c) for c in drivers}
     drivers = [c for c in drivers if counts[c] >= min_laps]
     rows = [r for r in rows if r[0] in drivers]
     if len(drivers) < 3:
-        return {}
+        return None
     comps = sorted({r[1] for r in rows}, key=lambda c: COMPOUND_PRIOR.get(c, (0, 0))[0])
     di = {c: i for i, c in enumerate(drivers)}
     ci = {c: i for i, c in enumerate(comps)}
@@ -123,7 +128,15 @@ def race_pace_gaps(sess: dict, min_laps: int = 4) -> dict[str, float]:
     ref = float(np.median(y))
     best = eff.min()
     gaps = {c: float((eff[i] - best) / ref * 100) for c, i in di.items()}
-    return {c: g for c, g in gaps.items() if g <= QUALI_OUTLIER_PCT}
+    base_c = comps[0]
+    offsets = {base_c: COMPOUND_PRIOR.get(base_c, (0, 0))[0]}
+    for c, i in ci.items():
+        if i > 0:
+            offsets[c] = offsets[base_c] + float(coef[nd + i - 1])
+    deg = {c: float(coef[nd + nc - 1 + i]) for c, i in ci.items()}
+    laps_per = {c: sum(1 for r in rows if r[1] == c) for c in comps}
+    return {"gaps": {c: g for c, g in gaps.items() if g <= QUALI_OUTLIER_PCT},
+            "offsets": offsets, "deg": deg, "laps": laps_per, "ref": ref}
 
 
 def reference_lap(sessions: list[dict]) -> float | None:
