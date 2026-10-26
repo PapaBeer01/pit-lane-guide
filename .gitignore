@@ -1,0 +1,6 @@
+.fastf1-cache/
+__pycache__/
+.pytest_cache/
+pipeline_problems.txt
+*.tmp
+.DS_Store

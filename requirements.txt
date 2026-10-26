@@ -1,0 +1,5 @@
+fastf1>=3.9,<4
+numpy
+pandas
+requests
+pytest

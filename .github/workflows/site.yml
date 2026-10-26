@@ -1,0 +1,89 @@
+name: Update data and publish site
+
+on:
+  schedule:
+    - cron: "*/20 * * * 5,6,0,1"   # Friday to Monday (UTC): every 20 minutes, for race weekends
+    - cron: "17 */6 * * 2,3,4"     # Tuesday to Thursday: every 6 hours (forecasts, late corrections)
+  workflow_dispatch: {}             # "Run workflow" button for a manual update
+  push:
+    branches: [main]                # code changes are published straight away
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      problems: ${{ steps.update.outputs.problems }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Fetch new sessions, check them, update predictions
+        id: update
+        if: github.event_name != 'push'
+        env:
+          F1_SEASON: "2026"           # change once a year when a new season starts
+        run: |
+          python -m pipeline.update
+          if [ -f pipeline_problems.txt ]; then
+            echo "problems=$(wc -l < pipeline_problems.txt)" >> "$GITHUB_OUTPUT"
+            { echo "### Data problems"; echo; sed 's/^/- /' pipeline_problems.txt; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Save new data
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          for d in site/data history archive; do [ -e "$d" ] && git add "$d"; done
+          if git diff --cached --quiet; then
+            echo "No new data."
+          else
+            git commit -m "Data update $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase
+            git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Runs last so good data is always published first. Failing here makes GitHub email you.
+  report:
+    needs: [build, deploy]
+    if: needs.build.outputs.problems != ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Some sessions failed their data checks and were not published (the site kept the last good data)."
+          echo "See the 'Data problems' summary on the build job. Usually this means F1's data wasn't ready yet; the next run retries."
+          exit 1
