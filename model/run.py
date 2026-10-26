@@ -17,6 +17,7 @@ from pipeline.store import read_json, write_json
 
 from .data import SeasonData
 from .form import Form
+from .pace import race_pace_report
 from .predict import predict
 from .reliability import Reliability
 from .score import score
@@ -219,6 +220,12 @@ def run_model(now: datetime | None = None) -> list[str]:
     form = Form(past, current, data.team_of)
     write_json(config.DATA_DIR / "form.json", {"updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "sample": data.sample,
                                               **form.to_json(data.entry_list())})
+    for ev in data.events:
+        for k in data.done_keys(ev):
+            if k in config.RACE_SESSIONS:
+                rep = race_pace_report(data.session(ev["round"], k))
+                if rep:
+                    write_json(config.DATA_DIR / "events" / str(ev["round"]) / f"{k}_pace.json", rep)
     write_json(config.DATA_DIR / "summary.json", {"updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "sample": data.sample,
                                                  **build_summary(data)})
     write_json(config.DATA_DIR / "reliability.json", {

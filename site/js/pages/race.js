@@ -1,7 +1,7 @@
 import { gapBars, lineChart, driverSeries, stintChart } from "../charts.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
-import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, section, SESSION_LABEL, term, tyre } from "../ui.js";
+import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre } from "../ui.js";
 import { predictionTable } from "./home.js";
 
 export const title = (r) => { const ev = eventByRound(r.args[0]); return ev ? ev.name : "Race"; };
@@ -42,6 +42,8 @@ export default async function race(route) {
       body.append(raceStory(sess));
       body.append(section(["Results", "chequered"], null, resultsTable(sess)));
       body.append(lapChart(sess));
+      const pace = await load(`events/${ev.round}/${key}_pace.json`);
+      if (pace) body.append(racePaceSection(pace, sess));
       if (Object.keys(sess.stints || {}).length) {
         const order = sess.results.map((r) => r.code);
         const total = Math.max(...Object.values(sess.laps).map((l) => l.n[l.n.length - 1] || 0));
@@ -190,4 +192,116 @@ function gapSection(s) {
       ? h("span", {}, "Practice times can mislead: teams carry different fuel loads and test different things. Look at ", term("longrun", "long runs"), " for race pace.")
       : "How far each driver's best lap was from the fastest. Tenths of a second separate whole rows of the grid.",
     h("div", { class: "panel" }, gapBars(items)));
+}
+
+
+// ---------- race pace from the actual race ----------
+function racePaceSection(p, sess) {
+  const rows = p.pace;
+  const worst = Math.max(...rows.map((r) => r.gap), 0.1);
+  let showAll = false;
+  const list = h("div", { class: "pace-list" });
+  const more = h("button", { class: "grid-more", type: "button", style: { color: "var(--ink)", borderColor: "var(--line-strong)" } });
+  const fill = () => {
+    list.replaceChildren(...(showAll ? rows : rows.slice(0, 10)).map((r) => {
+      const bar = h("i", { style: { width: reducedMotion() ? `${Math.max(2, (1 - r.gap / worst) * 100)}%` : "0%" } });
+      const diff = r.finished && r.pos ? r.rank - r.pos : null;      // > 0: finished higher than pace suggests
+      const row = h("div", { class: `pace-row${r.rank === 1 ? " top" : ""}`, style: { "--tc": driver(r.code).color } },
+        h("span", { class: "pace-rank" }, r.rank),
+        driverTag(r.code),
+        h("span", { class: "pace-track", role: "img", "aria-label": `${r.code}: ${r.gap === 0 ? "quickest" : `${r.gap.toFixed(3)} seconds a lap slower`}` }, bar),
+        h("span", { class: "pace-val" },
+          r.gap === 0 ? h("b", { style: { color: "var(--purple)" } }, "Quickest") : `+${r.gap.toFixed(3)}s/lap`,
+          h("small", {}, r.finished ? `Finished P${r.pos}` : "Did not finish",
+            diff ? h("span", { class: diff > 0 ? "up" : "down" }, ` ${diff > 0 ? "▲" : "▼"}${Math.abs(diff)}`) : null)));
+      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = `${Math.max(2, (1 - r.gap / worst) * 100)}%`; }));
+      return row;
+    }));
+    more.replaceChildren(icon(showAll ? "up" : "down", { size: 16 }), showAll ? "Show top 10" : `Show all ${rows.length}`);
+  };
+  more.addEventListener("click", () => { showAll = !showAll; fill(); });
+  fill();
+
+  // plain-language takeaways
+  const facts = [];
+  const top = rows[0];
+  if (top) {
+    facts.push(top.code === p.winner
+      ? `${top.code} had the best race pace and won.`
+      : `${top.code} had the best race pace but ${top.finished ? `finished P${top.pos}` : "didn't finish"}; ${p.winner} won with the ${ordinalWord(rows.find((r) => r.code === p.winner)?.rank)} best pace.`);
+  }
+  const over = rows.filter((r) => r.finished && r.pos).map((r) => ({ ...r, d: r.rank - r.pos })).sort((a, b) => b.d - a.d);
+  if (over[0] && over[0].d >= 3) facts.push(`${over[0].code} finished P${over[0].pos} with only the ${ordinalWord(over[0].rank)} best pace: strategy, a strong start or track position made the difference.`);
+  const under = over[over.length - 1];
+  if (under && under.d <= -3) facts.push(`${under.code} had the ${ordinalWord(under.rank)} best pace but finished P${under.pos}: time was lost somewhere else, like a slow stop, traffic or a safety car at the wrong moment.`);
+
+  // lap-time chart: pick drivers
+  const codes = rows.map((r) => r.code);
+  const finishers = sess.results.filter((r) => /^\d+$/.test(r.class || "")).map((r) => r.code);
+  let picked = new Set([...finishers.slice(0, 3), top?.code].filter(Boolean));
+  const chartBox = h("div");
+  const chips = h("div", { class: "toggle-chips", role: "group", "aria-label": "Drivers on the lap-time chart" });
+  const drawChart = () => {
+    chips.replaceChildren(...codes.map((c) => h("button", {
+      class: "toggle-chip", type: "button", "aria-pressed": String(picked.has(c)), style: { "--tc": driver(c).color },
+      onclick: () => { if (picked.has(c)) { if (picked.size > 1) picked.delete(c); } else picked.add(c); drawChart(); },
+    }, h("i"), c)));
+    const series = [...picked].map((c) => driverSeries(c, (p.laps[c] || []).map(([n, t]) => [n, t])));
+    const all = series.flatMap((x) => x.points.map((q) => q[1]));
+    if (!all.length) { chartBox.replaceChildren(h("p", { class: "muted" }, "No clean laps to show.")); return; }
+    const sorted = [...all].sort((a, b) => a - b);
+    const lo = sorted[0], hi = sorted[Math.floor(sorted.length * 0.97)];
+    const chart = lineChart(series, {
+      height: 260, yMin: Math.floor(lo * 2) / 2 - 0.3, yMax: Math.ceil(hi * 2) / 2 + 0.3, xLabel: "Lap", labels: true,
+      yFmt: (t) => lapTime(t).replace(/(\.\d)\d\d$/, "$1"), aria: "Lap times on clean laps for the chosen drivers",
+      tooltip: (x) => {
+        const lap = Math.round(x);
+        const lines = [...picked].map((c) => { const q = (p.laps[c] || []).find((v) => v[0] === lap); return q ? `${c}: ${lapTime(q[1])}` : null; }).filter(Boolean);
+        return `<b>Lap ${lap}</b><br>${lines.join("<br>") || "No clean laps"}`;
+      },
+    });
+    chartBox.replaceChildren(chart.el);
+  };
+  drawChart();
+
+  // stints: average clean lap and wear per tyre set
+  const stintCodes = showAllStints(rows, p);
+  let allStints = false;
+  const stintBox = h("div", { style: { display: "grid", gap: "12px" } });
+  const stintMore = h("button", { class: "grid-more", type: "button", style: { color: "var(--ink)", borderColor: "var(--line-strong)" } });
+  const drawStints = () => {
+    stintBox.replaceChildren(stintList(allStints ? stintCodes : stintCodes.slice(0, 8), p), stintCodes.length > 8 ? stintMore : "");
+    stintMore.replaceChildren(icon(allStints ? "up" : "down", { size: 16 }), allStints ? "Show fewer" : `Show all ${stintCodes.length}`);
+  };
+  stintMore.addEventListener("click", () => { allStints = !allStints; drawStints(); });
+  drawStints();
+
+  return racePaceView(p, facts, list, more, chips, chartBox, stintBox);
+}
+
+function stintList(codes, p) {
+  return h("div", { class: "stint-rows" }, codes.map((code) => h("div", { class: "stint-row" },
+    driverTag(code),
+    h("div", { class: "stint-cells" }, (p.stints[code] || []).map((st) => h("span", { class: "stint-cell" },
+      tyre(st.c), h("b", {}, lapTime(st.avg)), `${st.laps} laps`,
+      st.wear !== null && st.wear !== undefined ? h("span", { style: { color: st.wear > 0.08 ? "var(--red)" : st.wear > 0.04 ? "var(--amber)" : "var(--green)" } },
+        st.wear <= 0.005 ? "barely wore" : `+${st.wear.toFixed(2)}s/lap wear`) : null))))));
+}
+
+function racePaceView(p, facts, list, more, chips, chartBox, stintRows) {
+  return h("div", { style: { display: "grid", gap: "28px" } },
+    section(["Race pace", "gauge"], h("span", {}, "Who was really quickest over the race distance, in seconds per lap. ", p.note),
+      h("div", { class: "callout" }, noteList(facts, "bolt")),
+      h("div", { class: "panel", style: { display: "grid", gap: "12px" } }, list, more)),
+    section(["Lap times", "timer"], "Pick drivers to compare their lap times through the race. Laps get quicker as fuel burns off and slower as tyres wear; a drop usually means fresh tyres after a stop.",
+      h("div", { class: "panel", style: { display: "grid", gap: "12px" } }, chips, chartBox)),
+    section(["Pace on each set of tyres", "tyre"], h("span", {}, "Each driver's average clean lap on every tyre set, and how much time the tyres lost per lap as they wore (after allowing for fuel burning off). See ", term("deg", "tyre degradation"), "."),
+      h("div", { class: "panel" }, stintRows)));
+}
+
+function showAllStints(rows, p) { return rows.map((r) => r.code).filter((c) => p.stints[c]); }
+function ordinalWord(n) {
+  if (!n) return "";
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }

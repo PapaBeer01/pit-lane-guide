@@ -133,3 +133,12 @@ def test_strategy_planner_prefers_one_stop_with_hard_tyres():
     tm = {"S": {"offset": 0.0, "deg": 0.12}, "M": {"offset": 0.45, "deg": 0.05}, "H": {"offset": 0.85, "deg": 0.02}}
     plans = sorted(plan_times(tm, 57, 23.0), key=lambda p: p["time"])
     assert plans[0]["stops"] == 1 and "H" in plans[0]["seq"]
+
+
+def test_race_pace_report(sample_dir):
+    p = load(sample_dir, "events", "17", "R_pace.json")
+    gaps = [r["gap"] for r in p["pace"]]
+    assert gaps[0] == 0 and gaps == sorted(gaps)
+    assert [r["rank"] for r in p["pace"]] == list(range(1, len(gaps) + 1))
+    for stints in p["stints"].values():
+        assert all(s["laps"] >= 3 and s["c"] in "SMHIW" for s in stints)

@@ -526,3 +526,23 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .battle-pos { font: 800 3rem/1 var(--font-display); transform: skewX(-8deg); display: inline-block; }
 .battle-card.win .battle-pos { color: var(--purple); }
 .battle-line { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: .875rem; color: var(--ink-2); }
+
+/* ---------- race pace ---------- */
+.pace-list { display: grid; gap: 6px; }
+.pace-row { display: grid; grid-template-columns: 26px 64px 1fr 104px; gap: 10px; align-items: center; }
+.pace-rank { font: 800 1.2rem/1 var(--font-display); color: var(--muted); text-align: right; }
+.pace-row.top .pace-rank { color: var(--purple); }
+.pace-track { height: 14px; border-radius: 7px; background: var(--surface-3); position: relative; overflow: hidden; }
+.pace-track i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 7px; background: var(--tc); box-shadow: 0 0 10px color-mix(in srgb, var(--tc) 60%, transparent); transition: width 1s var(--ease); }
+.pace-val { font-size: .8125rem; color: var(--ink-2); text-align: right; display: grid; line-height: 1.2; }
+.pace-val small { color: var(--muted); }
+.pace-val .up { color: var(--green); } .pace-val .down { color: var(--red); }
+.toggle-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.toggle-chip { border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink-2); border-radius: 999px; padding: 6px 10px; min-height: 36px; font-weight: 700; font-size: .8125rem; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.toggle-chip[aria-pressed="true"] { background: color-mix(in srgb, var(--tc) 25%, var(--surface-2)); border-color: var(--tc); color: var(--ink); }
+.toggle-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--tc); }
+.stint-rows { display: grid; gap: 8px; }
+.stint-row { display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center; }
+.stint-cells { display: flex; gap: 6px; flex-wrap: wrap; }
+.stint-cell { display: inline-flex; gap: 6px; align-items: center; background: var(--surface-2); border-radius: 10px; padding: 5px 9px; font-size: .8125rem; color: var(--ink-2); }
+.stint-cell b { color: var(--ink); }
