@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T06:22:33Z",
+ "updated": "2026-10-27T07:26:08Z",
  "events": [
   {
    "round": 1,
@@ -447,27 +447,32 @@
     {
      "key": "FP1",
      "start": "2026-08-21T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "SQ",
      "start": "2026-08-21T14:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "S",
      "start": "2026-08-22T10:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-08-22T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-08-23T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -486,27 +491,32 @@
     {
      "key": "FP1",
      "start": "2026-09-04T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-09-04T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-09-05T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-09-05T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-09-06T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -525,27 +535,32 @@
     {
      "key": "FP1",
      "start": "2026-09-11T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-09-11T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-09-12T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-09-12T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-09-13T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -564,27 +579,32 @@
     {
      "key": "FP1",
      "start": "2026-09-24T08:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-09-24T12:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-09-25T08:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-09-25T12:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-09-26T11:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -603,27 +623,32 @@
     {
      "key": "FP1",
      "start": "2026-10-02T04:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-10-02T08:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-10-03T04:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-10-03T08:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-10-04T07:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -935,6 +960,17 @@
    "as_of": "2026-10-25T20:00:00Z"
   },
   {
+   "code": "ARO",
+   "num": "61",
+   "first": "Paul",
+   "last": "Aron",
+   "name": "Paul Aron",
+   "team": "Alpine",
+   "color": "#00A1E8",
+   "country": null,
+   "as_of": "2026-09-04T10:30:00Z"
+  },
+  {
    "code": "ALO",
    "num": "14",
    "first": "Fernando",
@@ -1122,6 +1158,17 @@
    "as_of": "2026-10-25T20:00:00Z"
   },
   {
+   "code": "TSU",
+   "num": "22",
+   "first": "Yuki",
+   "last": "Tsunoda",
+   "name": "Yuki Tsunoda",
+   "team": "Racing Bulls",
+   "color": "#6C98FF",
+   "country": null,
+   "as_of": "2026-09-13T13:00:00Z"
+  },
+  {
    "code": "VER",
    "num": "3",
    "first": "Max",
@@ -1144,6 +1191,17 @@
    "as_of": "2026-10-25T20:00:00Z"
   },
   {
+   "code": "IWA",
+   "num": "36",
+   "first": "Ayumu",
+   "last": "Iwasa",
+   "name": "Ayumu Iwasa",
+   "team": "Red Bull Racing",
+   "color": "#4781D7",
+   "country": null,
+   "as_of": "2026-09-04T10:30:00Z"
+  },
+  {
    "code": "SAI",
    "num": "55",
    "first": "Carlos",
@@ -1164,6 +1222,17 @@
    "color": "#1868DB",
    "country": null,
    "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "BRO",
+   "num": "46",
+   "first": "Luke",
+   "last": "Browning",
+   "name": "Luke Browning",
+   "team": "Williams",
+   "color": "#1868DB",
+   "country": null,
+   "as_of": "2026-09-04T10:30:00Z"
   }
  ]
 }
