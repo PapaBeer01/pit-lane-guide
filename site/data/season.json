@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T08:07:50Z",
+ "updated": "2026-10-27T08:17:23Z",
  "events": [
   {
    "round": 1,
@@ -18,27 +18,32 @@
     {
      "key": "FP1",
      "start": "2026-03-06T01:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-03-06T05:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-03-07T01:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-03-07T05:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-03-08T04:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -1015,6 +1020,7 @@
     "Alpine"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1049,6 +1055,7 @@
     "Alpine"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1083,6 +1090,7 @@
     "Aston Martin"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1131,6 +1139,7 @@
     "Aston Martin"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1165,6 +1174,7 @@
     "Audi"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1199,6 +1209,7 @@
     "Audi"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1233,6 +1244,7 @@
     "Cadillac"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1281,6 +1293,7 @@
     "Cadillac"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1329,6 +1342,7 @@
     "Ferrari"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1363,6 +1377,7 @@
     "Ferrari"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1397,6 +1412,7 @@
     "Haas F1 Team"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1445,6 +1461,7 @@
     "Haas F1 Team"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1493,6 +1510,7 @@
     "McLaren"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1527,6 +1545,7 @@
     "McLaren"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1561,6 +1580,7 @@
     "Mercedes"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1595,6 +1615,7 @@
     "Mercedes"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1643,6 +1664,7 @@
     "Racing Bulls"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1677,6 +1699,7 @@
     "Racing Bulls"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1731,6 +1754,7 @@
     "Red Bull Racing"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1776,6 +1800,7 @@
     "Red Bull Racing"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1810,6 +1835,7 @@
     "Williams"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
@@ -1858,6 +1884,7 @@
     "Williams"
    ],
    "race_rounds": [
+    1,
     2,
     3,
     4,
