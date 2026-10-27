@@ -134,6 +134,8 @@ export async function profile(route) {
         h("a", { class: "h2h-side", href: `#/driver/${mate}` }, avatar(mate, { size: 52 }), h("b", {}, animatedNumber(b, "int")), h("span", {}, mate)))));
   }
 
+  if (s.trait) view.append(traitSection(code, s.trait, mate));
+
   if (predR) {
     const pr = predR.drivers.find((x) => x.code === code);
     const pq = predQ?.drivers.find((x) => x.code === code);
@@ -153,4 +155,34 @@ export async function profile(route) {
 
 function tile(ic, color, v, k, fmt) {
   return h("div", { class: "tile", style: { "--k": color } }, icon(ic, { size: 22 }), animatedNumber(v, fmt, "v"), h("div", { class: "k" }, k));
+}
+
+
+// ---------- Saturday or Sunday? (racer vs qualifier, compared with the teammate) ----------
+export const TRAIT_TEXT = {
+  sunday: ["Stronger on Sundays", "good"],
+  saturday: ["Stronger on Saturdays", "best"],
+  balanced: ["Equally strong both days", ""],
+};
+function traitSection(code, t, mate) {
+  const [label, cls] = TRAIT_TEXT[t.label] || TRAIT_TEXT.balanced;
+  const secs = Math.abs(t.delta) * 0.9;            // % of a ~90 s lap, in seconds
+  const who = driver(code).last || code, mateName = mate ? driver(mate).last || mate : "their teammate";
+  const line = t.label === "balanced"
+    ? `Compared with ${mateName}, ${who} is about as strong in races as in qualifying.`
+    : t.label === "sunday"
+      ? `Compared with ${mateName}, ${who} finds about ${secs.toFixed(2)}s a lap more in races than in qualifying: a racer more than a one-lap specialist.`
+      : `Compared with ${mateName}, ${who} is about ${secs.toFixed(2)}s a lap stronger over one lap in qualifying than over a race distance.`;
+  const [ahead, behind] = t.race_vs_mate || [0, 0];
+  const g = t.gained;
+  return section(["Saturday or Sunday?", "bolt"], "Qualifying is one perfect lap on Saturday; the race is a long fight on Sunday. Comparing with the teammate, in the same car, shows which suits the driver better.",
+    h("div", { class: "panel", style: { display: "grid", gap: "14px" } },
+      h("div", { style: { display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" } },
+        h("span", { class: `chip ${cls}` }, label),
+        h("span", { class: "small muted" }, `From ${t.rounds} race weekend${t.rounds === 1 ? "" : "s"} with both drivers' pace`)),
+      h("p", {}, line),
+      h("div", { class: "trait-tiles" },
+        h("div", { class: "dc-stat" }, h("b", { style: { color: g > 0 ? "var(--green)" : g < 0 ? "var(--red)" : "inherit" } }, g === null ? "–" : `${g > 0 ? "+" : ""}${g.toFixed(1)}`), h("small", {}, "places gained per race, grid to flag")),
+        h("div", { class: "dc-stat" }, h("b", {}, `${ahead}–${behind}`), h("small", {}, mate ? `finished ahead of ${mate} (both finished)` : "finished ahead of teammate"))),
+      h("p", { class: "small muted" }, "Race pace is corrected for tyres and fuel. Early in a season everyone is pulled towards \"equally strong\" until there are enough races to tell.")));
 }

@@ -1,6 +1,7 @@
 import { avatar, teamBadge } from "../avatars.js";
 import { icon } from "../icons.js";
-import { driver, empty, eventByRound, h, load, meter, pct, section, SESSION_LABEL } from "../ui.js";
+import { ctx, driver, driverTag, empty, eventByRound, h, load, meter, pct, section, SESSION_LABEL } from "../ui.js";
+import { TRAIT_TEXT } from "./drivers.js";
 
 export const title = () => "Form guide";
 
@@ -17,7 +18,7 @@ const MARK = {
 const ORDER = ["FP1", "FP2", "FP3", "SQ", "S", "Q", "R"];
 
 export default async function formPage() {
-  const [form, standings, rel] = await Promise.all([load("form.json"), load("standings.json"), load("reliability.json")]);
+  const [form, standings, rel, summary] = await Promise.all([load("form.json"), load("standings.json"), load("reliability.json"), load("summary.json")]);
   if (!form || !form.rounds.length) return empty("The form guide starts after the first race weekend.");
   const order = (standings?.drivers || []).map((d) => d.code);
   const drivers = [...form.drivers].sort((a, b) => (order.indexOf(a.code) + 99 * (order.indexOf(a.code) < 0)) - (order.indexOf(b.code) + 99 * (order.indexOf(b.code) < 0)));
@@ -56,6 +57,7 @@ export default async function formPage() {
       h("p", { class: "muted" }, "Who's been running cleanly and who keeps hitting trouble, session by session over the last few weekends. Our predictions use this: a driver who often has a bad qualifying gets a matching chance of another one in every simulation, and teams that keep losing practice running carry a little more retirement risk.")),
     section(["Last six weekends", "pulse"], "Each box is one weekend: a mark per session, then the qualifying (Q) and race (R) result. Purple means a win or pole.",
       key, h("div", { class: "panel-flush scroll-x" }, head, rows)),
+    traitTable(summary),
     section(["Team trouble record", "wrench"], `How often each team has lost practice running or had a bad qualifying, with recent weekends counting most. Grid averages: ${pct(form.grid.fp_issue)} of practice sessions and ${pct(form.grid.quali_fail)} of qualifying sessions.`,
       teamTable));
 }
@@ -71,4 +73,24 @@ function cell(ev) {
   return h("span", { class: "form-cell", title: eventByRound(ev.round)?.name },
     h("span", { class: "marks" }, marks),
     h("span", { class: "res" }, res("Q", ev.q), res("R", ev.r)));
+}
+
+
+// Saturday or Sunday? Everyone on the current grid, by places gained per race
+function traitTable(summary) {
+  const current = new Set(Object.values(ctx.drivers).filter((d) => d.current !== false).map((d) => d.code));
+  const rows = (summary?.drivers || []).filter((d) => d.trait && current.has(d.code))
+    .sort((a, b) => (b.trait.gained ?? -99) - (a.trait.gained ?? -99));
+  if (!rows.length) return null;
+  return section(["Saturday or Sunday?", "bolt"], "Places gained from the grid to the flag, per race, and whether each driver is stronger in races or in qualifying compared with their teammate (same car). Drivers who start near the front have less room to gain places. Tap a driver for details.",
+    h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data" },
+      h("thead", {}, h("tr", {}, ["Driver", "Gained per race", "Compared with teammate"].map((t, i) => h("th", { scope: "col", class: i === 1 ? "num" : "" }, t)))),
+      h("tbody", {}, rows.map((d) => {
+        const g = d.trait.gained;
+        const [label, cls] = TRAIT_TEXT[d.trait.label] || TRAIT_TEXT.balanced;
+        return h("tr", {},
+          h("td", {}, h("a", { href: `#/driver/${d.code}`, style: { color: "inherit", textDecoration: "none" } }, driverTag(d.code))),
+          h("td", { class: "num", style: { fontWeight: 700, color: g > 0 ? "var(--green)" : g < 0 ? "var(--red)" : "inherit" } }, g === null ? "–" : `${g > 0 ? "+" : ""}${g.toFixed(1)}`),
+          h("td", {}, h("span", { class: `chip ${cls}` }, label)));
+      })))));
 }

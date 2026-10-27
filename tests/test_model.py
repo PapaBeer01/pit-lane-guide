@@ -142,3 +142,50 @@ def test_race_pace_report(sample_dir):
     assert [r["rank"] for r in p["pace"]] == list(range(1, len(gaps) + 1))
     for stints in p["stints"].values():
         assert all(s["laps"] >= 3 and s["c"] in "SMHIW" for s in stints)
+
+
+def test_practice_long_runs_ignore_the_unreliable_accurate_flag():
+    """Austin FP2 2026: Norris's 8-lap run on hards was mostly flagged 'not accurate'."""
+    from model.pace import practice_pace_report
+
+    def driver(base, run_ok):
+        # out lap, push lap, cool-down, then a long run of 8 laps, then in lap
+        t = [None, base - 5, base + 60] + [base + 0.1 * i for i in range(8)] + [base + 25]
+        n = list(range(1, len(t) + 1))
+        return {"n": n, "t": t, "c": ["H"] * len(t), "l": n, "p": [None] * len(t),
+                "pi": [0] * (len(t) - 1) + [1], "po": [1] + [0] * (len(t) - 1),
+                "ok": [0, 1, 1] + run_ok + [0], "ts": ["1"] * len(t), "st": [0.0] * len(t)}
+    laps = {"AAA": driver(100.0, [0] * 8), "BBB": driver(100.5, [1, 0, 1, 0, 1, 0, 1, 0]), "CCC": driver(101.0, [1] * 8)}
+    sess = {"round": 1, "key": "FP2", "laps": laps, "results": []}
+    rep = practice_pace_report(sess)
+    assert [p["code"] for p in rep["pace"]] == ["AAA", "BBB", "CCC"]
+    assert all(p["run_laps"] == 8 for p in rep["pace"])          # cool-down lap ends the run, not the flag
+    assert abs(rep["pace"][1]["gap"] - 0.5) < 0.05
+
+
+def test_sunday_trait_compares_with_the_teammate():
+    from model.run import sunday_trait
+
+    class Data:
+        events = [{"round": r} for r in range(1, 7)]
+
+        def team_at(self, code, rnd):
+            return "T"
+
+        def session(self, rnd, key):
+            res = [{"code": "RAC", "pos": 1, "grid": 2, "class": "1", "best": 90.3, "q": [90.3]},
+                   {"code": "QUA", "pos": 2, "grid": 1, "class": "2", "best": 90.0, "q": [90.0]}]
+            if key == "Q":
+                return {"key": "Q", "results": res}
+            return {"key": "R", "results": res, "laps": {}}
+    import model.run as run
+    # race pace: RAC 0.3% quicker than QUA on Sundays although 0.3% slower in qualifying
+    orig = run.race_pace_gaps
+    run.race_pace_gaps = lambda s: {"RAC": 0.0, "QUA": 0.3}
+    try:
+        t_rac, t_qua = sunday_trait(Data(), "RAC"), sunday_trait(Data(), "QUA")
+    finally:
+        run.race_pace_gaps = orig
+    assert t_rac["label"] == "sunday" and t_qua["label"] == "saturday"
+    assert t_rac["gained"] == 1.0 and t_rac["race_vs_mate"] == [6, 0]
+    assert t_rac["delta"] == -t_qua["delta"]

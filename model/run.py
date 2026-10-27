@@ -16,8 +16,9 @@ from pipeline.track_history import load_track_history
 from pipeline.store import read_json, write_json
 
 from .data import SeasonData
+from .features import one_lap_gaps, race_pace_gaps
 from .form import Form
-from .pace import race_pace_report
+from .pace import practice_pace_report, race_pace_report
 from .predict import predict
 from .reliability import Reliability
 from .score import score
@@ -76,6 +77,50 @@ def build_standings(data: SeasonData, now: datetime | None = None) -> dict:
         d["in_contention"] = d["points"] + max_left >= leader
     return {"rounds": rounds, "drivers": d_rows, "teams": t_rows, "points_left": max_left,
             "races_left": len(remaining)}
+
+
+TRAIT_SHRINK = 3            # rounds' worth of "balanced" mixed in, so one odd weekend doesn't label anyone
+TRAIT_LINE = 0.08           # % of lap time: beyond this a driver counts as stronger on one day
+
+
+def sunday_trait(data: SeasonData, code: str) -> dict | None:
+    """Racer or qualifier? From Grands Prix this season.
+
+    - gained: average places gained from the grid to the flag (classified finishes, pit-lane starts left out)
+    - race_vs_mate: finished ahead of the teammate / behind (both classified)
+    - delta: race-pace gap to the teammate minus the qualifying gap to the teammate, in % of lap time,
+      shrunk towards 0. Same car, so this isolates the driver: negative = relatively stronger in races.
+    """
+    gained, ahead, behind, deltas = [], 0, 0, []
+    for ev in data.events:
+        rnd = ev["round"]
+        r, q = data.session(rnd, "R"), data.session(rnd, "Q")
+        if not r:
+            continue
+        res = {x["code"]: x for x in r.get("results", [])}
+        me = res.get(code)
+        if not me:
+            continue
+        done = lambda x: (x.get("class") or "").isdigit()          # noqa: E731
+        if done(me) and me.get("grid") and me.get("pos"):
+            gained.append(me["grid"] - me["pos"])
+        team = data.team_at(code, rnd)
+        mates = [c for c in res if c != code and data.team_at(c, rnd) == team]
+        if not mates:
+            continue
+        mate = res[mates[0]]
+        if done(me) and done(mate) and me.get("pos") and mate.get("pos"):
+            ahead, behind = ahead + (me["pos"] < mate["pos"]), behind + (me["pos"] > mate["pos"])
+        if q:
+            qg, rg = one_lap_gaps(q), race_pace_gaps(r)
+            if all(c in qg and c in rg for c in (code, mate["code"])):
+                deltas.append((rg[code] - rg[mate["code"]]) - (qg[code] - qg[mate["code"]]))
+    if not gained and not deltas:
+        return None
+    delta = sum(deltas) / (len(deltas) + TRAIT_SHRINK) if deltas else 0.0
+    label = "sunday" if delta <= -TRAIT_LINE else "saturday" if delta >= TRAIT_LINE else "balanced"
+    return {"gained": round(sum(gained) / len(gained), 1) if gained else None, "races": len(gained),
+            "race_vs_mate": [ahead, behind], "delta": round(delta, 3), "rounds": len(deltas), "label": label}
 
 
 def build_summary(data: SeasonData) -> dict:
@@ -141,6 +186,7 @@ def build_summary(data: SeasonData) -> dict:
             "best": min(rs) if rs else None, "avg_q": round(sum(qs) / len(qs), 1) if qs else None,
             "avg_r": round(sum(rs) / len(rs), 1) if rs else None, "points": sum(e.get("pts", 0) for e in log),
             "mate": mate, "quali_vs_mate": [ahead, both - ahead] if both else None,
+            "trait": sunday_trait(data, d["code"]),
         })
     return {"events": events, "drivers": list(drivers.values())}
 
@@ -246,10 +292,10 @@ def run_model(now: datetime | None = None) -> list[str]:
                                               **form.to_json(data.entry_list())})
     for ev in data.events:
         for k in data.done_keys(ev):
-            if k in config.RACE_SESSIONS:
-                rep = race_pace_report(data.session(ev["round"], k))
-                if rep:
-                    write_json(config.DATA_DIR / "events" / str(ev["round"]) / f"{k}_pace.json", rep)
+            report = race_pace_report if k in config.RACE_SESSIONS else practice_pace_report if k.startswith("FP") else None
+            rep = report(data.session(ev["round"], k)) if report else None
+            if rep:
+                write_json(config.DATA_DIR / "events" / str(ev["round"]) / f"{k}_pace.json", rep)
     write_json(config.DATA_DIR / "summary.json", {"updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"), "sample": data.sample,
                                                  **build_summary(data)})
     write_json(config.DATA_DIR / "reliability.json", {

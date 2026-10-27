@@ -54,6 +54,10 @@ export default async function race(route) {
     } else {
       body.append(section(["Results", "chequered"], null, resultsTable(sess)));
       body.append(gapSection(sess));
+      if (key.startsWith("FP")) {
+        const lr = await load(`events/${ev.round}/${key}_pace.json`);
+        if (lr?.pace?.length) body.append(longRunSection(lr));
+      }
     }
     if (sess.telemetry?.length) {
       const top = sess.results.filter((r) => r.pos).slice(0, 2).map((r) => r.code);
@@ -195,6 +199,75 @@ function gapSection(s) {
     h("div", { class: "panel" }, gapBars(items)));
 }
 
+
+// ---------- practice long runs: the laps teams use to rehearse the race ----------
+const TYRE_NAME = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" };
+function longRunSection(p) {
+  const rows = p.pace;
+  const worst = Math.max(...rows.map((r) => r.gap), 0.1);
+  let showAll = false;
+  const list = h("div", { class: "pace-list" });
+  const more = h("button", { class: "grid-more", type: "button", style: { color: "var(--ink)", borderColor: "var(--line-strong)" } });
+  const fill = () => {
+    list.replaceChildren(...(showAll ? rows : rows.slice(0, 10)).map((r) => {
+      const w = `${Math.max(2, (1 - r.gap / worst) * 100)}%`;
+      const bar = h("i", { style: { width: reducedMotion() ? w : "0%" } });
+      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = w; }));
+      return h("div", { class: `pace-row${r.rank === 1 ? " top" : ""}`, style: { "--tc": driver(r.code).color } },
+        h("span", { class: "pace-rank" }, r.rank),
+        driverTag(r.code),
+        h("span", { class: "pace-track", role: "img", "aria-label": `${r.code}: ${r.gap === 0 ? "quickest" : `${r.gap.toFixed(3)} seconds a lap slower`}` }, bar),
+        h("span", { class: "pace-val" },
+          r.gap === 0 ? h("b", { style: { color: "var(--purple)" } }, "Quickest") : `+${r.gap.toFixed(3)}s/lap`,
+          r.run_laps ? h("small", { style: { display: "inline-flex", gap: "4px", alignItems: "center" } }, tyre(r.run_c), `${r.run_laps}-lap run`) : null));
+    }));
+    more.hidden = rows.length <= 10;
+    more.replaceChildren(icon(showAll ? "up" : "down", { size: 16 }), showAll ? "Show top 10" : `Show all ${rows.length}`);
+  };
+  more.addEventListener("click", () => { showAll = !showAll; fill(); });
+  fill();
+
+  // plain-language takeaways
+  const longest = Object.entries(p.runs).flatMap(([code, rs]) => rs.map((r) => ({ code, ...r }))).sort((a, b) => b.laps - a.laps)[0];
+  const facts = [`${rows[0].code} was quickest on long runs${rows[1] ? `, ${rows[1].gap.toFixed(3)}s a lap ahead of ${rows[1].code}` : ""}.`];
+  if (longest) facts.push(`The longest run was ${longest.code}'s: ${longest.laps} laps on ${(TYRE_NAME[longest.c] || "unknown").toLowerCase()} tyres.`);
+  facts.push("Fuel loads and engine settings differ between teams in practice, so small gaps here can flip on Sunday.");
+
+  // lap-by-lap chart of each driver's longest run
+  const longestRun = (c) => (p.runs[c] || []).reduce((a, b) => (!a || b.laps > a.laps ? b : a), null);
+  const codes = rows.map((r) => r.code).filter((c) => longestRun(c));
+  let picked = new Set(codes.slice(0, 3));
+  const chartBox = h("div");
+  const chips = h("div", { class: "toggle-chips", role: "group", "aria-label": "Drivers on the long-run chart" });
+  const draw = () => {
+    chips.replaceChildren(...codes.map((c) => h("button", {
+      class: "toggle-chip", type: "button", "aria-pressed": String(picked.has(c)), style: { "--tc": driver(c).color },
+      onclick: () => { if (picked.has(c)) { if (picked.size > 1) picked.delete(c); } else picked.add(c); draw(); },
+    }, h("i"), c)));
+    const series = [...picked].map((c) => driverSeries(c, longestRun(c).times.map((t, i) => [i + 1, t])));
+    const all = series.flatMap((x) => x.points.map((q) => q[1])).filter((t) => t);
+    if (!all.length) { chartBox.replaceChildren(h("p", { class: "muted" }, "No long runs to show.")); return; }
+    const chart = lineChart(series, {
+      height: 240, yMin: Math.floor(Math.min(...all) * 2) / 2 - 0.2, yMax: Math.ceil(Math.max(...all) * 2) / 2 + 0.2,
+      xLabel: "Lap", labels: true, xFmt: (t) => `${t}`,
+      yFmt: (t) => lapTime(t).replace(/(\.\d)\d\d$/, "$1"), aria: "Lap times through each chosen driver's longest run",
+      tooltip: (x) => {
+        const k = Math.round(x);
+        const lines = [...picked].map((c) => { const r = longestRun(c); const t = r.times[k - 1]; return t ? `${c}: ${lapTime(t)} (${TYRE_NAME[r.c] || ""})` : null; }).filter(Boolean);
+        return `<b>Lap ${k} of the run</b><br>${lines.join("<br>") || "No lap"}`;
+      },
+    });
+    chartBox.replaceChildren(chart.el);
+  };
+  draw();
+
+  return h("div", { style: { display: "grid", gap: "28px" } },
+    section(["Long-run pace", "gauge"], h("span", {}, "Teams rehearse the race in practice by running several laps in a row on one set of tyres. This ranks drivers on those runs, in seconds per lap off the quickest. ", p.note),
+      h("div", { class: "callout" }, noteList(facts, "bolt")),
+      h("div", { class: "panel", style: { display: "grid", gap: "12px" } }, list, more)),
+    section(["Long runs lap by lap", "timer"], "Each line is one driver's longest run. A flat line means the tyres held on; a line rising to the right means they were wearing out. Pick drivers to compare.",
+      h("div", { class: "panel", style: { display: "grid", gap: "12px" } }, chips, chartBox)));
+}
 
 // ---------- race pace from the actual race ----------
 function racePaceSection(p, sess) {

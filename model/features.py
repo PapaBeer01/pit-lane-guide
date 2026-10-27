@@ -44,12 +44,22 @@ def one_lap_gaps(sess: dict) -> dict[str, float]:
     return {c: g for c, g in gaps.items() if g <= QUALI_OUTLIER_PCT}
 
 
+PRACTICE_SLOW = 1.08       # practice laps this much slower than the driver's best are cool-down laps
+
+
 def _clean_runs(d: dict, race: bool) -> list[list[int]]:
-    """Indexes of clean laps, grouped into continuous runs."""
+    """Indexes of clean laps, grouped into continuous runs.
+
+    In practice FastF1's "accurate" flag is unreliable (whole long runs come back marked inaccurate
+    while cool-down laps pass), so practice laps are judged by time instead: a lap far slower than
+    the driver's best is a cool-down lap and ends the run."""
     runs, cur = [], []
+    times = [t for t in d["t"] if t]
+    best = min(times) if times else None
     for i in range(len(d["n"])):
         t = d["t"][i]
-        clean = (t is not None and d["ok"][i] and not d["pi"][i] and not d["po"][i]
+        quality = d["ok"][i] if race else (best is not None and t is not None and t <= best * PRACTICE_SLOW)
+        clean = (t is not None and quality and not d["pi"][i] and not d["po"][i]
                  and _green(d["ts"][i]) and d["n"][i] > 1)
         if clean:
             cur.append(i)
