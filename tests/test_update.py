@@ -77,10 +77,13 @@ class FakeSession:
         return Info()
 
 
+ROUNDS = (1, 2)
+
+
 def fake_schedule(year, include_testing=False):
     base = pd.Timestamp("2026-03-06 01:30")
     rows = []
-    for rnd in (1, 2):
+    for rnd in ROUNDS:
         b = base + pd.Timedelta(days=7 * (rnd - 1))
         row = {"RoundNumber": rnd, "EventName": f"Test Grand Prix {rnd}", "OfficialEventName": "", "Country": "Testland",
                "Location": "Melbourne", "EventFormat": "conventional", "EventDate": b + pd.Timedelta(days=2)}
@@ -105,6 +108,7 @@ def fake_env(tmp_path, monkeypatch):
     monkeypatch.setattr(pipeline.history, "fetch_history", lambda *a, **k: [])
     import pipeline.update
     monkeypatch.setattr(pipeline.update, "sign_in", lambda: (True, ""))
+    monkeypatch.setattr(pipeline.update, "check_access", lambda *a: (True, ""))
 
     class NoErgast:
         def __init__(self, *a, **k):
@@ -114,8 +118,10 @@ def fake_env(tmp_path, monkeypatch):
     return tmp_path
 
 
-def test_update_publishes_finished_sessions_and_predicts(fake_env):
+def test_update_publishes_finished_sessions_and_predicts(fake_env, monkeypatch):
     from pipeline.update import run
+    monkeypatch.setattr(config, "MAX_HISTORY_RACES_PER_RUN", 100)   # all track history in one run
+    monkeypatch.setattr(config, "MAX_SESSIONS_PER_RUN", 200)
     # pretend the sample preview is still in place: the first real run must clear it
     write_json(config.DATA_DIR / "season.json", {"sample": True, "year": 2026, "events": [], "drivers": []})
     now = datetime(2026, 3, 8, 12, 0, tzinfo=timezone.utc)      # round 1 finished, round 2 next
@@ -181,3 +187,122 @@ def test_missing_f1_login_stops_cleanly(fake_env, monkeypatch):
     assert problems == ["F1 TV sign-in not set up"]
     assert not (config.DATA_DIR / "events").exists()
     assert not (config.DATA_DIR / "predictions").exists()          # no empty placeholder predictions
+
+
+# --- run #4 (Oct 2026): signed in, but every session came back empty, then 500 calls/h ---
+
+def _many_rounds(monkeypatch, n):
+    monkeypatch.setitem(fake_schedule.__globals__, "ROUNDS", tuple(range(1, n + 1)))
+
+
+def _counting_sessions(monkeypatch, make):
+    import fastf1
+    calls = []
+
+    def get_session(y, r, name):
+        calls.append((r, name))
+        return make(name)
+    monkeypatch.setattr(fastf1, "get_session", get_session)
+    return calls
+
+
+class EmptySession(FakeSession):
+    """What FastF1 gives when F1 refuses the data: load() only logs, then the data isn't there."""
+    def __getattribute__(self, item):
+        if item in ("laps", "results", "race_control_messages"):
+            from fastf1.exceptions import DataNotLoadedError
+            raise DataNotLoadedError("The data you are trying to access has not been loaded yet. See Session.load")
+        return super().__getattribute__(item)
+
+
+def test_refused_timing_data_stops_before_loading(fake_env, monkeypatch):
+    import pipeline.update
+    from pipeline.update import run
+    calls = _counting_sessions(monkeypatch, lambda name: FakeSession(name, np.random.default_rng(3)))
+    monkeypatch.setattr(pipeline.update, "check_access",
+                        lambda *a: (False, "Signed in to F1 TV, but F1 refused the timing data (HTTP 401)"))
+    problems = run(now=datetime(2026, 3, 8, 12, 0, tzinfo=timezone.utc), year=2026)
+    assert problems == ["Signed in to F1 TV, but F1 refused the timing data (HTTP 401)"]
+    assert calls == []                                            # not one session load attempted
+    assert not (config.DATA_DIR / "events").exists()
+    assert not (config.DATA_DIR / "predictions").exists()
+
+
+def test_empty_sessions_stop_the_run_with_one_message(fake_env, monkeypatch):
+    from pipeline.update import run
+    _many_rounds(monkeypatch, 18)
+    calls = _counting_sessions(monkeypatch, lambda name: EmptySession(name, np.random.default_rng(4)))
+    problems = run(now=datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc), year=2026)
+    assert len([c for c in calls]) == config.STOP_AFTER_FAILURES   # gave up after two, not ~90
+    assert len(problems) == 1
+    assert "Stopped loading early" in problems[0] and "came back empty" in problems[0]
+    assert "has not been loaded" in problems[0]                   # the real FastF1 error is shown once
+    assert not (config.DATA_DIR / "events").exists()
+    assert not (config.HISTORY_DIR).exists()                       # track history not attempted either
+
+
+def test_rate_limit_stops_the_run(fake_env, monkeypatch):
+    from fastf1.exceptions import RateLimitExceededError
+    from pipeline.update import run
+    _many_rounds(monkeypatch, 5)
+
+    class Limited(FakeSession):
+        def load(self, **kw):
+            raise RateLimitExceededError("any API: 500 calls/h")
+    calls = _counting_sessions(monkeypatch, lambda name: Limited(name, np.random.default_rng(5)))
+    problems = run(now=datetime(2026, 10, 27, 6, 0, tzinfo=timezone.utc), year=2026)
+    assert len(calls) == 1
+    assert len(problems) == 1 and "request limit" in problems[0] and "500 calls/h" in problems[0]
+
+
+def test_backfill_is_spread_over_runs_newest_first(fake_env, monkeypatch):
+    from pipeline.update import run
+    _many_rounds(monkeypatch, 4)                                   # 20 finished sessions
+    now = datetime(2026, 4, 10, 12, 0, tzinfo=timezone.utc)
+    calls = _counting_sessions(monkeypatch, lambda name: FakeSession(name, np.random.default_rng(6)))
+    assert run(now=now, year=2026) == []
+    assert len(calls) == config.MAX_SESSIONS_PER_RUN
+    loaded = {p.parent.name + "/" + p.stem for p in (config.DATA_DIR / "events").glob("*/*.json")
+              if p.stem in config.SESSION_MINUTES}
+    assert loaded == {f"{r}/{k}" for r in (3, 4) for k in ("FP1", "FP2", "FP3", "Q", "R")}   # newest rounds first
+    assert not (config.HISTORY_DIR).exists()                       # season backlog first, track history later
+    calls.clear()
+    run(now=now, year=2026)
+    assert len(calls) == config.MAX_SESSIONS_PER_RUN               # second run finishes the backlog
+    season = read_json(config.DATA_DIR / "season.json")
+    assert all(s["done"] for ev in season["events"] for s in ev["sessions"])
+    calls.clear()
+    run(now=now, year=2026)                                        # nothing new: track history gets the run
+    assert 0 < len(calls) <= config.MAX_HISTORY_RACES_PER_RUN and all(n == "Race" for _, n in calls)
+
+
+def test_check_access_reports_refusal(monkeypatch):
+    import fastf1
+    from fastf1.req import Cache
+    from pipeline.update import check_access
+
+    class Resp:
+        status_code = 401
+
+    class S:
+        api_path = "/static/2026/2026-03-08_Test_Grand_Prix/2026-03-08_Race/"
+    seen = []
+    monkeypatch.setattr(fastf1, "get_session", lambda *a: S())
+    monkeypatch.setattr(Cache, "requests_get", classmethod(lambda cls, url, **k: seen.append(url) or Resp()))
+    ok, msg = check_access(2026, {"round": 1}, {"key": "R", "ff_name": "Race"})
+    assert not ok and "HTTP 401" in msg and "round 1 R" in msg
+    assert seen == ["https://livetiming.formula1.com/static/2026/2026-03-08_Test_Grand_Prix/2026-03-08_Race/SessionInfo.jsonStream"]
+    Resp.status_code = 200
+    assert check_access(2026, {"round": 1}, {"key": "R", "ff_name": "Race"}) == (True, "")
+
+
+def test_track_history_gives_up_without_burning_tries(tmp_path, monkeypatch):
+    import fastf1
+    from pipeline import track_history
+    monkeypatch.setattr(config, "HISTORY_DIR", tmp_path / "history")
+    monkeypatch.setattr(fastf1, "get_event_schedule", fake_schedule)
+    calls = _counting_sessions(monkeypatch, lambda name: EmptySession(name, np.random.default_rng(7)))
+    track_history.fetch_track_history(deadline=float("inf"))
+    assert len(calls) == 2
+    data = read_json(config.HISTORY_DIR / "track_2018.json")
+    assert [r.get("tries") for r in data["races"]] == [1]          # only the first counts as a failed try

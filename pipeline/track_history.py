@@ -87,11 +87,18 @@ def strategies_from_laps(laps: pd.DataFrame) -> tuple[dict, float | None]:
     return stints, (round(float(np.median(losses)), 1) if losses else None)
 
 
-def fetch_track_history(deadline: float) -> list[str]:
-    """Download any missing past races (resumes across runs). Stops at `deadline` (time.monotonic)."""
+def fetch_track_history(deadline: float, max_races: int | None = None) -> list[str]:
+    """Download any missing past races (resumes across runs).
+
+    Stops at `deadline` (time.monotonic), after `max_races` races, when FastF1's request limit is
+    reached, or after two races in a row come back empty (those don't count as failed tries).
+    """
     import fastf1
 
+    max_races = config.MAX_HISTORY_RACES_PER_RUN if max_races is None else max_races
     problems = []
+    attempted = 0
+    empty_in_row = 0
     for year in SC_YEARS:
         path = config.HISTORY_DIR / f"track_{year}.json"
         data = read_json(path, {"year": year, "races": []}) or {"year": year, "races": []}
@@ -107,10 +114,11 @@ def fetch_track_history(deadline: float) -> list[str]:
             rnd = int(ev["RoundNumber"])
             if rnd in have:
                 continue
-            if time.monotonic() > deadline:
+            if time.monotonic() > deadline or attempted >= max_races or empty_in_row >= 2:
                 if changed:
                     write_json(path, data)
                 return problems
+            attempted += 1
             try:
                 s = fastf1.get_session(year, rnd, "Race")
                 with_laps = year in STRATEGY_YEARS
@@ -123,8 +131,16 @@ def fetch_track_history(deadline: float) -> list[str]:
                     race["stints"], race["pit_loss"] = strategies_from_laps(s.laps)
                 data["races"] = [r for r in data["races"] if r["round"] != rnd] + [race]
                 changed = True
+                empty_in_row = 0
             except Exception as e:
                 log.warning("Track history %s round %s: %s", year, rnd, e)
+                if type(e).__name__ == "RateLimitExceededError" or "calls/h" in str(e):
+                    if changed:
+                        write_json(path, data)
+                    return problems                  # not this race's fault: no try counted
+                empty_in_row += 1
+                if empty_in_row >= 2:
+                    continue                         # probably no access right now: no try counted
                 prev = next((r for r in data["races"] if r["round"] == rnd), None)
                 if prev:
                     prev["tries"] = prev.get("tries", 1) + 1

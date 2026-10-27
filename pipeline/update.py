@@ -8,6 +8,7 @@ flag the run (which makes GitHub send a failure email).
 from __future__ import annotations
 
 import logging
+import re
 import shutil
 import sys
 import time
@@ -159,6 +160,51 @@ def sign_in() -> tuple[bool, str]:
         return False, f"F1 TV sign-in failed ({type(e).__name__}: {e}). Check the F1_USERNAME / F1_PASSWORD secrets and the subscription."
 
 
+def _subscription_summary() -> str:
+    """Non-secret facts from the sign-in token (the run log of a public repo is public)."""
+    try:
+        from fastf1.internals.f1account import token_manager
+        tok = token_manager.get_stored()
+        if tok is None:
+            return "no token stored"
+        claims = tok.claims
+        keep = {k: v for k, v in claims.items()
+                if re.search(r"subscri|product|status|entitle|tier|plan", k, re.I)
+                and not re.search(r"id$|email|name", k, re.I)
+                and isinstance(v, (str, int, float, bool)) and "@" not in str(v)}
+        exp = datetime.fromtimestamp(tok.expires_at, timezone.utc).strftime("%Y-%m-%d %H:%MZ")
+        return f"token expires {exp}; subscription fields: {keep or 'none'}; all claim names: {sorted(claims)}"
+    except Exception as e:
+        return f"token unreadable ({type(e).__name__})"
+
+
+def check_access(year: int, ev: dict, sess: dict) -> tuple[bool, str]:
+    """One test request for a finished session before loading anything else.
+
+    Signing in can succeed while F1 still refuses the timing data (e.g. a subscription tier
+    without it). FastF1 then logs an error per page, signs in again after every refusal and
+    tries a mirror, so ~90 sessions quickly use up its 500 calls/h. One request settles it.
+    """
+    import fastf1
+    from fastf1 import _api
+    from fastf1.req import Cache
+    s = fastf1.get_session(year, ev["round"], sess["ff_name"])
+    url = _api.base_url + s.api_path + _api.pages["session_info"]
+    r = Cache.requests_get(url)
+    log.info("Access check: HTTP %s for round %s %s; %s", r.status_code, ev["round"], sess["key"], _subscription_summary())
+    if r.status_code in (401, 403):
+        return False, (f"Signed in to F1 TV, but F1 refused the timing data (HTTP {r.status_code}) for round "
+                       f"{ev['round']} {sess['key']}. Nothing was loaded this run. Likely cause: the subscription "
+                       f"doesn't include the timing archive. Details: {_subscription_summary()}")
+    if r.status_code >= 400:
+        log.warning("Access check inconclusive (HTTP %s); loading sessions anyway", r.status_code)
+    return True, ""
+
+
+def _is_rate_limit(e: Exception) -> bool:
+    return type(e).__name__ == "RateLimitExceededError" or "calls/h" in str(e)
+
+
 def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     import fastf1
 
@@ -196,42 +242,87 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     # something new to download, and stop early with a clear message if it fails.
     due = [(ev, s) for ev in events for s in ev["sessions"]
            if session_due(s, now) and needs_refresh(read_json(config.DATA_DIR / "events" / str(ev["round"]) / f"{s['key']}.json"), s, now)]
-    signed_in = True
+    # Backfill is spread over runs: newest sessions first (most useful for the next race), the rest later.
+    batch = sorted(due, key=lambda p: p[1]["start"], reverse=True)[:config.MAX_SESSIONS_PER_RUN]
+    to_load = {(ev["round"], s["key"]) for ev, s in batch}
+    if len(due) > len(batch):
+        log.info("%d sessions to load; loading the newest %d this run, the rest on later runs", len(due), len(batch))
+
+    access = True
     if due:
         ok, msg = sign_in()
+        if ok:
+            ev0, s0 = batch[0]
+            try:
+                ok, msg = check_access(year, ev0, s0)
+            except Exception as e:
+                if _is_rate_limit(e):
+                    ok, msg = False, f"FastF1's request limit is used up ({e}); the next run continues."
+                else:
+                    log.warning("Access check failed to run (%s: %s); loading sessions anyway", type(e).__name__, e)
         if not ok:
-            signed_in = False
+            access = False
             problems.append(msg)
 
+    stopped = None                 # reason the run stopped loading sessions early
+    empty_streak: list[str] = []   # overdue sessions that came back empty, in a row
+    skipped = 0
     for ev in events:
         ev_dir = config.DATA_DIR / "events" / str(ev["round"])
         for sess in ev["sessions"]:
             path = ev_dir / f"{sess['key']}.json"
             existing = read_json(path)
-            if not signed_in or not session_due(sess, now) or not needs_refresh(existing, sess, now):
-                sess["done"] = existing is not None
+            sess["done"] = existing is not None
+            if (ev["round"], sess["key"]) not in to_load:
+                continue
+            if not access:
+                continue
+            if stopped:
+                skipped += 1
                 continue
             if time.monotonic() - started > config.MAX_RUN_MINUTES * 60:
-                sess["done"] = existing is not None
                 log.info("Time budget used; round %s %s will load on the next run", ev["round"], sess["key"])
                 continue
-            log.info("Loading round %s %s", ev["round"], sess["key"])
+            label = f"Round {ev['round']} {sess['key']}"
+            late = now >= _parse(sess["start"]) + timedelta(hours=6)
+            log.info("Loading %s", label)
             try:
                 payload, errs = export_session(year, ev, sess, expected, now)
             except Exception as e:
-                payload, errs = None, [f"Round {ev['round']} {sess['key']}: data not available yet ({e})"]
+                if _is_rate_limit(e):
+                    stopped = f"FastF1's request limit was reached at {label} ({e})"
+                    skipped += 1
+                    continue
+                payload, errs = None, [f"{label}: data not available yet ({type(e).__name__}: {e})"]
+                if late:
+                    empty_streak.append(label)
+                    if len(empty_streak) >= config.STOP_AFTER_FAILURES:
+                        stopped = (f"{', '.join(empty_streak)} all came back empty, long after the sessions ended "
+                                   f"(first error: {errs[0].split(': ', 1)[1]})")
+                        continue
+            else:
+                empty_streak = []
             if payload:
                 for d in payload.pop("drivers"):
-                    drivers[d["code"]] = d          # latest team/colour wins
+                    old = drivers.get(d["code"])
+                    if not old or (old.get("as_of") or "") <= sess["start"]:
+                        drivers[d["code"]] = {**d, "as_of": sess["start"]}   # newest team/colour wins
                 write_json(path, payload)
                 expected = max(expected or 0, len(payload["results"]))
-                log.info("Published round %s %s", ev["round"], sess["key"])
-            else:
+                log.info("Published %s", label)
+            elif late or existing is not None:
                 # Not ready yet is normal for a while after the session; only report if it's been hours
-                late = now >= _parse(sess["start"]) + timedelta(hours=6)
-                if late or existing is not None:
-                    problems.extend(errs)
+                problems.extend(errs)
             sess["done"] = path.exists()
+
+    if stopped:
+        if empty_streak and "came back empty" in stopped:     # one clear message instead of one per session
+            problems[:] = [p for p in problems if not any(p.startswith(l + ":") for l in empty_streak)]
+        problems.append(f"Stopped loading early: {stopped}. Skipped {skipped} more session(s) to avoid hammering "
+                        f"F1's servers; the next run retries. Check the 'Access check' line in the run log.")
+    backlog = len(due) - len(batch) + skipped
+    if backlog and not stopped:
+        log.info("%d sessions left for later runs", backlog)
 
     for ev in events:
         for sess in ev["sessions"]:
@@ -263,8 +354,10 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
         log.warning("History unavailable: %s", e)
     try:
         from .track_history import fetch_track_history
-        if signed_in:
-            fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60)
+        # shares the per-run request budget with this season's sessions
+        room = min(config.MAX_HISTORY_RACES_PER_RUN, config.MAX_SESSIONS_PER_RUN - len(batch))
+        if access and not stopped and not backlog and room > 0:
+            fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60, max_races=room)
     except Exception as e:
         log.warning("Track history unavailable: %s", e)
 
