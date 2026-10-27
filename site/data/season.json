@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T08:17:23Z",
+ "updated": "2026-10-27T08:26:06Z",
  "events": [
   {
    "round": 1,
@@ -1661,7 +1661,8 @@
    "country": null,
    "as_of": "2026-10-25T20:00:00Z",
    "teams": [
-    "Racing Bulls"
+    "Racing Bulls",
+    "Red Bull Racing"
    ],
    "race_rounds": [
     1,

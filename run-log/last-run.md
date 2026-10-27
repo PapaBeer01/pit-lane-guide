@@ -2,9 +2,9 @@
 
 - WARP: success
 - Update step: success
-- published=25
-- backlog=15
-- more=true
+- published=15
+- backlog=0
+- more=false
 
 ## Problems
 
