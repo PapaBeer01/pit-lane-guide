@@ -7,6 +7,7 @@ injury at another. Fields added to each driver in season.json:
   team, color    the team they last raced for (Friday-practice teams only if they never raced)
   teams          every team they raced for this season, in order
   race_rounds    rounds where they took part in qualifying, a sprint or the race
+  stints         [{team, from, to}] in order, e.g. Racing Bulls 1-11, Red Bull 12-14, Racing Bulls 15-18
   current        in the most recent race weekend's line-up
 """
 from __future__ import annotations
@@ -24,6 +25,7 @@ def build_roster(drivers: dict[str, dict], data_dir=None) -> dict[str, dict]:
     rounds = sorted(int(p.name) for p in events_dir.iterdir() if p.name.isdigit()) if events_dir.exists() else []
     out = {c: {**d} for c, d in drivers.items()}
     raced: dict[str, list[int]] = {}
+    round_team: dict[str, dict[int, str]] = {}               # code -> round -> team raced for
     race_team: dict[str, tuple[str, str | None]] = {}       # latest (team, colour) in a race session
     teams: dict[str, list[str]] = {}
     latest_lineup: list[str] = []
@@ -41,6 +43,8 @@ def build_roster(drivers: dict[str, dict], data_dir=None) -> dict[str, dict]:
                     if rnd not in raced.setdefault(code, []):
                         raced[code].append(rnd)
                     race_team[code] = (team, r.get("color") or d.get("color"))
+                    if team:
+                        round_team.setdefault(code, {})[rnd] = team
                     if team and team not in teams.setdefault(code, []):
                         teams[code].append(team)
             if key in RACE_KEYS and sess.get("results"):
@@ -53,4 +57,11 @@ def build_roster(drivers: dict[str, dict], data_dir=None) -> dict[str, dict]:
         d["teams"] = teams.get(code, [])
         d["race_rounds"] = raced.get(code, [])
         d["current"] = code in latest_lineup
+        stints: list[dict] = []
+        for rnd, team in sorted(round_team.get(code, {}).items()):
+            if stints and stints[-1]["team"] == team:
+                stints[-1]["to"] = rnd
+            else:
+                stints.append({"team": team, "from": rnd, "to": rnd})
+        d["stints"] = stints
     return out

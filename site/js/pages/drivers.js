@@ -1,7 +1,7 @@
 import { avatar, helmet, teamBadge } from "../avatars.js";
 import { lineChart } from "../charts.js";
 import { icon } from "../icons.js";
-import { animatedNumber, ctx, driver, empty, eventByRound, h, load, nextEvent, pct, probBar, section, term } from "../ui.js";
+import { animatedNumber, ctx, driver, empty, eventByRound, h, load, nextEvent, pct, probBar, section, stintText, term } from "../ui.js";
 
 export const title = () => "Meet the grid";
 
@@ -27,7 +27,7 @@ export default async function drivers() {
     h("div", { class: "driver-cards" }, teams[team].map((code) => card(code, stats[code], i++)))));
   const roundsText = (d) => {
     const n = d.race_rounds?.length || 0;
-    return `${n} race weekend${n === 1 ? "" : "s"} for ${(d.teams || [d.team]).join(", then ")}`;
+    return `${n} race weekend${n === 1 ? "" : "s"}: ${stintText(d.code) || `${d.team} (rounds ${d.race_rounds.join(", ")})`}`;
   };
 
   return h("div", { style: { display: "grid", gap: "30px" } },
@@ -86,7 +86,7 @@ export async function profile(route) {
     h("div", { class: "ph-text" },
       h("div", { class: "who-row" }, teamBadge(d.team, { size: 26 }), h("span", { class: "muted" }, d.team), d.num ? h("span", { class: "chip" }, `#${d.num}`) : null,
         d.current === false ? h("span", { class: "chip warn" }, d.race_rounds?.length ? "Not in the latest line-up" : "Friday practice only") : null),
-      d.teams?.length > 1 ? h("p", { class: "small muted" }, `Raced for ${d.teams.join(", then ")} this season. Points stay with the team they were scored for.`) : null,
+      stintText(code) ? h("p", { class: "small muted" }, `This season: ${stintText(code)}. Points stay with the team they were scored for.`) : null,
       h("h1", {}, h("span", { class: "ph-first" }, d.first), " ", d.last),
       h("p", { class: "muted" }, `${code}${d.country ? `, ${d.country}` : ""}`)));
 

@@ -1,7 +1,7 @@
 import { legend, lineChart, driverSeries } from "../charts.js";
 import { avatar, teamBadge } from "../avatars.js";
 import { icon } from "../icons.js";
-import { animatedNumber, driver, driverTag, empty, h, load, pct, section, term } from "../ui.js";
+import { animatedNumber, driver, driverTag, empty, h, load, pct, section, stintText, term } from "../ui.js";
 
 export const title = () => "Standings";
 
@@ -47,7 +47,7 @@ export default async function standings() {
       h("tbody", {}, st.drivers.map((d, i) => h("tr", { class: i === 0 ? "p1" : "" },
         h("td", { class: "pos" }, i + 1),
         h("td", {}, h("a", { class: "who-row", href: `#/driver/${d.code}`, style: { color: "inherit", textDecoration: "none" } }, avatar(d.code, { size: 34, ring: false }), driverTag(d.code, { full: true }))),
-        h("td", {}, (d.teams && d.teams.length > 1) ? h("span", { title: "Raced for more than one team this season" }, d.teams.join(", then ")) : driver(d.code).team),
+        h("td", {}, stintText(d.code) || driver(d.code).team),
         h("td", { class: "num", style: { fontWeight: 700 } }, d.points), h("td", { class: "num" }, d.wins), h("td", { class: "num" }, d.podiums))))))));
 
   view.append(section(["Teams", "layers"], "Every point scored in each team's cars, including by stand-in drivers. Points stay with the team they were scored for when a driver moves.",

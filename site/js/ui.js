@@ -52,6 +52,13 @@ export function useSessionTeams(...sessions) {
   }
 }
 export function clearSessionTeams() { ctx.override = {}; }
+// "Racing Bulls (rounds 1–11), Red Bull Racing (12–14), Racing Bulls (15–18)" for drivers who switched
+export function stintText(code) {
+  const st = ctx.drivers[code]?.stints || [];
+  if (st.length < 2) return null;
+  const span = (s) => (s.from === s.to ? `${s.from}` : `${s.from}–${s.to}`);
+  return st.map((s, i) => `${s.team} (${i === 0 ? (s.from === s.to ? "round " : "rounds ") : ""}${span(s)})`).join(", ");
+}
 // drivers who count as "on the grid" here: that weekend's entry, or the current line-up
 function pool() {
   const o = Object.keys(ctx.override);
