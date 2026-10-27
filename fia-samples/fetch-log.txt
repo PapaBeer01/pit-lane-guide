@@ -1,4 +1,0 @@
-united_states direct: HTTP 200
-singapore direct: HTTP 200
-japanese direct: HTTP 200
-miami direct: HTTP 200

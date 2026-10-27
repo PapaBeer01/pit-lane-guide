@@ -99,6 +99,14 @@ jobs:
         if: always() && github.event_name != 'push'
         run: warp-cli --accept-tos disconnect 2>/dev/null || true
 
+      # FIA's car-upgrade documents: reachable directly (no WARP), so fetched after it disconnects
+      - name: Fetch car upgrades
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: |
+          python -m pipeline.upgrades | tee upgrades_status.txt
+          if [ -f run-log/last-run.md ]; then sed 's/^/- /' upgrades_status.txt >> run-log/last-run.md; fi
+
       - name: Run tests
         run: pytest -q
 

@@ -1,6 +1,7 @@
 import { gapBars, lineChart, driverSeries, stintChart } from "../charts.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
+import { upgradesSection } from "../upgrades.js";
 import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
 import { predictionTable } from "./home.js";
 
@@ -79,6 +80,8 @@ export default async function race(route) {
     if (pred.strategy) body.append(strategySection(pred.strategy, { actual: sc?.strategy || null, title: sess ? "Strategy: expected vs actual" : "Race strategy" }));
     if (pred.track) body.append(oddsSection(pred.track, { actual: sess ? (sess.flags || {}) : null }));
   }
+  const upg = upgradesSection(await load(`events/${ev.round}/upgrades.json`), { title: "New parts at this race", open: 0 });
+  if (upg) body.append(upg);
   requestAnimationFrame(() => tabs.querySelector('[aria-selected="true"]')?.scrollIntoView({ inline: "center", block: "nearest" }));
   return h("div", { style: { display: "grid", gap: "20px" } }, head, tabs, body);
 }

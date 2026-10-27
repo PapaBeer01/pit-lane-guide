@@ -2,6 +2,7 @@ import { avatar, helmet } from "../avatars.js";
 import { carSvg } from "../car.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
+import { upgradesSection } from "../upgrades.js";
 import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
 
 export const title = () => "This weekend";
@@ -10,11 +11,12 @@ export default async function home() {
   const ev = nextEvent();
   if (!ev) return empty("The season calendar isn't available yet.");
   const targets = ev.sessions.filter((s) => ["SQ", "S", "Q", "R"].includes(s.key)).map((s) => s.key);
-  const [preds, sessions, forecast, form] = await Promise.all([
+  const [preds, sessions, forecast, form, upgrades] = await Promise.all([
     Promise.all(targets.map(async (t) => [t, await load(`predictions/${ev.round}/${t}.json`)])).then(Object.fromEntries),
     Promise.all(ev.sessions.filter((s) => s.done).map(async (s) => [s.key, await load(`events/${ev.round}/${s.key}.json`)])).then(Object.fromEntries),
     load(`events/${ev.round}/forecast.json`),
     load("form.json"),
+    load(`events/${ev.round}/upgrades.json`),
   ]);
   // this weekend's teams (FP1 left out: teams lend cars to reserve drivers there)
   useSessionTeams(...Object.entries(sessions).filter(([k]) => k !== "FP1").map(([, s]) => s));
@@ -59,6 +61,8 @@ export default async function home() {
 
   const view = h("div", { style: { display: "grid", gap: "34px" } }, hero);
   view.append(predictionsSection(ev, targets, preds, sessions));
+  const upg = upgradesSection(upgrades);
+  if (upg) view.append(upg);
   const gp = preds.R;
   if (gp?.strategy && !sessions.R) view.append(strategySection(gp.strategy, { title: "How the race could be won: strategy" }));
   if (gp?.track && !sessions.R) view.append(oddsSection(gp.track));
