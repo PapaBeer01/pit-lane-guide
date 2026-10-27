@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T07:26:08Z",
+ "updated": "2026-10-27T07:57:47Z",
  "events": [
   {
    "round": 1,
@@ -252,27 +252,32 @@
     {
      "key": "FP1",
      "start": "2026-06-12T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-06-12T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-06-13T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-06-13T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-06-14T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -291,27 +296,32 @@
     {
      "key": "FP1",
      "start": "2026-06-26T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-06-26T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-06-27T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-06-27T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-06-28T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -330,27 +340,32 @@
     {
      "key": "FP1",
      "start": "2026-07-03T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "SQ",
      "start": "2026-07-03T15:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "S",
      "start": "2026-07-04T11:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-07-04T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-07-05T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -369,27 +384,32 @@
     {
      "key": "FP1",
      "start": "2026-07-17T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-07-17T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-07-18T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-07-18T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-07-19T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -408,27 +428,32 @@
     {
      "key": "FP1",
      "start": "2026-07-24T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-07-24T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-07-25T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-07-25T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-07-26T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -938,15 +963,18 @@
  ],
  "drivers": [
   {
-   "code": "GAS",
-   "num": "10",
-   "first": "Pierre",
-   "last": "Gasly",
-   "name": "Pierre Gasly",
+   "code": "ARO",
+   "num": "61",
+   "first": "Paul",
+   "last": "Aron",
+   "name": "Paul Aron",
    "team": "Alpine",
    "color": "#00A1E8",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-09-04T10:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
    "code": "COL",
@@ -957,18 +985,54 @@
    "team": "Alpine",
    "color": "#00A1E8",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Alpine"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
-   "code": "ARO",
-   "num": "61",
-   "first": "Paul",
-   "last": "Aron",
-   "name": "Paul Aron",
+   "code": "GAS",
+   "num": "10",
+   "first": "Pierre",
+   "last": "Gasly",
+   "name": "Pierre Gasly",
    "team": "Alpine",
    "color": "#00A1E8",
    "country": null,
-   "as_of": "2026-09-04T10:30:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Alpine"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "ALO",
@@ -979,7 +1043,39 @@
    "team": "Aston Martin",
    "color": "#229971",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Aston Martin"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "CRA",
+   "num": "34",
+   "first": "Jak",
+   "last": "Crawford",
+   "name": "Jak Crawford",
+   "team": "Aston Martin",
+   "color": "#229971",
+   "country": null,
+   "as_of": "2026-07-17T11:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
    "code": "STR",
@@ -990,7 +1086,25 @@
    "team": "Aston Martin",
    "color": "#229971",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Aston Martin"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "BOR",
@@ -1001,7 +1115,25 @@
    "team": "Audi",
    "color": "#F50537",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Audi"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "HUL",
@@ -1012,18 +1144,25 @@
    "team": "Audi",
    "color": "#F50537",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
-  },
-  {
-   "code": "PER",
-   "num": "11",
-   "first": "Sergio",
-   "last": "Perez",
-   "name": "Sergio Perez",
-   "team": "Cadillac",
-   "color": "#909090",
-   "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Audi"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "BOT",
@@ -1034,7 +1173,25 @@
    "team": "Cadillac",
    "color": "#909090",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Cadillac"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "HER",
@@ -1045,18 +1202,53 @@
    "team": "Cadillac",
    "color": "#909090",
    "country": null,
-   "as_of": "2026-10-23T17:30:00Z"
+   "as_of": "2026-10-23T17:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
-   "code": "LEC",
-   "num": "16",
-   "first": "Charles",
-   "last": "Leclerc",
-   "name": "Charles Leclerc",
+   "code": "PER",
+   "num": "11",
+   "first": "Sergio",
+   "last": "Perez",
+   "name": "Sergio Perez",
+   "team": "Cadillac",
+   "color": "#909090",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Cadillac"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "BEG",
+   "num": "38",
+   "first": "Dino",
+   "last": "Beganovic",
+   "name": "Dino Beganovic",
    "team": "Ferrari",
    "color": "#ED1131",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-06-26T11:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
    "code": "HAM",
@@ -1067,7 +1259,54 @@
    "team": "Ferrari",
    "color": "#ED1131",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Ferrari"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "LEC",
+   "num": "16",
+   "first": "Charles",
+   "last": "Leclerc",
+   "name": "Charles Leclerc",
+   "team": "Ferrari",
+   "color": "#ED1131",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Ferrari"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "BEA",
@@ -1078,7 +1317,39 @@
    "team": "Haas F1 Team",
    "color": "#9C9FA2",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Haas F1 Team"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "HIR",
+   "num": "50",
+   "first": "Ryo",
+   "last": "Hirakawa",
+   "name": "Ryo Hirakawa",
+   "team": "Haas F1 Team",
+   "color": "#9C9FA2",
+   "country": null,
+   "as_of": "2026-07-24T11:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
    "code": "OCO",
@@ -1089,7 +1360,39 @@
    "team": "Haas F1 Team",
    "color": "#9C9FA2",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Haas F1 Team"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "FOR",
+   "num": "67",
+   "first": "Leonardo",
+   "last": "Fornaroli",
+   "name": "Leonardo Fornaroli",
+   "team": "McLaren",
+   "color": "#F47600",
+   "country": null,
+   "as_of": "2026-07-24T11:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
    "code": "NOR",
@@ -1100,7 +1403,25 @@
    "team": "McLaren",
    "color": "#F47600",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "McLaren"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "PIA",
@@ -1111,18 +1432,25 @@
    "team": "McLaren",
    "color": "#F47600",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
-  },
-  {
-   "code": "RUS",
-   "num": "63",
-   "first": "George",
-   "last": "Russell",
-   "name": "George Russell",
-   "team": "Mercedes",
-   "color": "#00D7B6",
-   "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "McLaren"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "ANT",
@@ -1133,7 +1461,68 @@
    "team": "Mercedes",
    "color": "#00D7B6",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Mercedes"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "RUS",
+   "num": "63",
+   "first": "George",
+   "last": "Russell",
+   "name": "George Russell",
+   "team": "Mercedes",
+   "color": "#00D7B6",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Mercedes"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
+  },
+  {
+   "code": "VES",
+   "num": "72",
+   "first": "Frederik",
+   "last": "Vesti",
+   "name": "Frederik Vesti",
+   "team": "Mercedes",
+   "color": "#00D7B6",
+   "country": null,
+   "as_of": "2026-07-24T11:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
    "code": "LAW",
@@ -1144,7 +1533,25 @@
    "team": "Racing Bulls",
    "color": "#6C98FF",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Racing Bulls"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "LIN",
@@ -1155,7 +1562,25 @@
    "team": "Racing Bulls",
    "color": "#6C98FF",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Racing Bulls"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "TSU",
@@ -1166,18 +1591,16 @@
    "team": "Racing Bulls",
    "color": "#6C98FF",
    "country": null,
-   "as_of": "2026-09-13T13:00:00Z"
-  },
-  {
-   "code": "VER",
-   "num": "3",
-   "first": "Max",
-   "last": "Verstappen",
-   "name": "Max Verstappen",
-   "team": "Red Bull Racing",
-   "color": "#4781D7",
-   "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-09-13T13:00:00Z",
+   "teams": [
+    "Racing Bulls"
+   ],
+   "race_rounds": [
+    12,
+    13,
+    14
+   ],
+   "current": false
   },
   {
    "code": "HAD",
@@ -1188,7 +1611,22 @@
    "team": "Red Bull Racing",
    "color": "#4781D7",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Red Bull Racing"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "IWA",
@@ -1199,18 +1637,39 @@
    "team": "Red Bull Racing",
    "color": "#4781D7",
    "country": null,
-   "as_of": "2026-09-04T10:30:00Z"
+   "as_of": "2026-09-04T10:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
   },
   {
-   "code": "SAI",
-   "num": "55",
-   "first": "Carlos",
-   "last": "Sainz",
-   "name": "Carlos Sainz",
-   "team": "Williams",
-   "color": "#1868DB",
+   "code": "VER",
+   "num": "3",
+   "first": "Max",
+   "last": "Verstappen",
+   "name": "Max Verstappen",
+   "team": "Red Bull Racing",
+   "color": "#4781D7",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Red Bull Racing"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "ALB",
@@ -1221,7 +1680,25 @@
    "team": "Williams",
    "color": "#1868DB",
    "country": null,
-   "as_of": "2026-10-25T20:00:00Z"
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Williams"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   },
   {
    "code": "BRO",
@@ -1232,7 +1709,39 @@
    "team": "Williams",
    "color": "#1868DB",
    "country": null,
-   "as_of": "2026-09-04T10:30:00Z"
+   "as_of": "2026-09-04T10:30:00Z",
+   "teams": [],
+   "race_rounds": [],
+   "current": false
+  },
+  {
+   "code": "SAI",
+   "num": "55",
+   "first": "Carlos",
+   "last": "Sainz",
+   "name": "Carlos Sainz",
+   "team": "Williams",
+   "color": "#1868DB",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z",
+   "teams": [
+    "Williams"
+   ],
+   "race_rounds": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+   ],
+   "current": true
   }
  ]
 }
