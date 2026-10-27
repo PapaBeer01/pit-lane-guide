@@ -1,0 +1,905 @@
+{
+ "year": 2026,
+ "sample": false,
+ "updated": "2026-10-27T04:53:57Z",
+ "events": [
+  {
+   "round": 1,
+   "name": "Australian Grand Prix",
+   "official": "FORMULA 1 QATAR AIRWAYS AUSTRALIAN GRAND PRIX 2026",
+   "country": "Australia",
+   "location": "Melbourne",
+   "format": "conventional",
+   "date": "2026-03-08T00:00:00Z",
+   "lat": -37.8497,
+   "lon": 144.968,
+   "circuit_id": "albert_park",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-03-06T01:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-03-06T05:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-03-07T01:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-03-07T05:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-03-08T04:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "name": "Chinese Grand Prix",
+   "official": "FORMULA 1 HEINEKEN CHINESE GRAND PRIX 2026",
+   "country": "China",
+   "location": "Shanghai",
+   "format": "sprint",
+   "date": "2026-03-15T00:00:00Z",
+   "lat": 31.3389,
+   "lon": 121.22,
+   "circuit_id": "shanghai",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-03-13T03:30:00Z",
+     "done": false
+    },
+    {
+     "key": "SQ",
+     "start": "2026-03-13T07:30:00Z",
+     "done": false
+    },
+    {
+     "key": "S",
+     "start": "2026-03-14T03:00:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-03-14T07:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-03-15T07:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "name": "Japanese Grand Prix",
+   "official": "FORMULA 1 ARAMCO JAPANESE GRAND PRIX 2026",
+   "country": "Japan",
+   "location": "Suzuka",
+   "format": "conventional",
+   "date": "2026-03-29T00:00:00Z",
+   "lat": 34.8431,
+   "lon": 136.541,
+   "circuit_id": "suzuka",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-03-27T02:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-03-27T06:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-03-28T02:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-03-28T06:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-03-29T05:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 4,
+   "name": "Miami Grand Prix",
+   "official": "FORMULA 1 CRYPTO.COM MIAMI GRAND PRIX 2026",
+   "country": "United States",
+   "location": "Miami Gardens",
+   "format": "sprint",
+   "date": "2026-05-03T00:00:00Z",
+   "lat": 25.9581,
+   "lon": -80.2389,
+   "circuit_id": "miami",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-05-01T16:00:00Z",
+     "done": false
+    },
+    {
+     "key": "SQ",
+     "start": "2026-05-01T20:30:00Z",
+     "done": false
+    },
+    {
+     "key": "S",
+     "start": "2026-05-02T16:00:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-05-02T20:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-05-03T17:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 5,
+   "name": "Canadian Grand Prix",
+   "official": "FORMULA 1 LENOVO GRAND PRIX DU CANADA 2026",
+   "country": "Canada",
+   "location": "Montréal",
+   "format": "sprint",
+   "date": "2026-05-24T00:00:00Z",
+   "lat": 45.5,
+   "lon": -73.5228,
+   "circuit_id": "villeneuve",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-05-22T16:30:00Z",
+     "done": false
+    },
+    {
+     "key": "SQ",
+     "start": "2026-05-22T20:30:00Z",
+     "done": false
+    },
+    {
+     "key": "S",
+     "start": "2026-05-23T16:00:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-05-23T20:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-05-24T20:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 6,
+   "name": "Monaco Grand Prix",
+   "official": "FORMULA 1 LOUIS VUITTON GRAND PRIX DE MONACO 2026",
+   "country": "Monaco",
+   "location": "Monte Carlo",
+   "format": "conventional",
+   "date": "2026-06-07T00:00:00Z",
+   "lat": 43.7347,
+   "lon": 7.42056,
+   "circuit_id": "monaco",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-06-05T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-06-05T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-06-06T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-06-06T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-06-07T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 7,
+   "name": "Barcelona Grand Prix",
+   "official": "FORMULA 1 MSC CRUISES GRAN PREMIO DE BARCELONA-CATALUNYA 2026",
+   "country": "Spain",
+   "location": "Barcelona",
+   "format": "conventional",
+   "date": "2026-06-14T00:00:00Z",
+   "lat": 41.57,
+   "lon": 2.26111,
+   "circuit_id": "catalunya",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-06-12T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-06-12T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-06-13T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-06-13T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-06-14T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 8,
+   "name": "Austrian Grand Prix",
+   "official": "FORMULA 1 LENOVO AUSTRIAN GRAND PRIX 2026",
+   "country": "Austria",
+   "location": "Spielberg",
+   "format": "conventional",
+   "date": "2026-06-28T00:00:00Z",
+   "lat": 47.2197,
+   "lon": 14.7647,
+   "circuit_id": "red_bull_ring",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-06-26T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-06-26T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-06-27T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-06-27T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-06-28T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 9,
+   "name": "British Grand Prix",
+   "official": "FORMULA 1 PIRELLI BRITISH GRAND PRIX 2026",
+   "country": "United Kingdom",
+   "location": "Silverstone",
+   "format": "sprint",
+   "date": "2026-07-05T00:00:00Z",
+   "lat": 52.0786,
+   "lon": -1.01694,
+   "circuit_id": "silverstone",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-07-03T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "SQ",
+     "start": "2026-07-03T15:30:00Z",
+     "done": false
+    },
+    {
+     "key": "S",
+     "start": "2026-07-04T11:00:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-07-04T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-07-05T14:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 10,
+   "name": "Belgian Grand Prix",
+   "official": "FORMULA 1 MOËT & CHANDON BELGIAN GRAND PRIX 2026",
+   "country": "Belgium",
+   "location": "Spa-Francorchamps",
+   "format": "conventional",
+   "date": "2026-07-19T00:00:00Z",
+   "lat": 50.4372,
+   "lon": 5.97139,
+   "circuit_id": "spa",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-07-17T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-07-17T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-07-18T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-07-18T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-07-19T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 11,
+   "name": "Hungarian Grand Prix",
+   "official": "FORMULA 1 AWS HUNGARIAN GRAND PRIX 2026",
+   "country": "Hungary",
+   "location": "Budapest",
+   "format": "conventional",
+   "date": "2026-07-26T00:00:00Z",
+   "lat": 47.5789,
+   "lon": 19.2486,
+   "circuit_id": "hungaroring",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-07-24T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-07-24T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-07-25T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-07-25T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-07-26T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 12,
+   "name": "Dutch Grand Prix",
+   "official": "FORMULA 1 HEINEKEN DUTCH GRAND PRIX 2026",
+   "country": "Netherlands",
+   "location": "Zandvoort",
+   "format": "sprint",
+   "date": "2026-08-23T00:00:00Z",
+   "lat": 52.3888,
+   "lon": 4.54092,
+   "circuit_id": "zandvoort",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-08-21T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "SQ",
+     "start": "2026-08-21T14:30:00Z",
+     "done": false
+    },
+    {
+     "key": "S",
+     "start": "2026-08-22T10:00:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-08-22T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-08-23T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 13,
+   "name": "Italian Grand Prix",
+   "official": "FORMULA 1 PIRELLI GRAN PREMIO D’ITALIA 2026",
+   "country": "Italy",
+   "location": "Monza",
+   "format": "conventional",
+   "date": "2026-09-06T00:00:00Z",
+   "lat": 45.6156,
+   "lon": 9.28111,
+   "circuit_id": "monza",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-09-04T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-09-04T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-09-05T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-09-05T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-09-06T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 14,
+   "name": "Spanish Grand Prix",
+   "official": "FORMULA 1 TAG HEUER GRAN PREMIO DE ESPAÑA 2026",
+   "country": "Spain",
+   "location": "Madrid",
+   "format": "conventional",
+   "date": "2026-09-13T00:00:00Z",
+   "lat": 40.46528,
+   "lon": -3.61528,
+   "circuit_id": "madring",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-09-11T11:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-09-11T15:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-09-12T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-09-12T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-09-13T13:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 15,
+   "name": "Azerbaijan Grand Prix",
+   "official": "FORMULA 1 QATAR AIRWAYS AZERBAIJAN GRAND PRIX 2026",
+   "country": "Azerbaijan",
+   "location": "Baku",
+   "format": "conventional",
+   "date": "2026-09-26T00:00:00Z",
+   "lat": 40.3725,
+   "lon": 49.8533,
+   "circuit_id": "baku",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-09-24T08:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-09-24T12:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-09-25T08:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-09-25T12:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-09-26T11:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 16,
+   "name": "Bahrain Grand Prix",
+   "official": "FORMULA 1 GULF AIR BAHRAIN GRAND PRIX IN MALAYSIA 2026",
+   "country": "Bahrain",
+   "location": "Kuala Lumpur",
+   "format": "conventional",
+   "date": "2026-10-04T00:00:00Z",
+   "lat": 2.76083,
+   "lon": 101.738,
+   "circuit_id": "sepang",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-10-02T04:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-10-02T08:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-10-03T04:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-10-03T08:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-10-04T07:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 17,
+   "name": "Singapore Grand Prix",
+   "official": "FORMULA 1 SINGAPORE AIRLINES SINGAPORE GRAND PRIX 2026",
+   "country": "Singapore",
+   "location": "Marina Bay",
+   "format": "sprint",
+   "date": "2026-10-11T00:00:00Z",
+   "lat": 1.2914,
+   "lon": 103.864,
+   "circuit_id": "marina_bay",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-10-09T08:30:00Z",
+     "done": false
+    },
+    {
+     "key": "SQ",
+     "start": "2026-10-09T12:30:00Z",
+     "done": false
+    },
+    {
+     "key": "S",
+     "start": "2026-10-10T09:00:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-10-10T13:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-10-11T12:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 18,
+   "name": "United States Grand Prix",
+   "official": "FORMULA 1 MSC CRUISES UNITED STATES GRAND PRIX 2026",
+   "country": "United States",
+   "location": "Austin",
+   "format": "conventional",
+   "date": "2026-10-25T00:00:00Z",
+   "lat": 30.1328,
+   "lon": -97.6411,
+   "circuit_id": "americas",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-10-23T17:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-10-23T21:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-10-24T17:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-10-24T21:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-10-25T20:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 19,
+   "name": "Mexico City Grand Prix",
+   "official": "FORMULA 1 GRAN PREMIO DE LA CIUDAD DE MÉXICO 2026",
+   "country": "Mexico",
+   "location": "Mexico City",
+   "format": "conventional",
+   "date": "2026-11-01T00:00:00Z",
+   "lat": 19.4042,
+   "lon": -99.0907,
+   "circuit_id": "rodriguez",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-10-30T18:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-10-30T22:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-10-31T17:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-10-31T21:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-11-01T20:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 20,
+   "name": "São Paulo Grand Prix",
+   "official": "FORMULA 1 MSC CRUISES GRANDE PRÊMIO DE SÃO PAULO 2026",
+   "country": "Brazil",
+   "location": "São Paulo",
+   "format": "conventional",
+   "date": "2026-11-08T00:00:00Z",
+   "lat": -23.7036,
+   "lon": -46.6997,
+   "circuit_id": "interlagos",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-11-06T15:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-11-06T19:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-11-07T14:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-11-07T18:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-11-08T17:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 21,
+   "name": "Las Vegas Grand Prix",
+   "official": "FORMULA 1 HEINEKEN LAS VEGAS GRAND PRIX 2026",
+   "country": "United States",
+   "location": "Las Vegas",
+   "format": "conventional",
+   "date": "2026-11-21T00:00:00Z",
+   "lat": 36.1147,
+   "lon": -115.173,
+   "circuit_id": "vegas",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-11-20T00:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-11-20T04:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-11-21T00:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-11-21T04:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-11-22T04:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 22,
+   "name": "Qatar Grand Prix",
+   "official": "FORMULA 1 QATAR AIRWAYS QATAR GRAND PRIX 2026",
+   "country": "Qatar",
+   "location": "Lusail",
+   "format": "conventional",
+   "date": "2026-11-29T00:00:00Z",
+   "lat": 25.49,
+   "lon": 51.4542,
+   "circuit_id": "losail",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-11-27T13:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-11-27T17:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-11-28T14:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-11-28T18:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-11-29T16:00:00Z",
+     "done": false
+    }
+   ]
+  },
+  {
+   "round": 23,
+   "name": "Abu Dhabi Grand Prix",
+   "official": "FORMULA 1 ETIHAD AIRWAYS ABU DHABI GRAND PRIX 2026",
+   "country": "United Arab Emirates",
+   "location": "Yas Marina",
+   "format": "conventional",
+   "date": "2026-12-06T00:00:00Z",
+   "lat": 24.4672,
+   "lon": 54.6031,
+   "circuit_id": "yas_marina",
+   "sessions": [
+    {
+     "key": "FP1",
+     "start": "2026-12-04T09:30:00Z",
+     "done": false
+    },
+    {
+     "key": "FP2",
+     "start": "2026-12-04T13:00:00Z",
+     "done": false
+    },
+    {
+     "key": "FP3",
+     "start": "2026-12-05T10:30:00Z",
+     "done": false
+    },
+    {
+     "key": "Q",
+     "start": "2026-12-05T14:00:00Z",
+     "done": false
+    },
+    {
+     "key": "R",
+     "start": "2026-12-06T13:00:00Z",
+     "done": false
+    }
+   ]
+  }
+ ],
+ "drivers": []
+}
