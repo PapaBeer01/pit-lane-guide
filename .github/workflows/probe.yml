@@ -65,7 +65,8 @@ jobs:
 
       - name: Note WARP failure
         if: steps.warp.outcome != 'success'
-        run: printf '## Route: warp\n\nCloudflare WARP could not be started on the runner.\n\n' >> probe-results.md
+        run: |
+          printf '## Route: warp\n\nCloudflare WARP could not be started on the runner.\n\n' >> probe-results.md
 
       - name: Save results
         if: always()
