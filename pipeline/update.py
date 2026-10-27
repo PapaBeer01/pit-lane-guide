@@ -147,6 +147,15 @@ def export_session(year: int, ev: dict, sess: dict, expected: int | None, now: d
     return payload, []
 
 
+def grid_size() -> int:
+    """Most cars in any published race or qualifying session so far (0 if none)."""
+    best = 0
+    for path in (config.DATA_DIR / "events").glob("*/*.json"):
+        if path.stem in config.QUALI_SESSIONS + config.RACE_SESSIONS:
+            best = max(best, len((read_json(path) or {}).get("results") or []))
+    return best
+
+
 def sign_in() -> tuple[bool, str]:
     """Sign in to F1 TV with the F1_USERNAME / F1_PASSWORD secrets (FastF1 keeps the token for this run)."""
     import os
@@ -243,7 +252,9 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
         problems.append(f"Schedule: {e}")
         events = season.get("events", [])
     drivers = {d["code"]: d for d in season.get("drivers", [])}
-    expected = len(drivers) or None
+    # Expected field size: the largest grid in sessions already published. Not the number of drivers seen
+    # this season: that includes reserves who stood in for one Friday practice (27 by round 18 in 2026).
+    expected = grid_size() or None
 
     # Since October 2026, F1's timing archive needs an F1 TV sign-in. Sign in only when there is
     # something new to download, and stop early with a clear message if it fails.

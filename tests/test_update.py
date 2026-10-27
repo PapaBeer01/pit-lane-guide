@@ -313,3 +313,27 @@ def test_track_history_gives_up_without_burning_tries(tmp_path, monkeypatch):
     assert len(calls) == 2
     data = read_json(config.HISTORY_DIR / "track_2018.json")
     assert [r.get("tries") for r in data["races"]] == [1]          # only the first counts as a failed try
+
+
+def test_stand_in_drivers_dont_raise_the_expected_field(fake_env):
+    """Run 27 Oct: 27 drivers seen in the season (reserves in FP1) made 22-car sessions fail the check."""
+    from pipeline.update import run
+    seen = [{"code": c, "name": c, "team": "T", "color": "#aa0000"} for c in CODES + [f"R{i}" for i in range(7)]]
+    write_json(config.DATA_DIR / "season.json", {"sample": False, "year": 2026, "events": [], "drivers": seen})
+    problems = run(now=datetime(2026, 3, 8, 12, 0, tzinfo=timezone.utc), year=2026)
+    assert problems == []
+    assert (config.DATA_DIR / "events" / "1" / "R.json").exists()
+
+
+def test_short_field_is_still_caught_once_a_grid_is_known(fake_env, monkeypatch):
+    import fastf1
+    from pipeline.update import run
+    run(now=datetime(2026, 3, 8, 12, 0, tzinfo=timezone.utc), year=2026)       # round 1: 20 cars
+
+    class Short(FakeSession):
+        def __init__(self, name, rng):
+            super().__init__(name, rng)
+            self.results = self.results.iloc[:12]                              # half the field missing
+    monkeypatch.setattr(fastf1, "get_session", lambda y, r, name: Short(name, np.random.default_rng(9)))
+    problems = run(now=datetime(2026, 3, 15, 12, 0, tzinfo=timezone.utc), year=2026)
+    assert any("only 12 drivers" in p and "expected about 20" in p for p in problems)
