@@ -57,8 +57,14 @@ export default async function compare(route) {
     h("span", { class: "duel-vs" }, "vs"),
     h("a", { href: `#/driver/${b}`, class: "duel-side b" }, helmet(b, { size: 110, cls: "flip" }), h("b", {}, driver(b).last), h("span", { class: "muted small" }, sub(resB, tb)))));
 
-  if (race) view.append(...raceBattle(sess, a, b, colA, colB, dashB));
-  else if (key === "Q" || key === "SQ") view.append(qualiBattle(sess, a, b));
+  if (race) {
+    view.append(...raceBattle(sess, a, b, colA, colB, dashB));
+    // how the same two qualified for this race (sprint qualifying for a sprint)
+    const qKey = key === "S" ? "SQ" : "Q";
+    const qSess = ev.sessions.some((s) => s.key === qKey && s.done) ? await load(`events/${ev.round}/${qKey}.json`) : null;
+    const qb = qSess ? qualiBattle(qSess, a, b, { title: `${SESSION_LABEL[qKey]} for this ${key === "S" ? "sprint" : "race"}` }) : null;
+    if (qb) view.append(qb);
+  } else if (key === "Q" || key === "SQ") view.append(qualiBattle(sess, a, b));
   if (!hasTel) { view.append(empty("Lap telemetry for one of these drivers isn't available for this session.")); return view; }
 
   // align driver 2 onto driver 1's distance grid; build time-at-distance for both
@@ -340,8 +346,9 @@ function pitMarks(pitA, pitB, a, b, colA, colB) {
     h("span", {}, icon("wrench", { size: 14 }), `${b} pitted: ${pitB.length ? pitB.map((n) => `lap ${n}`).join(", ") : "no stops"}`));
 }
 
-function qualiBattle(sess, a, b) {
+function qualiBattle(sess, a, b, { title = "Qualifying battle" } = {}) {
   const rA = sess.results.find((r) => r.code === a), rB = sess.results.find((r) => r.code === b);
+  if (!rA || !rB) return null;           // one of them didn't take part
   const rows = ["Q1", "Q2", "Q3"].map((name, i) => {
     const x = rA.q?.[i], y = rB.q?.[i];
     const diff = x && y ? y - x : null;
@@ -352,7 +359,7 @@ function qualiBattle(sess, a, b) {
       h("td", { class: "num" }, diff === null ? "" : `${diff > 0 ? a : b} by ${Math.abs(diff).toFixed(3)}s`));
   });
   const better = rA.pos && rB.pos ? (rA.pos < rB.pos ? a : b) : null;
-  return section(["Qualifying battle", "timer"], better ? `${better} out-qualified ${better === a ? b : a}: P${Math.min(rA.pos, rB.pos)} vs P${Math.max(rA.pos, rB.pos)}. Each part of qualifying knocks out the slowest cars.` : null,
+  return section([title, "timer"], better ? `${better} out-qualified ${better === a ? b : a}: P${Math.min(rA.pos, rB.pos)} vs P${Math.max(rA.pos, rB.pos)}. Each part of qualifying knocks out the slowest cars.` : null,
     h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data" },
       h("thead", {}, h("tr", {}, ["Part", a, b, "Quicker"].map((t, i) => h("th", { class: i ? "num" : "" }, t)))),
       h("tbody", {}, rows))));
