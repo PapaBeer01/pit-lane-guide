@@ -34,6 +34,24 @@ jobs:
       - name: Install
         run: pip install -r requirements.txt
 
+      # F1's servers block GitHub's own network (FastF1 issue #988), but accept the same request,
+      # with the F1 TV token, through Cloudflare WARP (free). Tested 27 Oct 2026: probe-results.md.
+      # If WARP fails to start, the update still runs and reports the block in one clear message.
+      - name: Connect through Cloudflare WARP
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          sudo apt-get update -q && sudo apt-get install -y -q cloudflare-warp
+          warp-cli --accept-tos registration new || warp-cli --accept-tos register
+          warp-cli --accept-tos connect
+          for i in $(seq 1 20); do
+            if curl -s --max-time 5 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on"; then echo "WARP is on"; exit 0; fi
+            sleep 2
+          done
+          echo "WARP did not connect"; warp-cli --accept-tos status; exit 1
+
       - name: Fetch new sessions, check them, update predictions
         id: update
         if: github.event_name != 'push'
@@ -49,6 +67,10 @@ jobs:
             echo "problems=$(wc -l < pipeline_problems.txt)" >> "$GITHUB_OUTPUT"
             { echo "### Data problems"; echo; sed 's/^/- /' pipeline_problems.txt; } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Disconnect WARP
+        if: always() && github.event_name != 'push'
+        run: warp-cli --accept-tos disconnect 2>/dev/null || true
 
       - name: Run tests
         run: pytest -q

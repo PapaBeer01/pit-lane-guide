@@ -195,7 +195,8 @@ def check_access(year: int, ev: dict, sess: dict) -> tuple[bool, str]:
     if r.status_code == 403:
         return False, (f"F1's servers blocked this request (HTTP 403, before checking the sign-in) for round "
                        f"{ev['round']} {sess['key']}. Nothing was loaded this run. F1 appears to block GitHub's "
-                       f"own servers (FastF1 issue #988), so the update needs another network route.")
+                       f"own servers (FastF1 issue #988); the workflow's Cloudflare WARP step should route around this, so check "
+                       f"whether that step connected.")
     if r.status_code == 401:
         return False, (f"Signed in to F1 TV, but F1 refused the timing data (HTTP 401) for round "
                        f"{ev['round']} {sess['key']}. Nothing was loaded this run. The token was rejected: check the "
