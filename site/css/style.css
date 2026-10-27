@@ -113,6 +113,9 @@ footer { max-width: 1160px; margin: 0 auto; padding: 0 16px 110px; color: var(--
   .nav a[aria-current="page"] .ic { color: var(--flag); }
 }
 .actions { display: flex; gap: 8px; }
+.save-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.save-row .tab[disabled], h2 .icon-btn[disabled] { opacity: .7; cursor: progress; }
+h2 .save-ic { margin-left: auto; }
 
 /* ---------- building blocks ---------- */
 .section { display: grid; gap: 14px; }

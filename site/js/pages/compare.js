@@ -1,6 +1,7 @@
 import { lineChart, stintChart, trackMap } from "../charts.js";
 import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
+import { canShareFiles, imageButton, makeImage, offscreen } from "../snapshot.js";
 import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term, tyre } from "../ui.js";
 
 export const title = () => "Compare drivers";
@@ -77,17 +78,26 @@ export default async function compare(route) {
     h("span", {}, h("i", { style: { background: colA } }), `${a} ${driver(a).last}`),
     h("span", {}, h("i", { class: dashB ? "dash" : "", style: { background: colB, "--c": colB } }), `${b} ${driver(b).last}`));
 
-  const map = circuit ? trackMap(circuit, {
+  const mapOpts = {
     colourAt: (dist) => segWinner(dist, d, delta) === "a" ? colA : colB,
     aria: `Track map coloured by who was faster in each section`,
-  }) : null;
+  };
+  const map = circuit ? trackMap(circuit, mapOpts) : null;
 
   let speed, gap, thr;
   const sA = { id: a, name: a, color: colA, points: d.map((x, i) => [x, ta.v[i]]) };
   const sB = { id: b, name: b, color: colB, dash: dashB, points: d.map((x, i) => [x, vb[i]]) };
   const km = (x) => `${(x / 1000).toFixed(1)}`;
-  speed = lineChart([sA, sB], {
-    height: 240, xFmt: km, xLabel: "km", yFmt: (t) => `${t}`, aria: "Speed around the lap in km/h",
+  const speedSeries = [sA, sB];
+  const speedOpts = { height: 240, xFmt: km, xLabel: "km", yFmt: (t) => `${t}`, aria: "Speed around the lap in km/h" };
+  const gapSeries = [{ id: "gap", name: "gap", color: "var(--ink)", points: d.map((x, i) => [x, delta[i]]) }];
+  const gapOpts = { height: 150, xFmt: km, zero: 0, yFmt: (t) => `${t > 0 ? "+" : ""}${t.toFixed(2)}`, aria: `Time gap between ${a} and ${b}` };
+  const thrSeries = [
+    { id: a, name: a, color: colA, points: d.map((x, i) => [x, ta.thr[i]]) },
+    { id: b, name: b, color: colB, dash: dashB, points: d.map((x, i) => [x, thrB[i]]) }];
+  const thrOpts = { height: 120, yMin: 0, yMax: 100, yTicks: [0, 100], yFmt: (t) => `${t}%`, xFmt: km, aria: "Throttle use around the lap" };
+  speed = lineChart(speedSeries, {
+    ...speedOpts,
     onHover: (x) => { map?.setMarker(x); gap.setHover(x); thr.setHover(x); },
     tooltip: (x) => {
       const i = idx(d, x);
@@ -95,29 +105,60 @@ export default async function compare(route) {
       return `<b>${c ? `Near turn ${c.n}` : `${(x / 1000).toFixed(2)} km`}</b><br>${a}: ${ta.v[i]} km/h, gear ${ta.g[i]}<br>${b}: ${Math.round(vb[i])} km/h<br>${delta[i] >= 0 ? a : b} ahead by ${Math.abs(delta[i]).toFixed(3)}s`;
     },
   });
-  gap = lineChart([{ id: "gap", name: "gap", color: "var(--ink)", points: d.map((x, i) => [x, delta[i]]) }], {
-    height: 150, xFmt: km, zero: 0, yFmt: (t) => `${t > 0 ? "+" : ""}${t.toFixed(2)}`, aria: `Time gap between ${a} and ${b}`,
+  gap = lineChart(gapSeries, {
+    ...gapOpts,
     onHover: (x) => { map?.setMarker(x); speed.setHover(x); thr.setHover(x); },
     tooltip: (x) => { const i = idx(d, x); return `<b>${delta[i] >= 0 ? a : b} ahead</b><br>by ${Math.abs(delta[i]).toFixed(3)}s`; },
   });
-  thr = lineChart([
-    { id: a, name: a, color: colA, points: d.map((x, i) => [x, ta.thr[i]]) },
-    { id: b, name: b, color: colB, dash: dashB, points: d.map((x, i) => [x, thrB[i]]) }], {
-    height: 120, yMin: 0, yMax: 100, yTicks: [0, 100], yFmt: (t) => `${t}%`, xFmt: km, aria: "Throttle use around the lap",
+  thr = lineChart(thrSeries, {
+    ...thrOpts,
     onHover: (x) => { map?.setMarker(x); speed.setHover(x); gap.setHover(x); },
   });
 
+  // ---- saving as pictures: each chart is redrawn off-screen at a fixed size, so it looks the same on any phone ----
+  const notes = {
+    speed: "Dips are corners: the lower the dip, the slower the corner.",
+    map: "Each part of the track takes the colour of the driver who was quicker through it.",
+    gap: `Above the line, ${a} is ahead; below it, ${b} is. A steep slope shows where time was won or lost.`,
+    thr: "100% is flat out. Getting back on the throttle earlier out of a corner is often where lap time comes from.",
+  };
+  const blocks = {
+    speed: { label: "Speed (km/h)", note: notes.speed, render: (w) => offscreen(w, () => lineChart(speedSeries, { ...speedOpts, still: true }).el) },
+    gap: { label: "The gap, metre by metre (seconds)", note: notes.gap, render: (w) => offscreen(w, () => lineChart(gapSeries, { ...gapOpts, still: true }).el) },
+    thr: { label: "Throttle", note: notes.thr, render: (w) => offscreen(w, () => lineChart(thrSeries, { ...thrOpts, still: true }).el) },
+    map: circuit ? { label: "Who was faster where", note: notes.map, center: true, render: (w) => offscreen(Math.min(w, 340), () => trackMap(circuit, { ...mapOpts, size: 340 }).el) } : null,
+  };
+  const overallText = headline.querySelector("p").textContent;
+  const slug = (t) => t.toLowerCase().replace("grand prix", "gp").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const file = (what) => () => `${slug(`${ev.name} ${SESSION_LABEL[key]}`)}-${a}-vs-${b}${what ? `-${what}` : ""}.png`;
+  const picture = (parts) => () => makeImage({
+    title: [{ text: a, color: colA }, { text: "  vs  " }, { text: b, color: colB }],
+    subtitle: `${ev.name}, ${SESSION_LABEL[key]}: fastest laps compared`,
+    headline: overallText,
+    legend: [{ color: colA, text: `${a} ${driver(a).last}` }, { color: colB, dash: dashB, text: `${b} ${driver(b).last}` }],
+    blocks: parts.map((k) => blocks[k]).filter(Boolean),
+  });
+  const all = ["speed", "gap", "thr", "map"];
+  const saveRow = h("div", { class: "save-row" },
+    imageButton({ label: "Download image", iconEl: icon("download", { size: 18 }), make: picture(all), filename: file("") }),
+    canShareFiles() ? imageButton({ label: "Share image", iconEl: icon("share", { size: 18 }), make: picture(all), filename: file(""), mode: "share" }) : null);
+  const saveOne = (k, what) => imageButton({ label: `Download the ${what} chart as an image`, iconEl: icon("download", { size: 20 }), make: picture([k]), filename: file(k), compact: true });
+  const withSave = (sec, k, what) => { sec.querySelector(".section-head h2").append(saveOne(k, what)); return sec; };
+
   view.append(h("div", { class: "section-head" }, h("h2", {}, icon("gauge", { size: 24 }), "Fastest laps compared"),
-    h("p", { class: "muted" }, race ? "Each driver's single quickest lap of the race, on top of each other." : "Each driver's quickest lap of the session, on top of each other.")), headline);
+    h("p", { class: "muted" }, race ? "Each driver's single quickest lap of the race, on top of each other." : "Each driver's quickest lap of the session, on top of each other.")), headline,
+    h("div", { style: { display: "grid", gap: "6px" } }, saveRow,
+      h("p", { class: "small muted" }, "Makes one picture with all four charts, ready for WhatsApp or X. Each chart also has its own download button.")));
   view.append(h("div", { class: "split" },
-    section(["Speed", "gauge"], "Dips are corners: the lower the dip, the slower the corner. Drag or hover to move along the lap.",
-      h("div", { class: "panel", style: { display: "grid", gap: "10px" } }, keyLegend, speed.el)),
-    section(["Who was faster where", "pin"], "Each part of the track takes the colour of the driver who was quicker through it.",
-      h("div", { class: "panel" }, map ? map.el : h("p", { class: "muted" }, "Track map not available."), h("div", { style: { marginTop: "8px" } }, keyLegend.cloneNode(true))))));
-  view.append(section(["The gap, metre by metre", "compare"], `Above the line, ${a} is ahead; below it, ${b} is. A steep slope shows where time was won or lost.`,
-    h("div", { class: "panel" }, gap.el)));
-  view.append(section(["Throttle", "bolt"], h("span", {}, "100% is flat out. Getting back on the throttle earlier out of a corner is often where lap time comes from."),
-    h("div", { class: "panel" }, thr.el)));
+    withSave(section(["Speed", "gauge"], `${notes.speed} Drag or hover to move along the lap.`,
+      h("div", { class: "panel", style: { display: "grid", gap: "10px" } }, keyLegend, speed.el)), "speed", "speed"),
+    map ? withSave(section(["Who was faster where", "pin"], notes.map,
+      h("div", { class: "panel" }, map.el, h("div", { style: { marginTop: "8px" } }, keyLegend.cloneNode(true)))), "map", "track map")
+      : section(["Who was faster where", "pin"], notes.map, h("div", { class: "panel" }, h("p", { class: "muted" }, "Track map not available.")))));
+  view.append(withSave(section(["The gap, metre by metre", "compare"], notes.gap,
+    h("div", { class: "panel" }, gap.el)), "gap", "gap"));
+  view.append(withSave(section(["Throttle", "bolt"], h("span", {}, notes.thr),
+    h("div", { class: "panel" }, thr.el)), "thr", "throttle"));
   view.append(h("p", { class: "small muted" }, "Telemetry is sampled a few times a second, so small differences of a few metres or hundredths can be noise. ",
     term("quali", "How qualifying works")));
   return view;

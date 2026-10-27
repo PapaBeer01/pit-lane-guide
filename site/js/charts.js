@@ -22,14 +22,14 @@ function niceTicks(min, max, count = 5) {
  * Line chart.
  * series: [{ id, name, color, dash, width, points: [[x, y], ...] }]
  * opts: { height, xLabel, yLabel, yFmt, xFmt, invertY, yMin, yMax, xMin, xMax, tooltip(x, nearest) -> Node|string,
- *         onHover(x|null), labels: true (direct-label line ends), highlight }
+ *         onHover(x|null), labels: true (direct-label line ends), highlight, still (no animation: for saved images) }
  */
 export function lineChart(series, opts = {}) {
   const wrap = h("div", { class: "chart-wrap" });
   const tip = h("div", { class: "tooltip", role: "status" });
   wrap.append(tip);
   let hoverX = null;
-  let firstDraw = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  let firstDraw = !opts.still && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   const api = { el: wrap, setHover: (x) => { hoverX = x; draw(); } };
 
   function draw() {
