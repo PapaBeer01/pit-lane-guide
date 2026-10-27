@@ -337,3 +337,62 @@ def test_short_field_is_still_caught_once_a_grid_is_known(fake_env, monkeypatch)
     monkeypatch.setattr(fastf1, "get_session", lambda y, r, name: Short(name, np.random.default_rng(9)))
     problems = run(now=datetime(2026, 3, 15, 12, 0, tzinfo=timezone.utc), year=2026)
     assert any("only 12 drivers" in p and "expected about 20" in p for p in problems)
+
+
+# --- mid-season driver changes (e.g. an injury: a driver moves up, a reserve fills his seat) ---
+
+def _swap_session(name, rnd, rng, rename: dict, team: dict):
+    """FakeSession where some cars have a different driver (rename old->new) or team (code->team)."""
+    s = FakeSession(name, rng)
+    s.laps["Driver"] = s.laps["Driver"].replace(rename)
+    for col in ("Abbreviation", "FullName", "FirstName", "LastName"):
+        s.results[col] = s.results[col].replace(rename)
+    for code, t in team.items():
+        s.results.loc[s.results["Abbreviation"] == code, "TeamName"] = t
+    return s
+
+
+def test_injury_swap_and_friday_reserve(fake_env, monkeypatch):
+    """Round 1: a reserve (FPR) drives D09's car in FP1 only.
+    Round 2: D03 (Team 1) is injured; D05 moves up from Team 2 to Team 1; reserve RSV takes D05's Team 2 seat."""
+    import fastf1
+    from pipeline.update import run
+    _many_rounds(monkeypatch, 3)
+
+    def get_session(y, rnd, name):
+        rng = np.random.default_rng(rnd * 10 + len(name))
+        if rnd == 1:
+            return _swap_session(name, rnd, rng, {"D09": "FPR"} if name == "Practice 1" else {}, {})
+        if rnd == 2:      # D03's car (Team 1) now driven by D05; D05's old car (Team 2) by RSV
+            return _swap_session(name, rnd, rng, {"D03": "D05", "D05": "RSV"}, {})
+        return FakeSession(name, rng)
+
+    monkeypatch.setattr(fastf1, "get_session", get_session)
+    monkeypatch.setattr(config, "MAX_SESSIONS_PER_RUN", 200)
+    assert run(now=datetime(2026, 3, 16, 12, 0, tzinfo=timezone.utc), year=2026) == []   # rounds 1-2 done
+
+    roster = {d["code"]: d for d in read_json(config.DATA_DIR / "season.json")["drivers"]}
+    assert roster["FPR"]["race_rounds"] == [] and roster["FPR"]["current"] is False      # Friday only
+    assert roster["D03"]["race_rounds"] == [1] and roster["D03"]["current"] is False     # injured
+    assert roster["D05"]["teams"] == ["Team 2", "Team 1"] and roster["D05"]["team"] == "Team 1"
+    assert roster["RSV"]["teams"] == ["Team 2"] and roster["RSV"]["current"] is True
+    assert sum(d["current"] for d in roster.values()) == 20
+
+    # constructors' points stay with the team they were scored for
+    st = read_json(config.DATA_DIR / "standings.json")
+    teams = {t["team"]: t["points"] for t in st["teams"]}
+    assert teams["Team 1"] == 15 + 12 + 12 + 15          # D03 r1, D04 r1+r2, D05 r2
+    assert teams["Team 2"] == 10 + 8 + 8 + 10            # D05 r1, D06 r1+r2, RSV r2
+    d05 = next(d for d in st["drivers"] if d["code"] == "D05")
+    assert d05["points"] == 25 and d05["teams"] == ["Team 2", "Team 1"]
+
+    # next race's predictions: the real line-up, not the injured driver or the Friday reserve
+    pred = read_json(config.DATA_DIR / "predictions" / "3" / "Q.json")
+    codes = {d["code"] for d in pred["drivers"]}
+    assert len(codes) == 20 and {"RSV", "D05"} <= codes and not ({"D03", "FPR"} & codes)
+
+    # teammate battles compare whoever shared the garage that weekend
+    summary = {d["code"]: d for d in read_json(config.DATA_DIR / "summary.json")["drivers"]}
+    assert summary["D04"]["quali_vs_mate"] == [0, 2]      # behind D03 in r1 and D05 in r2
+    assert summary["D04"]["mate"] == "D05"
+    assert summary["RSV"]["mate"] == "D06"

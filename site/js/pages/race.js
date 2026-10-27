@@ -1,7 +1,7 @@
 import { gapBars, lineChart, driverSeries, stintChart } from "../charts.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
-import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre } from "../ui.js";
+import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
 import { predictionTable } from "./home.js";
 
 export const title = (r) => { const ev = eventByRound(r.args[0]); return ev ? ev.name : "Race"; };
@@ -28,6 +28,7 @@ export default async function race(route) {
     }, icon(done.includes(k) ? "check" : "gauge", { size: 15 }), SESSION_LABEL[k], done.includes(k) ? null : h("span", { class: "tag" }, "prediction"))));
 
   const sess = done.includes(key) ? await load(`events/${ev.round}/${key}.json`) : null;
+  useSessionTeams(sess);
   const pred = predicted.has(key) ? await load(`predictions/${ev.round}/${key}.json`) : null;
   const body = h("div", { style: { display: "grid", gap: "28px" } });
 

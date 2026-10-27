@@ -36,17 +36,36 @@ export async function load(path) {
 }
 
 // ---------- season context ----------
-export const ctx = { season: null, drivers: {} };
+export const ctx = { season: null, drivers: {}, override: {} };
 export function driver(code) {
-  return ctx.drivers[code] || { code, name: code, team: "", color: "#8A929C", last: code };
+  const base = ctx.drivers[code] || { code, name: code, team: "", color: "#8A929C", last: code };
+  const o = ctx.override[code];
+  return o ? { ...base, ...o } : base;
+}
+// A race page shows teams as they were that weekend: a substitute or a driver who has since
+// moved keeps that weekend's team and colour. The router clears this on every page change.
+export function useSessionTeams(...sessions) {
+  for (const s of sessions) {
+    for (const r of s?.results || []) {
+      if (r.team) ctx.override[r.code] = { team: r.team, color: r.color || (ctx.drivers[r.code] || {}).color || "#8A929C" };
+    }
+  }
+}
+export function clearSessionTeams() { ctx.override = {}; }
+// drivers who count as "on the grid" here: that weekend's entry, or the current line-up
+function pool() {
+  const o = Object.keys(ctx.override);
+  return o.length ? o : Object.values(ctx.drivers).filter((d) => d.current !== false).map((d) => d.code);
 }
 export function teamColor(team) {
-  const d = Object.values(ctx.drivers).find((x) => x.team === team);
-  return d ? d.color : "#8A929C";
+  const c = pool().find((x) => driver(x).team === team);
+  return c ? driver(c).color : "#8A929C";
 }
 export function teammates(code) {
   const t = driver(code).team;
-  return Object.values(ctx.drivers).filter((d) => d.team === t).map((d) => d.code);
+  const order = Object.keys(ctx.drivers);
+  const mates = new Set([code, ...pool().filter((c) => driver(c).team === t)]);
+  return [...mates].sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 // Second driver of a team gets a dashed line so teammates are never told apart by colour alone
 export function isSecondDriver(code) {

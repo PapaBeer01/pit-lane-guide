@@ -1,5 +1,5 @@
 import { icon } from "./icons.js";
-import { ctx, h, load, localTime } from "./ui.js";
+import { clearSessionTeams, ctx, h, load, localTime } from "./ui.js";
 
 const routes = {
   "": () => import("./pages/home.js"),
@@ -49,6 +49,7 @@ function buildChrome() {
 
 async function render() {
   const app = document.getElementById("app");
+  clearSessionTeams();
   const route = parse();
   const loader = routes[route.name] || routes[""];
   const navName = route.name in navFor ? navFor[route.name] : route.name;

@@ -42,7 +42,8 @@ def build_standings(data: SeasonData) -> dict:
                 code = r["code"]
                 pts = r.get("points") or 0
                 d = drivers.setdefault(code, {"code": code, "points": 0, "wins": 0, "podiums": 0, "sprint_wins": 0,
-                                              "team": data.team_of(code), "by_round": {}})
+                                              "team": data.team_of(code), "by_round": {},
+                                              "teams": (data.drivers.get(code) or {}).get("teams") or [data.team_of(code)]})
                 d["points"] += pts
                 d["by_round"][ev["round"]] = d["by_round"].get(ev["round"], 0) + pts
                 if key == "R" and r.get("pos") == 1 and (r.get("class") or "1").isdigit():
@@ -51,7 +52,8 @@ def build_standings(data: SeasonData) -> dict:
                     d["sprint_wins"] += 1
                 if key == "R" and r.get("pos") and r["pos"] <= 3 and (r.get("class") or "").isdigit():
                     d["podiums"] += 1
-                t = teams.setdefault(d["team"], {"team": d["team"], "points": 0, "by_round": {}})
+                team = data.team_at(code, ev["round"])          # points stay with the team they were scored for
+                t = teams.setdefault(team, {"team": team, "points": 0, "by_round": {}})
                 t["points"] += pts
                 t["by_round"][ev["round"]] = t["by_round"].get(ev["round"], 0) + pts
 
@@ -81,7 +83,7 @@ def build_summary(data: SeasonData) -> dict:
     Lets the Races, Drivers and home pages show a whole season from a single download,
     which matters on slow mobile connections.
     """
-    events, drivers = [], {c: {"code": c, "log": []} for c in data.entry_list()}
+    events, drivers = [], {c: {"code": c, "log": []} for c in data.drivers}
     for ev in data.events:
         done = set(data.done_keys(ev))
         if not done:
@@ -118,19 +120,26 @@ def build_summary(data: SeasonData) -> dict:
         log = d["log"]
         qs = [e["q"] for e in log if e.get("q")]
         rs = [e["r"] for e in log if e.get("r")]
-        mate = next((m for m in data.entry_list() if m != d["code"] and data.team_of(m) == data.team_of(d["code"])), None)
-        ahead = both = 0
-        if mate:
-            mlog = {e["round"]: e for e in drivers[mate]["log"]}
-            pairs = [(e["q"], mlog[e["round"]]["q"]) for e in log if e.get("q") and mlog.get(e["round"], {}).get("q")]
-            both = len(pairs)
-            ahead = sum(1 for a, b in pairs if a < b)
+        # teammate battle, round by round: whoever shared the car's garage that weekend counts,
+        # so a substitute's or a mid-season mover's rounds are compared with the right teammate
+        pairs, mate = [], None
+        for e in log:
+            if not e.get("q"):
+                continue
+            team = data.team_at(d["code"], e["round"])
+            q = data.session(e["round"], "Q")
+            for r in (q or {}).get("results", []):
+                if r["code"] != d["code"] and r.get("pos") and data.team_at(r["code"], e["round"]) == team:
+                    pairs.append((e["q"], r["pos"]))
+                    mate = r["code"]
+        both = len(pairs)
+        ahead = sum(1 for a, b in pairs if a < b)
         d.update({
             "wins": sum(1 for e in log if e.get("r") == 1), "podiums": sum(1 for e in log if e.get("r") and e["r"] <= 3),
             "poles": sum(1 for e in log if e.get("q") == 1), "dnfs": sum(1 for e in log if e.get("r_out")),
             "best": min(rs) if rs else None, "avg_q": round(sum(qs) / len(qs), 1) if qs else None,
             "avg_r": round(sum(rs) / len(rs), 1) if rs else None, "points": sum(e.get("pts", 0) for e in log),
-            "mate": mate, "quali_vs_mate": [ahead, both - ahead] if mate else None,
+            "mate": mate, "quali_vs_mate": [ahead, both - ahead] if both else None,
         })
     return {"events": events, "drivers": list(drivers.values())}
 

@@ -36,13 +36,18 @@ NEW_DRIVER_SD = 0.8
 BAD_SESSION_PENALTY = (0.5, 1.4)   # % lap time lost in a bad qualifying (mistake, traffic, problem)
 
 
-def _weighted_form(past, current_round, extractor, keys) -> dict[str, tuple[float, float]]:
+def _weighted_form(past, current_round, extractor, keys, same_team=None) -> dict[str, tuple[float, float]]:
+    """Recency-weighted pace per driver. With `same_team(code, rnd)`, only rounds driven for the
+    driver's current team count: pace mostly belongs to the car, so a driver who switched teams
+    (or a substitute) starts from the new car's level via their teammate instead."""
     vals: dict[str, list[tuple[float, float]]] = {}
     for rnd, key, sess in past:
         if key not in keys:
             continue
         w = config.RECENCY_DECAY ** max(0, current_round - rnd - 1)
         for code, g in extractor(sess).items():
+            if same_team and not same_team(code, rnd):
+                continue
             vals.setdefault(code, []).append((g, w))
     out = {}
     for code, xs in vals.items():
@@ -64,7 +69,7 @@ def _fill_missing(prior: dict, codes: list[str], team_of) -> dict:
     for c in codes:
         if c in out:
             continue
-        mates = [prior[o][0] for o in prior if team_of(o) == team_of(c)]
+        mates = [prior[o][0] for o in prior if o in codes and o != c and team_of(o) == team_of(c)]
         out[c] = ((mates[0] + 0.1) if mates else mid, NEW_DRIVER_SD)
     return out
 
@@ -155,15 +160,17 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
     rng = np.random.default_rng(seed or (ev["round"] * 100 + config.PREDICTION_TARGETS.index(target)))
     past, weekend = data.before(ev, target)
     weekend_sessions = [s for _, _, s in weekend]
-    codes = data.entry_list() or sorted({r["code"] for _, _, s in past[-1:] for r in s["results"]})
-    team_of = data.team_of
     rnd = ev["round"]
+    # the drivers actually racing this weekend: no Friday-only reserves, substitutes included
+    codes = data.race_lineup(ev, target) or data.entry_list() or sorted({r["code"] for _, _, s in past[-1:] for r in s["results"]})
+    team_of = lambda c, r=None: data.team_of(c, rnd if r is None else r)   # noqa: E731  team this weekend
+    same_team = lambda c, r: data.team_at(c, r) == team_of(c)               # noqa: E731
     traits = config.track_traits(ev["location"])
     rain = 0.12 if rain_prob is None else float(rain_prob)
     track = TrackModel(ev, list(track_history), data.season.get("year", config.SEASON), this_season_at_track(data, ev))
 
     # ---- one-lap pace (qualifying) ----
-    q_prior = _fill_missing(_weighted_form(past, rnd, one_lap_gaps, config.QUALI_SESSIONS), codes, team_of)
+    q_prior = _fill_missing(_weighted_form(past, rnd, one_lap_gaps, config.QUALI_SESSIONS, same_team), codes, team_of)
     q_evidence = []
     for _, key, sess in weekend:
         if key in ONE_LAP_NOISE and key not in config.RACE_SESSIONS:
@@ -171,7 +178,7 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
     q_post = _combine(q_prior, q_evidence)
 
     # ---- race pace ----
-    r_form = _weighted_form(past, rnd, race_pace_gaps, config.RACE_SESSIONS)
+    r_form = _weighted_form(past, rnd, race_pace_gaps, config.RACE_SESSIONS, same_team)
     r_prior = _fill_missing(r_form or {c: q_post[c] for c in codes}, codes, team_of)
     r_evidence = []
     for _, key, sess in weekend:

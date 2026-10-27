@@ -92,6 +92,8 @@ def needs_refresh(existing: dict | None, sess: dict, now: datetime) -> bool:
     """Re-load once ~12 h after a session so late penalties/corrections are picked up."""
     if existing is None:
         return True
+    if existing.get("schema", 1) < config.SESSION_SCHEMA:
+        return True                     # published before files recorded each driver's team: load again
     exported = existing.get("exported_at")
     if not exported or existing.get("final"):
         return False
@@ -141,6 +143,7 @@ def export_session(year: int, ev: dict, sess: dict, expected: int | None, now: d
             except Exception as e:
                 log.warning("Circuit map %s: %s", ev["round"], e)
 
+    payload["schema"] = config.SESSION_SCHEMA
     payload["exported_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     payload["final"] = now >= _parse(sess["start"]) + timedelta(hours=12)
     payload["drivers"] = drivers_from_results(s.results)
@@ -258,10 +261,11 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
 
     # Since October 2026, F1's timing archive needs an F1 TV sign-in. Sign in only when there is
     # something new to download, and stop early with a clear message if it fails.
+    have = lambda ev, s: (config.DATA_DIR / "events" / str(ev["round"]) / f"{s['key']}.json").exists()
     due = [(ev, s) for ev in events for s in ev["sessions"]
            if session_due(s, now) and needs_refresh(read_json(config.DATA_DIR / "events" / str(ev["round"]) / f"{s['key']}.json"), s, now)]
-    # Backfill is spread over runs: newest sessions first (most useful for the next race), the rest later.
-    batch = sorted(due, key=lambda p: p[1]["start"], reverse=True)[:config.MAX_SESSIONS_PER_RUN]
+    # Backfill is spread over runs: missing sessions before re-loads, newest first (most useful for the next race).
+    batch = sorted(due, key=lambda p: (not have(*p), p[1]["start"]), reverse=True)[:config.MAX_SESSIONS_PER_RUN]
     to_load = {(ev["round"], s["key"]) for ev, s in batch}
     if len(due) > len(batch):
         log.info("%d sessions to load; loading the newest %d this run, the rest on later runs", len(due), len(batch))
@@ -386,9 +390,11 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     for ev in events:
         for s in ev["sessions"]:
             s.pop("ff_name", None)
+    from .roster import build_roster
+    drivers = build_roster(drivers)          # current line-up, substitutes, Friday-only reserves
     write_json(season_path, {
         "year": year, "sample": False, "updated": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "events": events, "drivers": sorted(drivers.values(), key=lambda d: d["team"]),
+        "events": events, "drivers": sorted(drivers.values(), key=lambda d: (d["team"], d["code"])),
     }, compact=False)
 
     from model.run import run_model

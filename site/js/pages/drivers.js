@@ -10,20 +10,37 @@ export default async function drivers() {
   const [summary, standings] = await Promise.all([load("summary.json"), load("standings.json")]);
   const stats = Object.fromEntries((summary?.drivers || []).map((d) => [d.code, d]));
   const teamOrder = (standings?.teams || []).map((t) => t.team);
+  // the current line-up, grouped by team; then anyone who raced earlier (e.g. an injured driver
+  // or a substitute) and the reserves who only drove in Friday practice
+  const all = ctx.season.drivers;
+  const isCurrent = (d) => d.current !== false;
+  const raced = (d) => !("race_rounds" in d) || d.race_rounds.length > 0;
   const teams = {};
-  for (const d of ctx.season.drivers) (teams[d.team] ||= []).push(d.code);
+  for (const d of all.filter(isCurrent)) (teams[d.team] ||= []).push(d.code);
   const ordered = Object.keys(teams).sort((a, b) => (teamOrder.indexOf(a) + 99 * (teamOrder.indexOf(a) < 0)) - (teamOrder.indexOf(b) + 99 * (teamOrder.indexOf(b) < 0)));
+  const earlier = all.filter((d) => !isCurrent(d) && raced(d));
+  const fridays = all.filter((d) => !isCurrent(d) && !raced(d));
 
   let i = 0;
   const blocks = ordered.map((team) => h("section", { class: "team-block", style: { "--tc": driver(teams[team][0]).color } },
     h("div", { class: "team-head" }, teamBadge(team, { size: 30 }), h("h2", {}, team)),
     h("div", { class: "driver-cards" }, teams[team].map((code) => card(code, stats[code], i++)))));
+  const roundsText = (d) => {
+    const n = d.race_rounds?.length || 0;
+    return `${n} race weekend${n === 1 ? "" : "s"} for ${(d.teams || [d.team]).join(", then ")}`;
+  };
 
   return h("div", { style: { display: "grid", gap: "30px" } },
     h("div", { style: { display: "grid", gap: "8px" } },
       h("h1", {}, "Meet the grid"),
-      h("p", { class: "muted" }, `${ctx.season.drivers.length} drivers in ${ordered.length} teams. Teammates drive the same car, so beating your teammate is the clearest sign of a driver's skill. Tap anyone for their season.`)),
+      h("p", { class: "muted" }, `${all.filter(isCurrent).length} drivers in ${ordered.length} teams. Teammates drive the same car, so beating your teammate is the clearest sign of a driver's skill. Tap anyone for their season.`)),
     ...blocks,
+    earlier.length ? section(["Also raced this season", "steer"], "Drivers who raced earlier in the year but aren't in the latest line-up, for example after an injury or when a substitute's stint ended.",
+      h("div", { class: "driver-cards" }, earlier.map((d) => h("div", { style: { display: "grid", gap: "6px" } },
+        card(d.code, stats[d.code], i++), h("p", { class: "small muted" }, roundsText(d)))))) : null,
+    fridays.length ? section(["Friday practice only", "wrench"], "Teams must give young or reserve drivers some practice running, so these drivers took over a car for a Friday session.",
+      h("div", { class: "panel" }, h("ul", { class: "legend", style: { listStyle: "none", margin: 0, padding: 0 } },
+        fridays.map((d) => h("li", {}, h("i", { style: { background: d.color } }), `${d.name} (${d.team || "reserve"})`))))) : null,
     h("p", { class: "small muted" }, "Helmets are our own illustrations in team colours, not the drivers' real designs."));
 }
 
@@ -67,7 +84,9 @@ export async function profile(route) {
   const hero = h("section", { class: "profile-hero", style: { "--tc": d.color } },
     h("div", { class: "ph-helmet" }, helmet(code, { size: 220 })),
     h("div", { class: "ph-text" },
-      h("div", { class: "who-row" }, teamBadge(d.team, { size: 26 }), h("span", { class: "muted" }, d.team), d.num ? h("span", { class: "chip" }, `#${d.num}`) : null),
+      h("div", { class: "who-row" }, teamBadge(d.team, { size: 26 }), h("span", { class: "muted" }, d.team), d.num ? h("span", { class: "chip" }, `#${d.num}`) : null,
+        d.current === false ? h("span", { class: "chip warn" }, d.race_rounds?.length ? "Not in the latest line-up" : "Friday practice only") : null),
+      d.teams?.length > 1 ? h("p", { class: "small muted" }, `Raced for ${d.teams.join(", then ")} this season. Points stay with the team they were scored for.`) : null,
       h("h1", {}, h("span", { class: "ph-first" }, d.first), " ", d.last),
       h("p", { class: "muted" }, `${code}${d.country ? `, ${d.country}` : ""}`)));
 

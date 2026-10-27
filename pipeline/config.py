@@ -31,6 +31,7 @@ SESSION_NAMES = {
 SESSION_MINUTES = {"FP1": 60, "FP2": 60, "FP3": 60, "SQ": 45, "S": 60, "Q": 60, "R": 120}
 READY_AFTER_MINUTES = 30                 # wait this long after a session ends before loading
 MAX_RUN_MINUTES = 35                     # stop starting new downloads after this; the next run continues
+SESSION_SCHEMA = 2                       # bump when session files gain fields: older files are re-loaded
 MAX_SESSIONS_PER_RUN = 25                # ~12-15 calls each, under FastF1's 500 calls/h; the rest go to the next run
 STOP_AFTER_FAILURES = 2                  # this many overdue sessions empty in a row: stop the run
 MAX_HISTORY_RACES_PER_RUN = 8            # past races for track history per run

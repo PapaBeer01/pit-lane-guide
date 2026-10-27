@@ -2,7 +2,7 @@ import { lineChart, stintChart, trackMap } from "../charts.js";
 import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
 import { canShareFiles, imageButton, makeImage, offscreen } from "../snapshot.js";
-import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term, tyre } from "../ui.js";
+import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
 
 export const title = () => "Compare drivers";
 const NEUTRAL = "#8A929C";
@@ -15,6 +15,7 @@ export default async function compare(route) {
   const keys = ev.sessions.filter((s) => s.tel).map((s) => s.key);
   const key = keys.includes(q.get("s")) ? q.get("s") : (keys.includes("Q") ? "Q" : keys[keys.length - 1]);
   const sess = await load(`events/${ev.round}/${key}.json`);
+  useSessionTeams(sess);
   const avail = sess.results.map((r) => r.code);
   const a = avail.includes(q.get("a")) ? q.get("a") : avail[0];
   let b = avail.includes(q.get("b")) ? q.get("b") : avail[1];

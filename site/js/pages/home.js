@@ -1,7 +1,7 @@
 import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
-import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName } from "../ui.js";
+import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
 
 export const title = () => "This weekend";
 
@@ -15,6 +15,8 @@ export default async function home() {
     load(`events/${ev.round}/forecast.json`),
     load("form.json"),
   ]);
+  // this weekend's teams (FP1 left out: teams lend cars to reserve drivers there)
+  useSessionTeams(...Object.entries(sessions).filter(([k]) => k !== "FP1").map(([, s]) => s));
   const trouble = Object.fromEntries((form?.drivers || []).map((d) => [d.code, d.quali_fail]));
   const troubleLine = Math.max(0.15, 1.8 * (form?.grid?.quali_fail || 0.08));
 

@@ -66,7 +66,7 @@ class Reliability:
                 cause = classify(r, inc)
                 if cause == "exclude":
                     continue
-                team = team_of(r["code"])
+                team = team_of(r["code"], rnd)          # the team that car belonged to that weekend
                 laps = max(1, r.get("laps") or 1)
                 mech_e[team] = mech_e.get(team, 0) + w * laps
                 inc_e[r["code"]] = inc_e.get(r["code"], 0) + w * laps

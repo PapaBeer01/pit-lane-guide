@@ -68,6 +68,7 @@ def _race_status(sess: dict) -> dict[str, str]:
 
 class Form:
     def __init__(self, past: list[tuple[int, str, dict]], current_round: int, team_of):
+        """team_of(code, round=None): the team in that round (None: their team now)."""
         self.team_of = team_of
         by_round: dict[int, dict[str, dict]] = {}
         for rnd, key, sess in past:
@@ -76,6 +77,7 @@ class Form:
         self.events: list[dict] = []          # [{round, sessions: {key: {code: status}}, results: {...}}]
         q_fail: dict[str, list[tuple[int, float]]] = {}
         fp_issue: dict[str, list[tuple[int, float]]] = {}
+        team_q: dict[str, list[tuple[int, float]]] = {}       # team-level qualifying trouble (both cars)
         for rnd in sorted(by_round):
             sessions = by_round[rnd]
             marks: dict[str, dict[str, str]] = {}
@@ -88,11 +90,12 @@ class Form:
                     marks[key] = _fp_status(sess)
                     practice_so_far.append(sess)
                     for c, st in marks[key].items():
-                        fp_issue.setdefault(team_of(c), []).append((rnd, 1.0 if st == "issue" else 0.0))
+                        fp_issue.setdefault(team_of(c, rnd), []).append((rnd, 1.0 if st == "issue" else 0.0))
                 elif key in config.QUALI_SESSIONS:
                     marks[key] = _quali_status(sess, practice_so_far)
                     for c, st in marks[key].items():
                         q_fail.setdefault(c, []).append((rnd, 0.0 if st == "ok" else 1.0))
+                        team_q.setdefault(team_of(c, rnd), []).append((rnd, 0.0 if st == "ok" else 1.0))
                 else:
                     marks[key] = _race_status(sess)
             positions = {k: {r["code"]: r.get("pos") for r in s.get("results", [])}
@@ -112,10 +115,6 @@ class Form:
         all_fp = [v for obs in fp_issue.values() for v in obs]
         self.grid_fp_issue = rate(all_fp, PRIOR_FP_ISSUE) if all_fp else PRIOR_FP_ISSUE
         self.fp_issue_team = {t: rate(obs, self.grid_fp_issue) for t, obs in fp_issue.items()}
-        # team-level qualifying trouble (both cars)
-        team_q: dict[str, list[tuple[int, float]]] = {}
-        for c, obs in q_fail.items():
-            team_q.setdefault(team_of(c), []).extend(obs)
         self.quali_fail_team = {t: rate(obs, self.grid_quali_fail) for t, obs in team_q.items()}
 
     def quali_fail(self, code: str) -> float:

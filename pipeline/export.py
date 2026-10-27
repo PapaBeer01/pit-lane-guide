@@ -69,6 +69,13 @@ def drivers_from_results(results: pd.DataFrame) -> list[dict]:
     return out
 
 
+def _color(v) -> str | None:
+    c = str(v or "").strip()
+    if not c or c.lower() == "nan":
+        return None
+    return c if c.startswith("#") else "#" + c
+
+
 def export_results(results: pd.DataFrame, key: str, laps: pd.DataFrame | None = None) -> list[dict]:
     """Classification for one session."""
     best = {}
@@ -100,6 +107,9 @@ def export_results(results: pd.DataFrame, key: str, laps: pd.DataFrame | None = 
             "q": q,
             "best": best.get(code),
             "laps": laps_done,
+            # the team this driver drove for in this session (substitutes and mid-season moves)
+            "team": str(r.get("TeamName") or "") or None,
+            "color": _color(r.get("TeamColor")),
         })
     # Practice sessions have no official position: order by best lap
     if key.startswith("FP"):

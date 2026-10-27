@@ -47,10 +47,10 @@ export default async function standings() {
       h("tbody", {}, st.drivers.map((d, i) => h("tr", { class: i === 0 ? "p1" : "" },
         h("td", { class: "pos" }, i + 1),
         h("td", {}, h("a", { class: "who-row", href: `#/driver/${d.code}`, style: { color: "inherit", textDecoration: "none" } }, avatar(d.code, { size: 34, ring: false }), driverTag(d.code, { full: true }))),
-        h("td", {}, driver(d.code).team),
+        h("td", {}, (d.teams && d.teams.length > 1) ? h("span", { title: "Raced for more than one team this season" }, d.teams.join(", then ")) : driver(d.code).team),
         h("td", { class: "num", style: { fontWeight: 700 } }, d.points), h("td", { class: "num" }, d.wins), h("td", { class: "num" }, d.podiums))))))));
 
-  view.append(section(["Teams", "layers"], "Both drivers' points added together.",
+  view.append(section(["Teams", "layers"], "Every point scored in each team's cars, including by stand-in drivers. Points stay with the team they were scored for when a driver moves.",
     h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data" },
       h("thead", {}, h("tr", {}, ["", "Team", "Points"].map((t, i) => h("th", { scope: "col", class: i > 1 ? "num" : "" }, t)))),
       h("tbody", {}, st.teams.map((t, i) => h("tr", {},
