@@ -51,7 +51,7 @@ def next_event(events: list[dict], now):
 
 MAX_SESSIONS_PER_RUN = 25                # ~12-15 calls each, under FastF1's 500 calls/h; the rest go to the next run
 STOP_AFTER_FAILURES = 2                  # this many overdue sessions empty in a row: stop the run
-MAX_HISTORY_RACES_PER_RUN = 8            # past races for track history per run
+MAX_HISTORY_RACES_PER_RUN = 20           # past races for track history per run (~10 calls each)
 
 QUALI_SESSIONS = ("SQ", "Q")
 RACE_SESSIONS = ("S", "R")

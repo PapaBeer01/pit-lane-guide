@@ -229,6 +229,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
 
     now = now or datetime.now(timezone.utc)
     started = time.monotonic()
+    STATUS.clear()
     config.CACHE_DIR.mkdir(exist_ok=True)
     fastf1.Cache.enable_cache(str(config.CACHE_DIR))
     problems: list[str] = []
@@ -380,10 +381,14 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
         log.warning("History unavailable: %s", e)
     try:
         from .track_history import fetch_track_history
-        # shares the per-run request budget with this season's sessions
+        # shares the per-run request budget with this season's sessions; the coming races' tracks first
         room = min(config.MAX_HISTORY_RACES_PER_RUN, config.MAX_SESSIONS_PER_RUN - len(batch))
         if access and not stopped and not backlog and room > 0:
-            fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60, max_races=room)
+            from .track_history import norm_location
+            nxt_ev = config.next_event(events, now)
+            upcoming = [norm_location(e["location"]) for e in events if nxt_ev and e["round"] >= nxt_ev["round"]]
+            hist = fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60, max_races=room, priority=upcoming)
+            STATUS.update(history_loaded=hist["loaded"], history_left=hist["remaining"])
     except Exception as e:
         log.warning("Track history unavailable: %s", e)
 
@@ -406,8 +411,12 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     problems = run()
     # "more" = sessions are still waiting and this run made progress, so another run is worth starting now
-    more = STATUS.get("backlog", 0) > 0 and STATUS.get("published", 0) > 0
-    STATUS_FILE.write_text(f"published={STATUS.get('published', 0)}\nbacklog={STATUS.get('backlog', 0)}\nmore={str(more).lower()}\n")
+    # another run is worth starting now while sessions or past races are waiting and this run made progress
+    more = (STATUS.get("backlog", 0) > 0 and STATUS.get("published", 0) > 0) or \
+           (STATUS.get("history_left", 0) > 0 and STATUS.get("history_loaded", 0) > 0)
+    STATUS_FILE.write_text(f"published={STATUS.get('published', 0)}\nbacklog={STATUS.get('backlog', 0)}\n"
+                           f"history_loaded={STATUS.get('history_loaded', 0)}\nhistory_left={STATUS.get('history_left', 0)}\n"
+                           f"more={str(more).lower()}\n")
     if problems:
         PROBLEMS_FILE.write_text("\n".join(problems) + "\n")
         for p in problems:

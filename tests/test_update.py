@@ -264,7 +264,7 @@ def test_backfill_is_spread_over_runs_newest_first(fake_env, monkeypatch):
     calls = _counting_sessions(monkeypatch, lambda name: FakeSession(name, np.random.default_rng(6)))
     assert run(now=now, year=2026) == []
     assert len(calls) == config.MAX_SESSIONS_PER_RUN
-    assert pipeline.update.STATUS == {"published": 10, "backlog": 10}   # tells the workflow to run again
+    assert pipeline.update.STATUS["published"] == 10 and pipeline.update.STATUS["backlog"] == 10   # run again
     loaded = {p.parent.name + "/" + p.stem for p in (config.DATA_DIR / "events").glob("*/*.json")
               if p.stem in config.SESSION_MINUTES}
     assert loaded == {f"{r}/{k}" for r in (3, 4) for k in ("FP1", "FP2", "FP3", "Q", "R")}   # newest rounds first
@@ -272,7 +272,7 @@ def test_backfill_is_spread_over_runs_newest_first(fake_env, monkeypatch):
     calls.clear()
     run(now=now, year=2026)
     assert len(calls) == config.MAX_SESSIONS_PER_RUN               # second run finishes the backlog
-    assert pipeline.update.STATUS == {"published": 10, "backlog": 0}
+    assert pipeline.update.STATUS["published"] == 10 and pipeline.update.STATUS["backlog"] == 0
     season = read_json(config.DATA_DIR / "season.json")
     assert all(s["done"] for ev in season["events"] for s in ev["sessions"])
     calls.clear()
@@ -311,7 +311,7 @@ def test_track_history_gives_up_without_burning_tries(tmp_path, monkeypatch):
     calls = _counting_sessions(monkeypatch, lambda name: EmptySession(name, np.random.default_rng(7)))
     track_history.fetch_track_history(deadline=float("inf"))
     assert len(calls) == 2
-    data = read_json(config.HISTORY_DIR / "track_2018.json")
+    data = read_json(config.HISTORY_DIR / "track_2025.json")            # newest season first
     assert [r.get("tries") for r in data["races"]] == [1]          # only the first counts as a failed try
 
 
@@ -422,3 +422,24 @@ def test_next_race_is_by_calendar_while_old_rounds_load(fake_env, monkeypatch):
     monkeypatch.setattr(fastf1, "get_session", lambda y, r, name: FakeSession(name, np.random.default_rng(r)))
     run(now=now, year=2026)
     assert read_json(config.DATA_DIR / "predictions" / "2" / "Q.json")["inputs"] == 3 + 5   # plus round 1's five
+
+
+
+def test_track_history_fetches_the_coming_races_tracks_first(tmp_path, monkeypatch):
+    """27 Oct: history went through 2018 in date order, so Mexico City's past races were weeks away."""
+    import fastf1
+    from pipeline import track_history
+
+    def schedule(year, include_testing=False):
+        rows = [{"RoundNumber": r, "Location": loc, "Country": "X", "EventName": f"{loc} GP"}
+                for r, loc in enumerate(["Melbourne", "Monaco", "Mexico City", "Interlagos"], 1)]
+        return pd.DataFrame(rows)
+    monkeypatch.setattr(config, "HISTORY_DIR", tmp_path / "history")
+    monkeypatch.setattr(fastf1, "get_event_schedule", schedule)
+    calls = _counting_sessions(monkeypatch, lambda name: FakeSession(name, np.random.default_rng(1)))
+    calls_by_year = []
+    monkeypatch.setattr(fastf1, "get_session", lambda y, r, n: calls_by_year.append((y, r)) or FakeSession(n, np.random.default_rng(1)))
+    out = track_history.fetch_track_history(deadline=float("inf"), max_races=10, priority=["mexico city", "sao paulo"])
+    assert calls_by_year[:8] == [(y, 3) for y in range(2025, 2017, -1)]       # Mexico City, newest season first
+    assert calls_by_year[8:10] == [(2025, 4), (2024, 4)]                       # then the next track
+    assert out["loaded"] == 10 and out["remaining"] == 8 * 4 - 10

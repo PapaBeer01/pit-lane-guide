@@ -87,21 +87,28 @@ def strategies_from_laps(laps: pd.DataFrame) -> tuple[dict, float | None]:
     return stints, (round(float(np.median(losses)), 1) if losses else None)
 
 
-def fetch_track_history(deadline: float, max_races: int | None = None) -> list[str]:
-    """Download any missing past races (resumes across runs).
+def fetch_track_history(deadline: float, max_races: int | None = None, priority=()) -> dict:
+    """Download missing past races, resuming across runs. Returns {problems, loaded, remaining}.
 
+    `priority`: track keys to fetch first, in order (the next race's track, then the following
+    ones), so the coming weekend's safety-car odds and pit-stop loss use real history soon.
+    Within each group, recent seasons come first (they count most).
     Stops at `deadline` (time.monotonic), after `max_races` races, when FastF1's request limit is
     reached, or after two races in a row come back empty (those don't count as failed tries).
     """
     import fastf1
 
     max_races = config.MAX_HISTORY_RACES_PER_RUN if max_races is None else max_races
-    problems = []
-    attempted = 0
-    empty_in_row = 0
+    rank = {k: i for i, k in enumerate(priority)}
+    problems: list[str] = []
+    files: dict[int, tuple] = {}
+    todo = []
     for year in SC_YEARS:
         path = config.HISTORY_DIR / f"track_{year}.json"
         data = read_json(path, {"year": year, "races": []}) or {"year": year, "races": []}
+        files[year] = (path, data)
+        if data.get("complete"):
+            continue                                   # every race of that season is saved
         # rounds already saved, or tried three times without success
         have = {r["round"] for r in data["races"] if not r.get("missing") or r.get("tries", 0) >= 3}
         try:
@@ -109,48 +116,58 @@ def fetch_track_history(deadline: float, max_races: int | None = None) -> list[s
         except Exception as e:
             problems.append(f"Track history {year}: {e}")
             continue
-        changed = False
-        for _, ev in sched.iterrows():
-            rnd = int(ev["RoundNumber"])
-            if rnd in have:
-                continue
-            if time.monotonic() > deadline or attempted >= max_races or empty_in_row >= 2:
-                if changed:
-                    write_json(path, data)
-                return problems
-            attempted += 1
-            try:
-                s = fastf1.get_session(year, rnd, "Race")
-                with_laps = year in STRATEGY_YEARS
-                s.load(laps=with_laps, telemetry=False, weather=False, messages=True)
-                race = {"round": rnd, "location": str(ev["Location"]), "country": str(ev["Country"]),
-                        "key": norm_location(str(ev["Location"])), "name": str(ev["EventName"]),
-                        "flags": flags_from_messages(s.race_control_messages)}
-                if with_laps:
-                    race["total_laps"] = int(s.total_laps) if getattr(s, "total_laps", None) else None
-                    race["stints"], race["pit_loss"] = strategies_from_laps(s.laps)
-                data["races"] = [r for r in data["races"] if r["round"] != rnd] + [race]
-                changed = True
-                empty_in_row = 0
-            except Exception as e:
-                log.warning("Track history %s round %s: %s", year, rnd, e)
-                if type(e).__name__ == "RateLimitExceededError" or "calls/h" in str(e):
-                    if changed:
-                        write_json(path, data)
-                    return problems                  # not this race's fault: no try counted
-                empty_in_row += 1
-                if empty_in_row >= 2:
-                    continue                         # probably no access right now: no try counted
-                prev = next((r for r in data["races"] if r["round"] == rnd), None)
-                if prev:
-                    prev["tries"] = prev.get("tries", 1) + 1
-                else:
-                    data["races"].append({"round": rnd, "location": str(ev["Location"]), "key": norm_location(str(ev["Location"])),
-                                          "name": str(ev["EventName"]), "missing": True, "tries": 1})
-                changed = True
-        if changed:
+        missing = [ev for _, ev in sched.iterrows() if int(ev["RoundNumber"]) > 0 and int(ev["RoundNumber"]) not in have]
+        if not missing:
+            data["complete"] = True
             write_json(path, data)
-    return problems
+        for ev in missing:
+            key = norm_location(str(ev["Location"]))
+            todo.append((rank.get(key, len(rank)), -year, int(ev["RoundNumber"]), year, ev, key))
+    todo.sort(key=lambda t: t[:3])
+
+    changed: set[int] = set()
+    attempted = loaded = empty_in_row = 0
+
+    def save():
+        for y in changed:
+            write_json(files[y][0], files[y][1])
+
+    for _, _, rnd, year, ev, key in todo:
+        if time.monotonic() > deadline or attempted >= max_races or empty_in_row >= 2:
+            break
+        attempted += 1
+        data = files[year][1]
+        try:
+            s = fastf1.get_session(year, rnd, "Race")
+            with_laps = year in STRATEGY_YEARS
+            s.load(laps=with_laps, telemetry=False, weather=False, messages=True)
+            race = {"round": rnd, "location": str(ev["Location"]), "country": str(ev["Country"]),
+                    "key": key, "name": str(ev["EventName"]),
+                    "flags": flags_from_messages(s.race_control_messages)}
+            if with_laps:
+                race["total_laps"] = int(s.total_laps) if getattr(s, "total_laps", None) else None
+                race["stints"], race["pit_loss"] = strategies_from_laps(s.laps)
+            data["races"] = [r for r in data["races"] if r["round"] != rnd] + [race]
+            changed.add(year)
+            loaded += 1
+            empty_in_row = 0
+        except Exception as e:
+            log.warning("Track history %s round %s: %s", year, rnd, e)
+            if type(e).__name__ == "RateLimitExceededError" or "calls/h" in str(e):
+                attempted -= 1
+                break                                  # not this race's fault: no try counted
+            empty_in_row += 1
+            if empty_in_row >= 2:
+                continue                               # probably no access right now: no try counted
+            prev = next((r for r in data["races"] if r["round"] == rnd), None)
+            if prev:
+                prev["tries"] = prev.get("tries", 1) + 1
+            else:
+                data["races"].append({"round": rnd, "location": str(ev["Location"]), "key": key,
+                                      "name": str(ev["EventName"]), "missing": True, "tries": 1})
+            changed.add(year)
+    save()
+    return {"problems": problems, "loaded": loaded, "remaining": max(0, len(todo) - loaded)}
 
 
 def load_track_history(history_dir=None) -> list[dict]:
