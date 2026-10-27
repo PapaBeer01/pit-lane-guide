@@ -346,6 +346,7 @@ details.explain .body { padding: 0 16px 18px 64px; display: grid; gap: 10px; col
 .skeleton-page { display: grid; gap: 16px; }
 .offline-bar { position: sticky; top: 0; z-index: 50; display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: var(--surface-3); color: var(--ink); font-size: 0.875rem; border-bottom: 1px solid var(--amber); }
 .offline-bar .ic { color: var(--amber); }
+.offline-bar[hidden] { display: none; }            /* the flex rule above would otherwise override [hidden] */
 
 /* avatars and badges (drawn in the browser, nothing to download) */
 .helmet { display: inline-flex; filter: drop-shadow(0 3px 6px rgba(0,0,0,.45)); }
