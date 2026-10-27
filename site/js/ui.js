@@ -117,12 +117,15 @@ export function localTime(iso, opts = {}) {
 export function localDate(iso) {
   return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(new Date(iso));
 }
-// The phone's time zone by name, e.g. "WAT" or "West Africa Time, GMT+1" (many phones only give "GMT+1")
+// The viewer's time zone by name and offset, e.g. "WAT, GMT+1" or "West Africa Time, GMT+1",
+// so visitors anywhere can see which zone the times are in.
 export function tzName() {
   try {
     const part = (style) => new Intl.DateTimeFormat(undefined, { timeZoneName: style }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value;
-    const short = part("short"), long = part("long");
-    return short && /^(GMT|UTC)/.test(short) && long && !/^(GMT|UTC)/.test(long) ? `${long}, ${short}` : short || tz;
+    const isOffset = (v) => !v || /^(GMT|UTC)([+-]|$)/.test(v);
+    const offset = part("shortOffset") || part("short");
+    const name = !isOffset(part("short")) ? part("short") : !isOffset(part("long")) ? part("long") : null;
+    return name && offset && name !== offset ? `${name}, ${offset}` : offset || name || tz;
   } catch { return tz; }
 }
 export function countdown(iso, now = Date.now()) {
