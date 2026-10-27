@@ -103,6 +103,8 @@ def fake_env(tmp_path, monkeypatch):
     monkeypatch.setattr(fastf1, "get_session", lambda y, r, name: FakeSession(name, rng))
     monkeypatch.setattr(fastf1.Cache, "enable_cache", lambda *a, **k: None)
     monkeypatch.setattr(pipeline.history, "fetch_history", lambda *a, **k: [])
+    import pipeline.update
+    monkeypatch.setattr(pipeline.update, "sign_in", lambda: (True, ""))
 
     class NoErgast:
         def __init__(self, *a, **k):
@@ -161,3 +163,21 @@ def test_bad_session_is_not_published(fake_env, monkeypatch):
     assert any("P1" in p for p in problems)
     assert not (config.DATA_DIR / "events" / "1" / "R.json").exists()
     assert (config.DATA_DIR / "events" / "1" / "Q.json").exists()
+
+
+def test_sign_in_explains_missing_secrets(monkeypatch):
+    from pipeline.update import sign_in
+    monkeypatch.delenv("F1_USERNAME", raising=False)
+    monkeypatch.delenv("F1_PASSWORD", raising=False)
+    ok, msg = sign_in()
+    assert not ok and "F1_USERNAME" in msg
+
+
+def test_missing_f1_login_stops_cleanly(fake_env, monkeypatch):
+    import pipeline.update
+    from pipeline.update import run
+    monkeypatch.setattr(pipeline.update, "sign_in", lambda: (False, "F1 TV sign-in not set up"))
+    problems = run(now=datetime(2026, 3, 8, 12, 0, tzinfo=timezone.utc), year=2026)
+    assert problems == ["F1 TV sign-in not set up"]
+    assert not (config.DATA_DIR / "events").exists()
+    assert not (config.DATA_DIR / "predictions").exists()          # no empty placeholder predictions

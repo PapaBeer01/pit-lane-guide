@@ -148,6 +148,13 @@ def run_model(now: datetime | None = None) -> list[str]:
     index, scores = [], []
     next_ev = next((e for e in data.events if not all(s.get("done") for s in e["sessions"])), None)
 
+    # no drivers or results yet (first run, or data not downloadable): never publish empty predictions
+    has_data = bool(data.entry_list()) and any(data.done_keys(e) for e in data.events)
+    if not has_data:
+        import shutil
+        shutil.rmtree(out_dir, ignore_errors=True)
+        return problems          # nothing to predict yet; not an error
+
     for ev in data.events:
         targets = [s["key"] for s in ev["sessions"] if s["key"] in config.PREDICTION_TARGETS]
         done = set(data.done_keys(ev))

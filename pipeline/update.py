@@ -144,6 +144,21 @@ def export_session(year: int, ev: dict, sess: dict, expected: int | None, now: d
     return payload, []
 
 
+def sign_in() -> tuple[bool, str]:
+    """Sign in to F1 TV with the F1_USERNAME / F1_PASSWORD secrets (FastF1 keeps the token for this run)."""
+    import os
+    if not os.environ.get("F1_USERNAME") or not os.environ.get("F1_PASSWORD"):
+        return False, ("F1 TV sign-in not set up: add the F1_USERNAME and F1_PASSWORD secrets to the repository "
+                       "(Settings > Secrets and variables > Actions). F1's timing data needs an F1 TV subscription.")
+    try:
+        from fastf1.internals.f1account import get_token, set_auth_method
+        set_auth_method("password")
+        get_token()
+        return True, ""
+    except Exception as e:  # wrong password, no subscription, F1 sign-in page changed
+        return False, f"F1 TV sign-in failed ({type(e).__name__}: {e}). Check the F1_USERNAME / F1_PASSWORD secrets and the subscription."
+
+
 def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     import fastf1
 
@@ -177,12 +192,23 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     drivers = {d["code"]: d for d in season.get("drivers", [])}
     expected = len(drivers) or None
 
+    # Since October 2026, F1's timing archive needs an F1 TV sign-in. Sign in only when there is
+    # something new to download, and stop early with a clear message if it fails.
+    due = [(ev, s) for ev in events for s in ev["sessions"]
+           if session_due(s, now) and needs_refresh(read_json(config.DATA_DIR / "events" / str(ev["round"]) / f"{s['key']}.json"), s, now)]
+    signed_in = True
+    if due:
+        ok, msg = sign_in()
+        if not ok:
+            signed_in = False
+            problems.append(msg)
+
     for ev in events:
         ev_dir = config.DATA_DIR / "events" / str(ev["round"])
         for sess in ev["sessions"]:
             path = ev_dir / f"{sess['key']}.json"
             existing = read_json(path)
-            if not session_due(sess, now) or not needs_refresh(existing, sess, now):
+            if not signed_in or not session_due(sess, now) or not needs_refresh(existing, sess, now):
                 sess["done"] = existing is not None
                 continue
             if time.monotonic() - started > config.MAX_RUN_MINUTES * 60:
@@ -237,7 +263,8 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
         log.warning("History unavailable: %s", e)
     try:
         from .track_history import fetch_track_history
-        fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60)
+        if signed_in:
+            fetch_track_history(deadline=started + config.MAX_RUN_MINUTES * 60)
     except Exception as e:
         log.warning("Track history unavailable: %s", e)
 

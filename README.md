@@ -27,10 +27,11 @@ Every 20 min on race weekends (every 6 h otherwise), GitHub Actions:
 3. **Add these files** to the repository. The easiest options:
    - Ask Claude to push them for you (give it the repository name), or
    - Use **Add file → Upload files** and drag in everything from this folder, including the hidden `.github` folder. If your computer hides it, create it on GitHub instead: **Add file → Create new file**, type `.github/workflows/site.yml` as the name, and paste in the contents of that file.
-4. **Turn on GitHub Pages**: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-5. **Run the first update**: open the **Actions** tab, enable workflows if asked, choose **Update data and publish site**, then click **Run workflow**.
+4. **Add your F1 TV sign-in as secrets.** Since October 2026, F1's timing data needs an F1 TV subscription (Access or higher). In the repository go to **Settings → Secrets and variables → Actions → New repository secret** and add two secrets: `F1_USERNAME` (your F1 account email) and `F1_PASSWORD`. Secrets are encrypted and hidden from everyone, including people who can see the repository. The bot only signs in on runs that have new sessions to download.
+5. **Turn on GitHub Pages**: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+6. **Run the first update**: open the **Actions** tab, enable workflows if asked, choose **Update data and publish site**, then click **Run workflow**.
    The first run downloads the season so far. Each run stops starting new downloads after 35 minutes, so it can take two or three runs (they happen automatically every 20 minutes over a race weekend, or click **Run workflow** again).
-6. **Visit your site** at `https://<your-username>.github.io/<repository-name>/`.
+7. **Visit your site** at `https://<your-username>.github.io/<repository-name>/`.
 
 From then on it updates itself. A free address like this costs nothing; you can add your own domain later in **Settings → Pages** (about $10–15 a year) if you want one.
 

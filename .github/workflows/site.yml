@@ -39,6 +39,10 @@ jobs:
         if: github.event_name != 'push'
         env:
           F1_SEASON: "2026"           # change once a year when a new season starts
+          # F1 TV sign-in (needed for F1's timing data since Oct 2026), stored as encrypted repository secrets
+          F1_USERNAME: ${{ secrets.F1_USERNAME }}
+          F1_PASSWORD: ${{ secrets.F1_PASSWORD }}
+          FASTF1_AUTH_METHOD: password
         run: |
           python -m pipeline.update
           if [ -f pipeline_problems.txt ]; then
