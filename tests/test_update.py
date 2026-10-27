@@ -290,8 +290,11 @@ def test_check_access_reports_refusal(monkeypatch):
     monkeypatch.setattr(fastf1, "get_session", lambda *a: S())
     monkeypatch.setattr(Cache, "requests_get", classmethod(lambda cls, url, **k: seen.append(url) or Resp()))
     ok, msg = check_access(2026, {"round": 1}, {"key": "R", "ff_name": "Race"})
-    assert not ok and "HTTP 401" in msg and "round 1 R" in msg
-    assert seen == ["https://livetiming.formula1.com/static/2026/2026-03-08_Test_Grand_Prix/2026-03-08_Race/SessionInfo.jsonStream"]
+    assert not ok and "HTTP 401" in msg and "round 1 R" in msg and "subscription" in msg
+    Resp.status_code = 403
+    ok, msg = check_access(2026, {"round": 1}, {"key": "R", "ff_name": "Race"})
+    assert not ok and "blocked" in msg and "subscription" not in msg
+    assert seen[0] == "https://livetiming.formula1.com/static/2026/2026-03-08_Test_Grand_Prix/2026-03-08_Race/SessionInfo.jsonStream"
     Resp.status_code = 200
     assert check_access(2026, {"round": 1}, {"key": "R", "ff_name": "Race"}) == (True, "")
 

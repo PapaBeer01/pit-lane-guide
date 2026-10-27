@@ -192,10 +192,14 @@ def check_access(year: int, ev: dict, sess: dict) -> tuple[bool, str]:
     url = _api.base_url + s.api_path + _api.pages["session_info"]
     r = Cache.requests_get(url)
     log.info("Access check: HTTP %s for round %s %s; %s", r.status_code, ev["round"], sess["key"], _subscription_summary())
-    if r.status_code in (401, 403):
-        return False, (f"Signed in to F1 TV, but F1 refused the timing data (HTTP {r.status_code}) for round "
-                       f"{ev['round']} {sess['key']}. Nothing was loaded this run. Likely cause: the subscription "
-                       f"doesn't include the timing archive. Details: {_subscription_summary()}")
+    if r.status_code == 403:
+        return False, (f"F1's servers blocked this request (HTTP 403, before checking the sign-in) for round "
+                       f"{ev['round']} {sess['key']}. Nothing was loaded this run. F1 appears to block GitHub's "
+                       f"own servers (FastF1 issue #988), so the update needs another network route.")
+    if r.status_code == 401:
+        return False, (f"Signed in to F1 TV, but F1 refused the timing data (HTTP 401) for round "
+                       f"{ev['round']} {sess['key']}. Nothing was loaded this run. The token was rejected: check the "
+                       f"subscription. Details: {_subscription_summary()}")
     if r.status_code >= 400:
         log.warning("Access check inconclusive (HTTP %s); loading sessions anyway", r.status_code)
     return True, ""

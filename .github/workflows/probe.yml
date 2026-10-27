@@ -1,0 +1,78 @@
+name: Test data routes
+
+# One-off check of which data sources work from GitHub's servers: directly, and through
+# Cloudflare WARP (free). Results are saved to probe-results.md. Safe to delete later.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - pipeline/probe.py
+      - .github/workflows/probe.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      F1_USERNAME: ${{ secrets.F1_USERNAME }}
+      F1_PASSWORD: ${{ secrets.F1_PASSWORD }}
+      FASTF1_AUTH_METHOD: password
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Start a fresh results file
+        run: |
+          echo "# Data route test" > probe-results.md
+          echo "" >> probe-results.md
+
+      - name: Test directly from GitHub
+        run: python -m pipeline.probe direct
+
+      - name: Connect through Cloudflare WARP (free)
+        id: warp
+        continue-on-error: true
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          sudo apt-get update -q && sudo apt-get install -y -q cloudflare-warp
+          warp-cli --accept-tos registration new || warp-cli --accept-tos register
+          warp-cli --accept-tos connect
+          for i in $(seq 1 20); do
+            if curl -s --max-time 5 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on"; then echo "WARP is on"; exit 0; fi
+            sleep 2
+          done
+          echo "WARP did not connect"; warp-cli --accept-tos status; exit 1
+
+      - name: Test through WARP
+        if: steps.warp.outcome == 'success'
+        run: python -m pipeline.probe warp
+
+      - name: Note WARP failure
+        if: steps.warp.outcome != 'success'
+        run: printf '## Route: warp\n\nCloudflare WARP could not be started on the runner.\n\n' >> probe-results.md
+
+      - name: Save results
+        if: always()
+        run: |
+          warp-cli --accept-tos disconnect 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add probe-results.md
+          git commit -m "Data route test results" || exit 0
+          for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
