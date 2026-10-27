@@ -5,7 +5,7 @@
 - published=0
 - backlog=0
 - history_loaded=20
-- history_left=85
+- history_left=65
 - more=true
 
 ## Problems
