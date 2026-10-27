@@ -1,4 +1,5 @@
 import { avatar, helmet } from "../avatars.js";
+import { carSvg } from "../car.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
 import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
@@ -51,7 +52,7 @@ export default async function home() {
       h("div", { class: "hero-meta" },
         h("span", {}, icon("pin", { size: 18 }), `${ev.location}, ${ev.country}`),
         first ? h("span", {}, icon("timer", { size: 18 }), `${SESSION_LABEL[first.key]} in`, liveCountdown(first.start)) : null)),
-    grid ? startLights(grid.el, grid.reveal) : null,
+    grid ? startLights(grid.el, grid.reveal, gridRows[0]?.code) : null,
     h("div", { class: "hero-body" },
       grid ? grid.el : null,
       racePred ? favourites(racePred, qualiDone ? null : qualiPred, raceKey) : null));
@@ -65,8 +66,9 @@ export default async function home() {
   return view;
 }
 
-// F1 start sequence: five red lights come on one by one, then go out and the grid rolls in.
-function startLights(gridEl, reveal) {
+// F1 start sequence: five red lights come on one by one while a car (in the pole favourite's
+// colours) revs on the line; the lights go out, it launches, and the grid rolls in.
+function startLights(gridEl, reveal, leader) {
   let seen = false;
   try { seen = sessionStorage.getItem("lights") === "1"; sessionStorage.setItem("lights", "1"); } catch { /* storage blocked: just play it */ }
   if (seen || reducedMotion()) { requestAnimationFrame(reveal); return null; }
@@ -78,8 +80,11 @@ function startLights(gridEl, reveal) {
     return h("span", { class: "light-col" }, a, b);
   });
   const caption = h("div", { class: "lights-caption", "aria-live": "polite" }, "");
+  const color = leader ? driver(leader).color : "var(--flag)";
+  const car = carSvg({ color, tyre: "var(--tyre-S)", width: 240, cls: "revving" });
+  const launch = h("div", { class: "launch", style: { "--car": color } }, h("span", { class: "smoke" }), car);
   const wrap = h("div", { class: "lights-wrap", role: "img", "aria-label": "Start lights", onclick: () => done() },
-    h("div", { class: "lights" }, cols), caption);
+    h("div", { class: "lights" }, cols), launch, caption);
   let finished = false;
   const timers = [];
   function done() {
@@ -88,9 +93,11 @@ function startLights(gridEl, reveal) {
     timers.forEach(clearTimeout);
     lamps.flat().forEach((l) => l.classList.remove("on"));
     caption.textContent = "Lights out and away we go";
+    car.classList.replace("revving", "go");
+    launch.classList.add("go");
     gridEl.classList.remove("waiting");
-    reveal();
-    setTimeout(() => wrap.classList.add("gone"), 1400);
+    setTimeout(reveal, 350);                     // the grid rolls in as the car clears the line
+    setTimeout(() => wrap.classList.add("gone"), 1700);
   }
   lamps.forEach((pair, i) => timers.push(setTimeout(() => pair.forEach((l) => l.classList.add("on")), 500 + i * 550)));
   timers.push(setTimeout(done, 500 + 5 * 550 + 400 + Math.random() * 700));

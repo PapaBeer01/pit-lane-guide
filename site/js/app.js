@@ -1,3 +1,4 @@
+import { brandCar, carSvg } from "./car.js";
 import { icon } from "./icons.js";
 import { clearSessionTeams, ctx, h, load, localTime } from "./ui.js";
 
@@ -30,6 +31,7 @@ function parse() {
 }
 
 function buildChrome() {
+  document.querySelector(".brand svg")?.replaceWith(brandCar());
   document.getElementById("nav").replaceChildren(...NAV.map(([r, label, ic]) =>
     h("a", { href: `#/${r}`, "data-route": r }, icon(ic, { size: 20 }), label)));
   const themeBtn = h("button", { class: "icon-btn", type: "button", "aria-label": "Switch light or dark mode" });
@@ -57,9 +59,10 @@ async function render() {
     if (a.dataset.route === navName) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   // show a skeleton if the page takes more than a moment (slow mobile data)
-  const slow = setTimeout(() => app.replaceChildren(h("div", { class: "skeleton-page", "aria-label": "Loading" },
-    h("div", { class: "skeleton", style: { height: "56px", width: "60%" } }),
-    h("div", { class: "skeleton" }), h("div", { class: "skeleton", style: { height: "140px" } }))), 180);
+  // on a slow connection, a car runs on the spot over a moving track until the page arrives
+  const slow = setTimeout(() => app.replaceChildren(h("div", { class: "pit-loader", role: "status" },
+    h("div", { class: "loader-road" }, carSvg({ color: "var(--flag)", tyre: "var(--tyre-S)", width: 180 })),
+    h("p", { class: "muted" }, "Loading…"))), 180);
   try {
     const mod = await loader();
     const view = await mod.default(route);
