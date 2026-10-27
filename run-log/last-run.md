@@ -4,7 +4,7 @@
 - Update step: success
 - published=0
 - backlog=0
-- history_loaded=5
+- history_loaded=0
 - history_left=0
 - more=false
 
