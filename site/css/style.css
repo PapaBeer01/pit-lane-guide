@@ -388,7 +388,7 @@ details.explain .body { padding: 0 16px 18px 64px; display: grid; gap: 10px; col
 .pop h3 { margin-bottom: 6px; color: var(--flag); }
 
 @media (prefers-reduced-motion: reduce) {
-  .car, .car .wheel, .launch .car, .launch.go::after, .launch .smoke, .loader-road::after, .brand-car { animation: none !important; }
+  .car, .car .wheel, .launch .car, .launch.go::after, .launch .smoke, .loader-road::after, .brand-car, .team-car { animation: none !important; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .grid-wrap.waiting .slot { opacity: 1; }
   .chart path.draw { stroke-dashoffset: 0; }
@@ -416,7 +416,13 @@ details.explain .body { padding: 0 16px 18px 64px; display: grid; gap: 10px; col
 .team-block { display: grid; gap: 12px; }
 .team-head { display: flex; align-items: center; gap: 10px; }
 .team-head h2 { font-size: 1.5rem; }
-.team-head::after { content: ""; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--tc), transparent); opacity: .6; }
+.team-head::after { content: ""; flex: 1; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--tc), transparent); opacity: .6; order: 1; }
+.team-car { order: 2; flex: none; width: clamp(84px, 26vw, 120px); height: auto; animation: team-drive .9s cubic-bezier(.2, .9, .25, 1.05) both; }
+.team-car { animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes team-drive { from { transform: translateX(-60px); opacity: 0; } to { transform: none; opacity: 1; } }
+.team-block:hover .team-car .wheel { animation: spin .3s linear infinite; }
+.team-cell { gap: 10px; }
+.table-car { flex: none; height: auto; }
 .driver-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .driver-card {
   position: relative; overflow: hidden; display: grid; gap: 12px; padding: 14px; border-radius: var(--r-md); text-decoration: none; color: inherit;

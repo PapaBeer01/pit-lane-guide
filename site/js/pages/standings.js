@@ -1,7 +1,8 @@
+import { carSvg } from "../car.js";
 import { legend, lineChart, driverSeries } from "../charts.js";
 import { avatar, teamBadge } from "../avatars.js";
 import { icon } from "../icons.js";
-import { animatedNumber, driver, driverTag, empty, h, load, pct, section, stintText, term } from "../ui.js";
+import { animatedNumber, driver, driverTag, empty, h, load, pct, section, stintText, teamColor, term } from "../ui.js";
 
 export const title = () => "Standings";
 
@@ -55,7 +56,7 @@ export default async function standings() {
       h("thead", {}, h("tr", {}, ["", "Team", "Points"].map((t, i) => h("th", { scope: "col", class: i > 1 ? "num" : "" }, t)))),
       h("tbody", {}, st.teams.map((t, i) => h("tr", {},
         h("td", { class: "pos" }, i + 1),
-        h("td", {}, h("span", { class: "driver" }, teamBadge(t.team, { size: 24 }), t.team)),
+        h("td", {}, h("span", { class: "driver team-cell" }, carSvg({ color: teamColor(t.team), width: 64, cls: "table-car" }), t.team)),
         h("td", { class: "num", style: { fontWeight: 700 } }, t.points))))))));
 
   if (rel?.teams?.length) {
