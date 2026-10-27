@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T08:26:06Z",
+ "updated": "2026-10-27T10:47:17Z",
  "events": [
   {
    "round": 1,
@@ -1004,7 +1004,8 @@
    "as_of": "2026-09-04T10:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "COL",
@@ -1039,7 +1040,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Alpine",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "GAS",
@@ -1074,7 +1082,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Alpine",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "ALO",
@@ -1109,7 +1124,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Aston Martin",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "CRA",
@@ -1123,7 +1145,8 @@
    "as_of": "2026-07-17T11:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "STR",
@@ -1158,7 +1181,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Aston Martin",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "BOR",
@@ -1193,7 +1223,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Audi",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "HUL",
@@ -1228,7 +1265,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Audi",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "BOT",
@@ -1263,7 +1307,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Cadillac",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "HER",
@@ -1277,7 +1328,8 @@
    "as_of": "2026-10-23T17:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "PER",
@@ -1312,7 +1364,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Cadillac",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "BEG",
@@ -1326,7 +1385,8 @@
    "as_of": "2026-06-26T11:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "HAM",
@@ -1361,7 +1421,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Ferrari",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "LEC",
@@ -1396,7 +1463,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Ferrari",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "BEA",
@@ -1431,7 +1505,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Haas F1 Team",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "HIR",
@@ -1445,7 +1526,8 @@
    "as_of": "2026-07-24T11:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "OCO",
@@ -1480,7 +1562,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Haas F1 Team",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "FOR",
@@ -1494,7 +1583,8 @@
    "as_of": "2026-07-24T11:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "NOR",
@@ -1529,7 +1619,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "McLaren",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "PIA",
@@ -1564,7 +1661,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "McLaren",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "ANT",
@@ -1599,7 +1703,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Mercedes",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "RUS",
@@ -1634,7 +1745,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Mercedes",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "VES",
@@ -1648,7 +1766,8 @@
    "as_of": "2026-07-24T11:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "LAW",
@@ -1684,7 +1803,24 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Racing Bulls",
+     "from": 1,
+     "to": 11
+    },
+    {
+     "team": "Red Bull Racing",
+     "from": 12,
+     "to": 14
+    },
+    {
+     "team": "Racing Bulls",
+     "from": 15,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "LIN",
@@ -1719,7 +1855,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Racing Bulls",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "TSU",
@@ -1739,7 +1882,14 @@
     13,
     14
    ],
-   "current": false
+   "current": false,
+   "stints": [
+    {
+     "team": "Racing Bulls",
+     "from": 12,
+     "to": 14
+    }
+   ]
   },
   {
    "code": "HAD",
@@ -1771,7 +1921,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Red Bull Racing",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "IWA",
@@ -1785,7 +1942,8 @@
    "as_of": "2026-09-04T10:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "VER",
@@ -1820,7 +1978,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Red Bull Racing",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "ALB",
@@ -1855,7 +2020,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Williams",
+     "from": 1,
+     "to": 18
+    }
+   ]
   },
   {
    "code": "BRO",
@@ -1869,7 +2041,8 @@
    "as_of": "2026-09-04T10:30:00Z",
    "teams": [],
    "race_rounds": [],
-   "current": false
+   "current": false,
+   "stints": []
   },
   {
    "code": "SAI",
@@ -1904,7 +2077,14 @@
     17,
     18
    ],
-   "current": true
+   "current": true,
+   "stints": [
+    {
+     "team": "Williams",
+     "from": 1,
+     "to": 18
+    }
+   ]
   }
  ]
 }

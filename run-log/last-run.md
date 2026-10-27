@@ -2,9 +2,11 @@
 
 - WARP: success
 - Update step: success
-- published=15
+- published=0
 - backlog=0
-- more=false
+- history_loaded=20
+- history_left=145
+- more=true
 
 ## Problems
 
