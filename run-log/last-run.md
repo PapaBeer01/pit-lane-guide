@@ -4,9 +4,9 @@
 - Update step: success
 - published=0
 - backlog=0
-- history_loaded=20
-- history_left=5
-- more=true
+- history_loaded=5
+- history_left=0
+- more=false
 
 ## Problems
 
