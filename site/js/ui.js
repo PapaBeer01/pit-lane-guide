@@ -117,9 +117,12 @@ export function localTime(iso, opts = {}) {
 export function localDate(iso) {
   return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(new Date(iso));
 }
+// The phone's time zone by name, e.g. "WAT" or "West Africa Time, GMT+1" (many phones only give "GMT+1")
 export function tzName() {
   try {
-    return new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value || tz;
+    const part = (style) => new Intl.DateTimeFormat(undefined, { timeZoneName: style }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value;
+    const short = part("short"), long = part("long");
+    return short && /^(GMT|UTC)/.test(short) && long && !/^(GMT|UTC)/.test(long) ? `${long}, ${short}` : short || tz;
   } catch { return tz; }
 }
 export function countdown(iso, now = Date.now()) {
