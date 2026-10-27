@@ -31,7 +31,11 @@ export default async function home() {
     gridRows = qualiDone.results.filter((r) => r.pos).map((r) => ({ code: r.code, sub: driver(r.code).team }));
     gridKind = "actual";
   } else if (qualiPred) {
-    gridRows = qualiPred.drivers.map((d) => ({ code: d.code, sub: `${pct(d.p_pole)} pole`, risk: (trouble[d.code] || 0) >= troubleLine }));
+    // ordered by pole chance; where that's level (most of the field is ~0%), by top-3 chance,
+    // then top-10 chance, then average predicted position
+    const byChance = [...qualiPred.drivers].sort((x, y) =>
+      (y.p_pole - x.p_pole) || (y.p_top3 - x.p_top3) || (y.p_top10 - x.p_top10) || ((x.avg ?? 99) - (y.avg ?? 99)));
+    gridRows = byChance.map((d) => ({ code: d.code, sub: `${pct(d.p_pole)} pole`, risk: (trouble[d.code] || 0) >= troubleLine }));
     gridKind = "predicted";
   }
 
@@ -115,12 +119,12 @@ function startingGrid(rows, kind, raceKey) {
   wrap.append(
     h("div", { class: "grid-title" },
       h("h2", {}, kind === "actual" ? `Starting grid for the ${label}` : `Predicted grid for the ${label}`),
-      h("span", {}, kind === "actual" ? "From qualifying" : "From our qualifying prediction")),
+      h("span", {}, kind === "actual" ? "From qualifying" : "Ordered by each driver's chance of pole")),
     h("div", { class: "startline", "aria-hidden": "true" }),
     slots, btn,
     h("p", { class: "grid-note" }, kind === "actual"
       ? "Late grid penalties can still move drivers back before the start."
-      : "Cars line up two by two in qualifying order. A spanner marks a driver with recent qualifying trouble."));
+      : "Ordered by pole chance; where that's level, by chance of a top-3 or top-10 qualifying. A spanner marks a driver with recent qualifying trouble."));
   fill();
   return { el: wrap, reveal: () => wrap.classList.add("reveal") };
 }
