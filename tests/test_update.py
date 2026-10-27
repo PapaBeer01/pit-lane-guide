@@ -396,3 +396,29 @@ def test_injury_swap_and_friday_reserve(fake_env, monkeypatch):
     assert summary["D04"]["quali_vs_mate"] == [0, 2]      # behind D03 in r1 and D05 in r2
     assert summary["D04"]["mate"] == "D05"
     assert summary["RSV"]["mate"] == "D06"
+
+
+def test_next_race_is_by_calendar_while_old_rounds_load(fake_env, monkeypatch):
+    """27 Oct: round 1 still loading made the site and model treat Melbourne as the next race."""
+    import fastf1
+    from pipeline.update import run
+    _many_rounds(monkeypatch, 3)
+    now = datetime(2026, 3, 16, 12, 0, tzinfo=timezone.utc)          # rounds 1-2 over, round 3 next
+
+    def get_session(y, rnd, name):                                     # round 1 isn't available yet
+        return EmptySession(name, np.random.default_rng(1)) if rnd == 1 else FakeSession(name, np.random.default_rng(rnd))
+    monkeypatch.setattr(fastf1, "get_session", get_session)
+    monkeypatch.setattr(config, "STOP_AFTER_FAILURES", 99)
+    monkeypatch.setattr(config, "MAX_SESSIONS_PER_RUN", 200)
+    run(now=now, year=2026)
+    assert (config.DATA_DIR / "predictions" / "3" / "Q.json").exists()              # the real next race
+    assert not read_json(config.DATA_DIR / "predictions" / "3" / "Q.json")["frozen"]
+    assert read_json(config.DATA_DIR / "standings.json")["races_left"] == 1
+    early = read_json(config.DATA_DIR / "predictions" / "2" / "Q.json")
+    assert early["backfilled"] and early["inputs"] == 3              # only round 2's own practice so far
+
+    # round 1 arrives later: round 2's backtest is re-made with it; the live round-3 prediction is
+    # re-made too (not started yet), and frozen live predictions would never change
+    monkeypatch.setattr(fastf1, "get_session", lambda y, r, name: FakeSession(name, np.random.default_rng(r)))
+    run(now=now, year=2026)
+    assert read_json(config.DATA_DIR / "predictions" / "2" / "Q.json")["inputs"] == 3 + 5   # plus round 1's five

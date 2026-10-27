@@ -85,9 +85,15 @@ export const SESSION_LABEL = { FP1: "Practice 1", FP2: "Practice 2", FP3: "Pract
 export const SESSION_SHORT = { FP1: "FP1", FP2: "FP2", FP3: "FP3", SQ: "Sprint Quali", S: "Sprint", Q: "Quali", R: "Race" };
 
 export function eventDone(ev) { return ev.sessions.every((s) => s.done); }
-export function nextEvent() {
+// The weekend happening now or next, by the calendar: a weekend counts as over 3 hours after its
+// last session starts. (Not "first weekend with missing data": an old round still loading isn't next.)
+export function nextEvent(now = Date.now()) {
   const evs = ctx.season?.events || [];
-  return evs.find((e) => !eventDone(e)) || evs[evs.length - 1];
+  const over = (e) => {
+    const starts = e.sessions.map((s) => Date.parse(s.start)).filter((t) => !Number.isNaN(t));
+    return starts.length && now > Math.max(...starts) + 3 * 3600e3;
+  };
+  return evs.find((e) => !over(e)) || evs[evs.length - 1];
 }
 export function lastCompleted() {
   return [...(ctx.season?.events || [])].reverse().find((e) => e.sessions.some((s) => s.done && (s.key === "R")));

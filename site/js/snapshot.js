@@ -112,7 +112,7 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
   const noteLines = blocks.map((b) => (b.note ? wrapText(measure, b.note, inner) : []));
 
   let H = PAD + 46 + subLines.length * 21 + (headLines.length ? 10 + headLines.length * 24 : 0) + (legend.length ? 30 : 0) + 8;
-  rendered.forEach((r, i) => { H += 18 + 26 + noteLines[i].length * 20 + 8 + r.h; });
+  rendered.forEach((r, i) => { H += (blocks[i].label ? 18 + 26 : 6) + noteLines[i].length * 20 + 8 + r.h; });
   H += 24 + 52 + PAD;
 
   const canvas = document.createElement("canvas");
@@ -128,7 +128,13 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
   let y = PAD;
   ctx.textBaseline = "alphabetic";
   // title, each part in its own colour (driver codes in team colours)
-  ctx.font = font(800, 44, "Big Shoulders Display");
+  let titleSize = 44;                                   // shrink a long title to fit on one line
+  ctx.font = font(800, titleSize, "Big Shoulders Display");
+  const titleW = title.reduce((w, p) => w + ctx.measureText(p.text).width, 0);
+  if (titleW > CARD_W - PAD * 2) {
+    titleSize = Math.max(26, Math.floor(titleSize * (CARD_W - PAD * 2) / titleW));
+    ctx.font = font(800, titleSize, "Big Shoulders Display");
+  }
   let x = PAD;
   y += 40;
   for (const part of title) {
@@ -165,10 +171,12 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
 
   rendered.forEach((r, i) => {
     const b = blocks[i];
-    y += 18 + 26;
-    ctx.font = font(800, 24, "Big Shoulders Display");
-    ctx.fillStyle = tok("--ink");
-    ctx.fillText(b.label, PAD, y);
+    if (b.label) {
+      y += 18 + 26;
+      ctx.font = font(800, 24, "Big Shoulders Display");
+      ctx.fillStyle = tok("--ink");
+      ctx.fillText(b.label, PAD, y);
+    } else y += 6;
     ctx.font = font(400, 14, "Atkinson Hyperlegible");
     ctx.fillStyle = tok("--muted");
     for (const l of noteLines[i]) { y += 20; ctx.fillText(l, PAD, y); }

@@ -30,7 +30,7 @@ def _start(ev, key):
     return datetime.fromisoformat(s["start"].replace("Z", "+00:00"))
 
 
-def build_standings(data: SeasonData) -> dict:
+def build_standings(data: SeasonData, now: datetime | None = None) -> dict:
     drivers, teams, rounds = {}, {}, []
     for ev in data.events:
         keys = [k for k in data.done_keys(ev) if k in config.RACE_SESSIONS]
@@ -68,7 +68,8 @@ def build_standings(data: SeasonData) -> dict:
 
     d_rows = sorted((progress(d) for d in drivers.values()), key=lambda d: (-d["points"], -d["wins"]))
     t_rows = sorted((progress(t) for t in teams.values()), key=lambda t: -t["points"])
-    remaining = [e for e in data.events if not all(s.get("done") for s in e["sessions"])]
+    nxt = config.next_event(data.events, now or datetime.now(timezone.utc))
+    remaining = [e for e in data.events if nxt and e["round"] >= nxt["round"]]
     max_left = sum(25 + (8 if e["format"] == "sprint" else 0) for e in remaining)
     leader = d_rows[0]["points"] if d_rows else 0
     for d in d_rows:
@@ -144,6 +145,12 @@ def build_summary(data: SeasonData) -> dict:
     return {"events": events, "drivers": list(drivers.values())}
 
 
+def _inputs(data: SeasonData, ev: dict, target: str) -> int:
+    """How many sessions a prediction for `target` could draw on (changes while old rounds load)."""
+    past, weekend = data.before(ev, target)
+    return len(past) + len(weekend)
+
+
 def run_model(now: datetime | None = None) -> list[str]:
     now = now or datetime.now(timezone.utc)
     data = SeasonData()
@@ -155,7 +162,7 @@ def run_model(now: datetime | None = None) -> list[str]:
     problems: list[str] = []
     out_dir = config.DATA_DIR / "predictions"
     index, scores = [], []
-    next_ev = next((e for e in data.events if not all(s.get("done") for s in e["sessions"])), None)
+    next_ev = config.next_event(data.events, now)
 
     # no drivers or results yet (first run, or data not downloadable): never publish empty predictions
     has_data = bool(data.entry_list()) and any(data.done_keys(e) for e in data.events)
@@ -178,10 +185,11 @@ def run_model(now: datetime | None = None) -> list[str]:
                     if existing and not existing.get("frozen"):
                         existing["frozen"] = True
                         write_json(path, existing)
-                    elif not existing:
-                        # first time we see this session: a backtest, made with data from before it
+                    elif not existing or (existing.get("backfilled") and existing.get("inputs") != _inputs(data, ev, target)):
+                        # a backtest, made only with data from before this session. Re-made while the
+                        # season's older sessions are still loading; real (live) predictions are never changed.
                         pred = predict(data, ev, target, rain_prob=None, now=now, history=history, track_history=track_history)
-                        pred.update({"frozen": True, "backfilled": True})
+                        pred.update({"frozen": True, "backfilled": True, "inputs": _inputs(data, ev, target)})
                         write_json(path, pred)
                 elif next_ev and ev["round"] == next_ev["round"]:
                     fc = data.forecast(ev["round"]) or {}
@@ -225,7 +233,7 @@ def run_model(now: datetime | None = None) -> list[str]:
                     "race": agg([s for s in scores if s["kind"] == "race"])},
         "sessions": scores,
     })
-    write_json(config.DATA_DIR / "standings.json", {**build_standings(data), "sample": data.sample})
+    write_json(config.DATA_DIR / "standings.json", {**build_standings(data, now), "sample": data.sample})
 
     past = []
     for ev in data.events:

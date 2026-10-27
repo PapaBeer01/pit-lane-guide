@@ -357,7 +357,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
                 sess["tel"] = bool(saved.get("telemetry"))
 
     # Weather forecast for the next event
-    nxt = next((e for e in events if not all(s.get("done") for s in e["sessions"])), None)
+    nxt = config.next_event(events, now)
     fc_path = config.DATA_DIR / "events" / str(nxt["round"]) / "forecast.json" if nxt else None
     old_fc = read_json(fc_path) if fc_path else None
     fresh = old_fc and old_fc.get("fetched") and now - datetime.fromisoformat(old_fc["fetched"]).replace(tzinfo=timezone.utc) < timedelta(hours=6)

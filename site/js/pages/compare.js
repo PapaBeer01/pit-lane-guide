@@ -127,23 +127,32 @@ export default async function compare(route) {
     speed: { label: "Speed (km/h)", note: notes.speed, render: (w) => offscreen(w, () => lineChart(speedSeries, { ...speedOpts, still: true }).el) },
     gap: { label: "The gap, metre by metre (seconds)", note: notes.gap, render: (w) => offscreen(w, () => lineChart(gapSeries, { ...gapOpts, still: true }).el) },
     thr: { label: "Throttle", note: notes.thr, render: (w) => offscreen(w, () => lineChart(thrSeries, { ...thrOpts, still: true }).el) },
-    map: circuit ? { label: "Who was faster where", note: notes.map, center: true, render: (w) => offscreen(Math.min(w, 340), () => trackMap(circuit, { ...mapOpts, size: 340 }).el) } : null,
+    map: circuit ? { label: "Who was faster where", note: notes.map, center: true, render: (w, big) => offscreen(big ? w : Math.min(w, 340), () => trackMap(circuit, { ...mapOpts, size: big ? w : 340 }).el) } : null,
   };
   const overallText = headline.querySelector("p").textContent;
   const slug = (t) => t.toLowerCase().replace("grand prix", "gp").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const file = (what) => () => `${slug(`${ev.name} ${SESSION_LABEL[key]}`)}-${a}-vs-${b}${what ? `-${what}` : ""}.png`;
+  const legendItems = [{ color: colA, text: `${a} ${driver(a).last}` }, { color: colB, dash: dashB, text: `${b} ${driver(b).last}` }];
+  // the full picture: both drivers as the title, all four charts
   const picture = (parts) => () => makeImage({
     title: [{ text: a, color: colA }, { text: "  vs  " }, { text: b, color: colB }],
     subtitle: `${ev.name}, ${SESSION_LABEL[key]}: fastest laps compared`,
     headline: overallText,
-    legend: [{ color: colA, text: `${a} ${driver(a).last}` }, { color: colB, dash: dashB, text: `${b} ${driver(b).last}` }],
+    legend: legendItems,
     blocks: parts.map((k) => blocks[k]).filter(Boolean),
+  });
+  // one chart on its own: titled by that chart, nothing else in the picture
+  const single = (k) => () => makeImage({
+    title: [{ text: blocks[k].label }],
+    subtitle: `${a} vs ${b}, ${ev.name} ${SESSION_LABEL[key]}: fastest laps`,
+    legend: legendItems,
+    blocks: [{ ...blocks[k], label: null, render: (w) => blocks[k].render(w, true) }],
   });
   const all = ["speed", "gap", "thr", "map"];
   const saveRow = h("div", { class: "save-row" },
     imageButton({ label: "Download image", iconEl: icon("download", { size: 18 }), make: picture(all), filename: file("") }),
     canShareFiles() ? imageButton({ label: "Share image", iconEl: icon("share", { size: 18 }), make: picture(all), filename: file(""), mode: "share" }) : null);
-  const saveOne = (k, what) => imageButton({ label: `Download the ${what} chart as an image`, iconEl: icon("download", { size: 20 }), make: picture([k]), filename: file(k), compact: true });
+  const saveOne = (k, what) => imageButton({ label: `Download the ${what} chart as an image`, iconEl: icon("download", { size: 20 }), make: single(k), filename: file(k), compact: true });
   const withSave = (sec, k, what) => { sec.querySelector(".section-head h2").append(saveOne(k, what)); return sec; };
 
   view.append(h("div", { class: "section-head" }, h("h2", {}, icon("gauge", { size: 24 }), "Fastest laps compared"),
