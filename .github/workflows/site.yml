@@ -40,6 +40,7 @@ jobs:
       # with the F1 TV token, through Cloudflare WARP (free). Tested 27 Oct 2026: probe-results.md.
       # If WARP fails to start, the update still runs and reports the block in one clear message.
       - name: Connect through Cloudflare WARP
+        id: warp
         if: github.event_name != 'push'
         continue-on-error: true
         run: |
@@ -72,6 +73,24 @@ jobs:
             { echo "### Data problems"; echo; sed 's/^/- /' pipeline_problems.txt; } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      # A short report saved in the repo (run-log/last-run.md) so problems can be read without
+      # opening Actions. No times in it, so a quiet run doesn't create a commit.
+      - name: Write run report
+        if: always() && github.event_name != 'push'
+        run: |
+          mkdir -p run-log
+          {
+            echo "# Last update run with news"
+            echo
+            echo "- WARP: ${{ steps.warp.outcome }}"
+            echo "- Update step: ${{ steps.update.outcome }}"
+            sed 's/^/- /' pipeline_status.txt 2>/dev/null || echo "- no status written"
+            echo
+            echo "## Problems"
+            echo
+            if [ -f pipeline_problems.txt ]; then sed 's/^/- /' pipeline_problems.txt; else echo "None."; fi
+          } > run-log/last-run.md
+
       - name: Disconnect WARP
         if: always() && github.event_name != 'push'
         run: warp-cli --accept-tos disconnect 2>/dev/null || true
@@ -80,11 +99,11 @@ jobs:
         run: pytest -q
 
       - name: Save new data
-        if: github.event_name != 'push'
+        if: always() && github.event_name != 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          for d in site/data history archive; do [ -e "$d" ] && git add "$d"; done
+          for d in site/data history archive run-log; do [ -e "$d" ] && git add "$d"; done
           if git diff --cached --quiet; then
             echo "No new data."
           else
