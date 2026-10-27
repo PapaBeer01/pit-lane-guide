@@ -1,0 +1,61 @@
+name: Fetch FIA upgrade samples
+
+# One-off: download a few FIA "Car Presentation Submissions" PDFs (car upgrades per team) so the
+# parser can be built and tested against real files, and check the FIA site is reachable from
+# GitHub (directly, else through Cloudflare WARP). Safe to delete later.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fia-sample.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download directly
+        id: direct
+        continue-on-error: true
+        run: |
+          mkdir -p fia-samples
+          base="https://www.fia.com/system/files/decision-document"
+          ok=0
+          for ev in united_states singapore japanese miami; do
+            code=$(curl -sS -L -A "Mozilla/5.0" -o "fia-samples/2026_${ev}.pdf" -w "%{http_code}" "$base/2026_${ev}_grand_prix_-_car_presentation_submissions.pdf" || echo 000)
+            echo "$ev direct: HTTP $code" | tee -a fia-samples/fetch-log.txt
+            [ "$code" = "200" ] && ok=1 || rm -f "fia-samples/2026_${ev}.pdf"
+          done
+          [ $ok = 1 ]
+      - name: Connect through Cloudflare WARP
+        if: steps.direct.outcome != 'success'
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          sudo apt-get update -q && sudo apt-get install -y -q cloudflare-warp
+          warp-cli --accept-tos registration new || warp-cli --accept-tos register
+          warp-cli --accept-tos connect
+          for i in $(seq 1 20); do curl -s --max-time 5 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on" && break; sleep 2; done
+      - name: Download through WARP
+        if: steps.direct.outcome != 'success'
+        run: |
+          base="https://www.fia.com/system/files/decision-document"
+          for ev in united_states singapore japanese miami; do
+            code=$(curl -sS -L -A "Mozilla/5.0" -o "fia-samples/2026_${ev}.pdf" -w "%{http_code}" "$base/2026_${ev}_grand_prix_-_car_presentation_submissions.pdf" || echo 000)
+            echo "$ev via WARP: HTTP $code" | tee -a fia-samples/fetch-log.txt
+            [ "$code" = "200" ] || rm -f "fia-samples/2026_${ev}.pdf"
+          done
+          warp-cli --accept-tos disconnect || true
+      - name: Save
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add fia-samples
+          git commit -m "FIA upgrade samples" || exit 0
+          for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
