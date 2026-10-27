@@ -3,7 +3,7 @@
 - WARP: success
 - Update step: success
 - published=25
-- backlog=65
+- backlog=40
 - more=true
 
 ## Problems

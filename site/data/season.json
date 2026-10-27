@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T07:57:47Z",
+ "updated": "2026-10-27T08:07:50Z",
  "events": [
   {
    "round": 1,
@@ -57,27 +57,32 @@
     {
      "key": "FP1",
      "start": "2026-03-13T03:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "SQ",
      "start": "2026-03-13T07:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "S",
      "start": "2026-03-14T03:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-03-14T07:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-03-15T07:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -96,27 +101,32 @@
     {
      "key": "FP1",
      "start": "2026-03-27T02:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-03-27T06:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-03-28T02:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-03-28T06:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-03-29T05:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -135,27 +145,32 @@
     {
      "key": "FP1",
      "start": "2026-05-01T16:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "SQ",
      "start": "2026-05-01T20:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "S",
      "start": "2026-05-02T16:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-05-02T20:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-05-03T17:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -174,27 +189,32 @@
     {
      "key": "FP1",
      "start": "2026-05-22T16:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "SQ",
      "start": "2026-05-22T20:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "S",
      "start": "2026-05-23T16:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-05-23T20:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-05-24T20:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -213,27 +233,32 @@
     {
      "key": "FP1",
      "start": "2026-06-05T11:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-06-05T15:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-06-06T10:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-06-06T14:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-06-07T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": false
     }
    ]
   },
@@ -990,6 +1015,11 @@
     "Alpine"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1019,6 +1049,11 @@
     "Alpine"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1048,6 +1083,11 @@
     "Aston Martin"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1091,6 +1131,11 @@
     "Aston Martin"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1120,6 +1165,11 @@
     "Audi"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1149,6 +1199,11 @@
     "Audi"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1178,6 +1233,11 @@
     "Cadillac"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1221,6 +1281,11 @@
     "Cadillac"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1264,6 +1329,11 @@
     "Ferrari"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1293,6 +1363,11 @@
     "Ferrari"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1322,6 +1397,11 @@
     "Haas F1 Team"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1365,6 +1445,11 @@
     "Haas F1 Team"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1408,6 +1493,11 @@
     "McLaren"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1437,6 +1527,11 @@
     "McLaren"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1466,6 +1561,11 @@
     "Mercedes"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1495,6 +1595,11 @@
     "Mercedes"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1538,6 +1643,11 @@
     "Racing Bulls"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1567,6 +1677,11 @@
     "Racing Bulls"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1616,6 +1731,11 @@
     "Red Bull Racing"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1656,6 +1776,11 @@
     "Red Bull Racing"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1685,6 +1810,11 @@
     "Williams"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
@@ -1728,6 +1858,11 @@
     "Williams"
    ],
    "race_rounds": [
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
     8,
     9,
