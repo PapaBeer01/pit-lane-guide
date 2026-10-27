@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-10-27T04:53:57Z",
+ "updated": "2026-10-27T06:22:33Z",
  "events": [
   {
    "round": 1,
@@ -642,27 +642,32 @@
     {
      "key": "FP1",
      "start": "2026-10-09T08:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "SQ",
      "start": "2026-10-09T12:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "S",
      "start": "2026-10-10T09:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-10-10T13:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-10-11T12:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -681,27 +686,32 @@
     {
      "key": "FP1",
      "start": "2026-10-23T17:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP2",
      "start": "2026-10-23T21:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "FP3",
      "start": "2026-10-24T17:30:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "Q",
      "start": "2026-10-24T21:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
      "start": "2026-10-25T20:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     }
    ]
   },
@@ -901,5 +911,259 @@
    ]
   }
  ],
- "drivers": []
+ "drivers": [
+  {
+   "code": "GAS",
+   "num": "10",
+   "first": "Pierre",
+   "last": "Gasly",
+   "name": "Pierre Gasly",
+   "team": "Alpine",
+   "color": "#00A1E8",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "COL",
+   "num": "43",
+   "first": "Franco",
+   "last": "Colapinto",
+   "name": "Franco Colapinto",
+   "team": "Alpine",
+   "color": "#00A1E8",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "ALO",
+   "num": "14",
+   "first": "Fernando",
+   "last": "Alonso",
+   "name": "Fernando Alonso",
+   "team": "Aston Martin",
+   "color": "#229971",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "STR",
+   "num": "18",
+   "first": "Lance",
+   "last": "Stroll",
+   "name": "Lance Stroll",
+   "team": "Aston Martin",
+   "color": "#229971",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "BOR",
+   "num": "5",
+   "first": "Gabriel",
+   "last": "Bortoleto",
+   "name": "Gabriel Bortoleto",
+   "team": "Audi",
+   "color": "#F50537",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "HUL",
+   "num": "27",
+   "first": "Nico",
+   "last": "Hulkenberg",
+   "name": "Nico Hulkenberg",
+   "team": "Audi",
+   "color": "#F50537",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "PER",
+   "num": "11",
+   "first": "Sergio",
+   "last": "Perez",
+   "name": "Sergio Perez",
+   "team": "Cadillac",
+   "color": "#909090",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "BOT",
+   "num": "77",
+   "first": "Valtteri",
+   "last": "Bottas",
+   "name": "Valtteri Bottas",
+   "team": "Cadillac",
+   "color": "#909090",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "HER",
+   "num": "25",
+   "first": "Colton",
+   "last": "Herta",
+   "name": "Colton Herta",
+   "team": "Cadillac",
+   "color": "#909090",
+   "country": null,
+   "as_of": "2026-10-23T17:30:00Z"
+  },
+  {
+   "code": "LEC",
+   "num": "16",
+   "first": "Charles",
+   "last": "Leclerc",
+   "name": "Charles Leclerc",
+   "team": "Ferrari",
+   "color": "#ED1131",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "HAM",
+   "num": "44",
+   "first": "Lewis",
+   "last": "Hamilton",
+   "name": "Lewis Hamilton",
+   "team": "Ferrari",
+   "color": "#ED1131",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "BEA",
+   "num": "87",
+   "first": "Oliver",
+   "last": "Bearman",
+   "name": "Oliver Bearman",
+   "team": "Haas F1 Team",
+   "color": "#9C9FA2",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "OCO",
+   "num": "31",
+   "first": "Esteban",
+   "last": "Ocon",
+   "name": "Esteban Ocon",
+   "team": "Haas F1 Team",
+   "color": "#9C9FA2",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "NOR",
+   "num": "1",
+   "first": "Lando",
+   "last": "Norris",
+   "name": "Lando Norris",
+   "team": "McLaren",
+   "color": "#F47600",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "PIA",
+   "num": "81",
+   "first": "Oscar",
+   "last": "Piastri",
+   "name": "Oscar Piastri",
+   "team": "McLaren",
+   "color": "#F47600",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "RUS",
+   "num": "63",
+   "first": "George",
+   "last": "Russell",
+   "name": "George Russell",
+   "team": "Mercedes",
+   "color": "#00D7B6",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "ANT",
+   "num": "12",
+   "first": "Kimi",
+   "last": "Antonelli",
+   "name": "Kimi Antonelli",
+   "team": "Mercedes",
+   "color": "#00D7B6",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "LAW",
+   "num": "30",
+   "first": "Liam",
+   "last": "Lawson",
+   "name": "Liam Lawson",
+   "team": "Racing Bulls",
+   "color": "#6C98FF",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "LIN",
+   "num": "41",
+   "first": "Arvid",
+   "last": "Lindblad",
+   "name": "Arvid Lindblad",
+   "team": "Racing Bulls",
+   "color": "#6C98FF",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "VER",
+   "num": "3",
+   "first": "Max",
+   "last": "Verstappen",
+   "name": "Max Verstappen",
+   "team": "Red Bull Racing",
+   "color": "#4781D7",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "HAD",
+   "num": "6",
+   "first": "Isack",
+   "last": "Hadjar",
+   "name": "Isack Hadjar",
+   "team": "Red Bull Racing",
+   "color": "#4781D7",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "SAI",
+   "num": "55",
+   "first": "Carlos",
+   "last": "Sainz",
+   "name": "Carlos Sainz",
+   "team": "Williams",
+   "color": "#1868DB",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  },
+  {
+   "code": "ALB",
+   "num": "23",
+   "first": "Alexander",
+   "last": "Albon",
+   "name": "Alexander Albon",
+   "team": "Williams",
+   "color": "#1868DB",
+   "country": null,
+   "as_of": "2026-10-25T20:00:00Z"
+  }
+ ]
 }
