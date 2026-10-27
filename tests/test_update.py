@@ -258,10 +258,13 @@ def test_rate_limit_stops_the_run(fake_env, monkeypatch):
 def test_backfill_is_spread_over_runs_newest_first(fake_env, monkeypatch):
     from pipeline.update import run
     _many_rounds(monkeypatch, 4)                                   # 20 finished sessions
+    monkeypatch.setattr(config, "MAX_SESSIONS_PER_RUN", 10)
+    import pipeline.update
     now = datetime(2026, 4, 10, 12, 0, tzinfo=timezone.utc)
     calls = _counting_sessions(monkeypatch, lambda name: FakeSession(name, np.random.default_rng(6)))
     assert run(now=now, year=2026) == []
     assert len(calls) == config.MAX_SESSIONS_PER_RUN
+    assert pipeline.update.STATUS == {"published": 10, "backlog": 10}   # tells the workflow to run again
     loaded = {p.parent.name + "/" + p.stem for p in (config.DATA_DIR / "events").glob("*/*.json")
               if p.stem in config.SESSION_MINUTES}
     assert loaded == {f"{r}/{k}" for r in (3, 4) for k in ("FP1", "FP2", "FP3", "Q", "R")}   # newest rounds first
@@ -269,6 +272,7 @@ def test_backfill_is_spread_over_runs_newest_first(fake_env, monkeypatch):
     calls.clear()
     run(now=now, year=2026)
     assert len(calls) == config.MAX_SESSIONS_PER_RUN               # second run finishes the backlog
+    assert pipeline.update.STATUS == {"published": 10, "backlog": 0}
     season = read_json(config.DATA_DIR / "season.json")
     assert all(s["done"] for ev in season["events"] for s in ev["sessions"])
     calls.clear()

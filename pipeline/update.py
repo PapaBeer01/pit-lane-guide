@@ -23,6 +23,8 @@ from .store import read_json, write_json
 
 log = logging.getLogger("pipeline")
 PROBLEMS_FILE = config.ROOT / "pipeline_problems.txt"
+STATUS_FILE = config.ROOT / "pipeline_status.txt"     # read by the workflow: start another run while sessions wait
+STATUS: dict = {}
 
 
 def _iso(ts) -> str | None:
@@ -269,6 +271,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
             access = False
             problems.append(msg)
 
+    published = 0
     stopped = None                 # reason the run stopped loading sessions early
     empty_streak: list[str] = []   # overdue sessions that came back empty, in a row
     skipped = 0
@@ -287,6 +290,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
                 continue
             if time.monotonic() - started > config.MAX_RUN_MINUTES * 60:
                 log.info("Time budget used; round %s %s will load on the next run", ev["round"], sess["key"])
+                skipped += 1
                 continue
             label = f"Round {ev['round']} {sess['key']}"
             late = now >= _parse(sess["start"]) + timedelta(hours=6)
@@ -313,6 +317,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
                     if not old or (old.get("as_of") or "") <= sess["start"]:
                         drivers[d["code"]] = {**d, "as_of": sess["start"]}   # newest team/colour wins
                 write_json(path, payload)
+                published += 1
                 expected = max(expected or 0, len(payload["results"]))
                 log.info("Published %s", label)
             elif late or existing is not None:
@@ -328,6 +333,7 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     backlog = len(due) - len(batch) + skipped
     if backlog and not stopped:
         log.info("%d sessions left for later runs", backlog)
+    STATUS.update(published=published, backlog=backlog)
 
     for ev in events:
         for sess in ev["sessions"]:
@@ -382,6 +388,9 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
 def main():
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     problems = run()
+    # "more" = sessions are still waiting and this run made progress, so another run is worth starting now
+    more = STATUS.get("backlog", 0) > 0 and STATUS.get("published", 0) > 0
+    STATUS_FILE.write_text(f"published={STATUS.get('published', 0)}\nbacklog={STATUS.get('backlog', 0)}\nmore={str(more).lower()}\n")
     if problems:
         PROBLEMS_FILE.write_text("\n".join(problems) + "\n")
         for p in problems:

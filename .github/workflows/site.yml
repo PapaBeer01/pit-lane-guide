@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write                    # lets a run start the next one while old sessions are still loading
   pages: write
   id-token: write
 
@@ -23,6 +24,7 @@ jobs:
     timeout-minutes: 60
     outputs:
       problems: ${{ steps.update.outputs.problems }}
+      more: ${{ steps.update.outputs.more }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +65,8 @@ jobs:
           FASTF1_AUTH_METHOD: password
         run: |
           python -m pipeline.update
+          cat pipeline_status.txt >> "$GITHUB_OUTPUT" 2>/dev/null || true
+          { echo "### Sessions"; echo; sed 's/^/- /' pipeline_status.txt 2>/dev/null; } >> "$GITHUB_STEP_SUMMARY"
           if [ -f pipeline_problems.txt ]; then
             echo "problems=$(wc -l < pipeline_problems.txt)" >> "$GITHUB_OUTPUT"
             { echo "### Data problems"; echo; sed 's/^/- /' pipeline_problems.txt; } >> "$GITHUB_STEP_SUMMARY"
@@ -88,6 +92,14 @@ jobs:
             git pull --rebase
             git push
           fi
+
+      # Catch-up: while older sessions are still waiting (and this run loaded some), queue another run
+      # straight away instead of waiting for the schedule. Stops by itself when nothing is left.
+      - name: Start the next catch-up run
+        if: steps.update.outputs.more == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run site.yml --ref main --repo "$GITHUB_REPOSITORY"
 
       - uses: actions/upload-pages-artifact@v3
         with:

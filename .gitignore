@@ -5,3 +5,4 @@ pipeline_problems.txt
 *.tmp
 .DS_Store
 site/history-sample/
+pipeline_status.txt
