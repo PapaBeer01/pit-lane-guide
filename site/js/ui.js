@@ -44,7 +44,7 @@ export const TEAM_COLORS = {
   "Haas F1 Team": "#DFE1E2", Audi: "#EB4526", Cadillac: "#AAAADD",
 };
 // Deep side of the team-colour cards, where the team colour alone is too pale to carry it
-export const TEAM_DEEP = { Mercedes: "#0B8F76" };
+export const TEAM_DEEP = { Mercedes: "#1F7471" };
 export function driver(code) {
   const base = ctx.drivers[code] || { code, name: code, team: "", color: "#8A929C", last: code };
   const o = ctx.override[code];
