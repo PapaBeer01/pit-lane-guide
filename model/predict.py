@@ -111,16 +111,18 @@ def _summary(pos: np.ndarray, codes: list[str]) -> list[dict]:
     rows = []
     for j, c in enumerate(codes):
         p = pos[:, j]
-        rows.append({
-            "code": c,
-            "pred": float(np.mean(p)),
-            "lo": int(np.percentile(p, 20)),
-            "hi": int(np.ceil(np.percentile(p, 80))),
-        })
-    # predicted order = by mean position; "pred" becomes that order's slot
-    rows.sort(key=lambda r: r["pred"])
+        rows.append({"code": c, "avg": round(float(np.mean(p)), 2),
+                     "lo": int(np.percentile(p, 20)), "hi": int(np.ceil(np.percentile(p, 80)))})
+    return rows
+
+
+def _order(rows: list[dict], chances: tuple[str, ...]) -> list[dict]:
+    """Predicted order: by the headline chances first (win, then podium, then points; or pole,
+    top 3, top 10), then average position. Not by average position alone: a fast driver with a
+    retirement risk can average a worse position than a steadier one while winning more often,
+    and the table would then put the likelier winner lower, which reads as a contradiction."""
+    rows.sort(key=lambda r: tuple(-r[k] for k in chances) + (r["avg"],))
     for i, r in enumerate(rows, 1):
-        r["avg"] = round(r["pred"], 2)
         r["pred"] = i
         r["lo"] = min(r["lo"], i)
         r["hi"] = max(r["hi"], i)
@@ -213,6 +215,7 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
             p = pos[:, idx[r["code"]]]
             r.update({"p_pole": round(float(np.mean(p == 1)), 3), "p_top3": round(float(np.mean(p <= 3)), 3),
                       "p_top10": round(float(np.mean(p <= 10)), 3)})
+        rows = _order(rows, ("p_pole", "p_top3", "p_top10"))
         kind = "qualifying"
         if troubled:
             notes.append(f"Recent qualifying trouble for {', '.join(troubled)}: their ranges allow for another bad session.")
@@ -281,6 +284,7 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
                 "p_fastest": round(float(np.mean(fl == j)), 3),
                 "grid": round(float(np.mean(grid[:, j])), 1),
             })
+        rows = _order(rows, ("p_win", "p_podium", "p_points"))
         if issues:
             names = ", ".join(sorted(issues))
             notes.append(f"Lost practice running ({names}): a small extra reliability risk is applied.")

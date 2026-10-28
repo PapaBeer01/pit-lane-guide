@@ -189,3 +189,17 @@ def test_sunday_trait_compares_with_the_teammate():
     assert t_rac["label"] == "sunday" and t_qua["label"] == "saturday"
     assert t_rac["gained"] == 1.0 and t_rac["race_vs_mate"] == [6, 0]
     assert t_rac["delta"] == -t_qua["delta"]
+
+
+def test_predicted_order_follows_the_chances():
+    """28 Oct: VER had a higher win and podium chance than HAM but sat below him, because the
+    order used average position, which VER's bigger retirement risk pulls down."""
+    from model.predict import _order
+    rows = [{"code": "HAM", "avg": 5.71, "lo": 2, "hi": 6, "p_win": 0.137, "p_podium": 0.446, "p_points": 0.866},
+            {"code": "VER", "avg": 5.87, "lo": 1, "hi": 7, "p_win": 0.212, "p_podium": 0.538, "p_points": 0.826},
+            {"code": "ALB", "avg": 12.0, "lo": 9, "hi": 15, "p_win": 0.0, "p_podium": 0.0, "p_points": 0.30},
+            {"code": "GAS", "avg": 11.0, "lo": 8, "hi": 14, "p_win": 0.0, "p_podium": 0.0, "p_points": 0.30}]
+    out = _order(rows, ("p_win", "p_podium", "p_points"))
+    assert [r["code"] for r in out] == ["VER", "HAM", "GAS", "ALB"]     # ties fall back to average position
+    assert [r["pred"] for r in out] == [1, 2, 3, 4]
+    assert all(r["lo"] <= r["pred"] <= r["hi"] for r in out)
