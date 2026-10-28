@@ -1,4 +1,5 @@
-import { lineChart, stintChart, trackMap } from "../charts.js";
+import { lineChart, trackMap } from "../charts.js";
+import { tyreBars as stintChart } from "../visuals.js";
 import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
 import { canShareFiles, imageButton, makeImage, offscreen } from "../snapshot.js";

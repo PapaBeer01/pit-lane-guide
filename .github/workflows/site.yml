@@ -107,6 +107,15 @@ jobs:
           python -m pipeline.upgrades | tee upgrades_status.txt
           if [ -f run-log/last-run.md ]; then sed 's/^/- /' upgrades_status.txt >> run-log/last-run.md; fi
 
+      # Owner-supplied photos, logos and car pictures (images/ folder) -> small web files in site/img.
+      # Built fresh on every run and not saved in the repo; nothing there means the site's own drawings.
+      - name: Prepare photos, logos and cars
+        if: always()
+        continue-on-error: true
+        run: |
+          python -m pipeline.images | tee images_status.txt
+          { echo "### Pictures"; echo; sed 's/^/- /' images_status.txt; } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run tests
         run: pytest -q
 

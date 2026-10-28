@@ -1,6 +1,7 @@
 import { brandCar, carSvg } from "./car.js";
 import { icon } from "./icons.js";
-import { clearSessionTeams, ctx, h, load, localTime } from "./ui.js";
+import { loadMedia } from "./media.js";
+import { clearSessionTeams, ctx, h, load, localTime, reducedMotion } from "./ui.js";
 
 const routes = {
   "": () => import("./pages/home.js"),
@@ -68,10 +69,20 @@ async function render() {
     const mod = await loader();
     const view = await mod.default(route);
     clearTimeout(slow);
-    app.classList.remove("enter");
-    app.replaceChildren(view);
-    void app.offsetWidth;
-    app.classList.add("enter");
+    const swap = () => {
+      app.classList.remove("enter");
+      app.replaceChildren(view);
+      void app.offsetWidth;
+      app.classList.add("enter");
+    };
+    // smooth cross-fade between pages where the browser supports it; shared pieces (the session
+    // switch, the race poster) glide into place instead of jumping
+    if (document.startViewTransition && !reducedMotion() && app.firstElementChild && !app.querySelector(".pit-loader")) {
+      document.documentElement.classList.add("vt");
+      const t = document.startViewTransition(swap);
+      t.finished.finally(() => document.documentElement.classList.remove("vt"));
+      await t.updateCallbackDone;
+    } else swap();
     document.title = mod.title ? `${mod.title(route)} | The Pit Lane` : "The Pit Lane";
   } catch (e) {
     clearTimeout(slow);
@@ -102,7 +113,7 @@ async function start() {
   buildChrome();
   offlineNotice();
   registerWorker();
-  const season = await load("season.json");
+  const [season] = await Promise.all([load("season.json"), loadMedia()]);
   if (!season) {
     document.getElementById("app").replaceChildren(h("div", { class: "panel empty" },
       h("h2", {}, icon("timer", { size: 24 }), "Warming up"),

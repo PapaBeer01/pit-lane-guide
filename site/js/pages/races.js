@@ -1,33 +1,41 @@
-import { avatar } from "../avatars.js";
+import { face } from "../media.js";
 import { icon } from "../icons.js";
+import { flag, trackOutline, tracks } from "../visuals.js";
 import { ctx, eventDone, h, load, localDate, nextEvent } from "../ui.js";
 
 export const title = () => "Races";
 
+// The season as a wall of track posters: every circuit's real shape, flag, dates and winner
 export default async function races() {
   const evs = ctx.season.events;
   const next = nextEvent();
-  // one small download for the whole season (instead of a file per race)
-  const summary = await load("summary.json");
+  // two small downloads for the whole season (instead of a file per race)
+  const [summary, shapes] = await Promise.all([load("summary.json"), tracks()]);
   const winners = Object.fromEntries((summary?.events || []).filter((e) => e.podium?.length).map((e) => [e.round, e.podium[0]]));
-  const rows = evs.map((e) => {
+  const cards = evs.map((e, i) => {
     const race = e.sessions.find((s) => s.key === "R");
+    const first = e.sessions[0];
     const isNext = next && e.round === next.round && !eventDone(e);
+    const done = eventDone(e);
+    const w = winners[e.round];
     return h("a", {
-      href: `#/race/${e.round}`, class: "panel race-row",
-      style: { display: "grid", gridTemplateColumns: "2.4em 1fr auto", gap: "4px 12px", alignItems: "center", textDecoration: "none", color: "inherit", boxShadow: isNext ? "0 0 0 2px var(--flag), 0 0 24px rgba(255,196,0,.25)" : null, opacity: eventDone(e) || isNext ? 1 : 0.72 },
+      href: `#/race/${e.round}`, class: `cal-card${isNext ? " next" : ""}${done ? " done" : ""}`,
+      style: { animationDelay: `${Math.min(i, 16) * 30}ms` },
+      "aria-label": `Round ${e.round}, ${e.name}, ${race ? localDate(race.start) : ""}${w ? `, won by ${w}` : ""}`,
     },
-      h("span", { style: { font: "800 1.8rem/1 var(--font-display)", color: isNext ? "var(--flag)" : "var(--muted)", transform: "skewX(-8deg)" } }, e.round),
-      h("span", { style: { display: "grid", gap: "2px" } },
-        h("span", { style: { fontWeight: 700 } }, e.name),
-        h("span", { class: "small muted" }, `${e.location}, ${race ? localDate(race.start) : ""}`)),
-      h("span", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" } },
+      h("span", { class: "cal-top" },
+        h("span", { class: "flag-emoji", "aria-hidden": "true" }, flag(e.country)),
+        h("span", { class: "cal-name" }, h("b", {}, e.location), h("small", {}, first && race ? `${localDate(first.start)} – ${localDate(race.start)}` : "")),
+        h("span", { class: "cal-round" }, e.round)),
+      h("span", { class: "cal-track" }, trackOutline(shapes[String(e.round)], { cls: "track-art small", glow: isNext, draw: false, label: `${e.location} track` })
+        || h("span", { class: "cal-notrack muted small" }, "Track map after first session")),
+      h("span", { class: "cal-foot" },
         e.format === "sprint" ? h("span", { class: "chip best" }, icon("bolt", { size: 12 }), "Sprint") : null,
         isNext ? h("span", { class: "chip flag" }, icon("flag", { size: 12 }), "Next") : null,
-        winners[e.round] ? h("span", { class: "small", style: { display: "inline-flex", gap: "8px", alignItems: "center", fontWeight: 700 } }, h("span", { style: { color: "var(--flag)" } }, icon("trophy", { size: 15 })), avatar(winners[e.round], { size: 32 }), winners[e.round]) : null));
+        w ? h("span", { class: "cal-win" }, icon("trophy", { size: 14 }), face(w, { size: 26 }), w) : null));
   });
   return h("div", { style: { display: "grid", gap: "16px" } },
     h("h1", {}, `${ctx.season.year} season`),
     h("p", { class: "muted" }, `${evs.length} rounds. Tap a race for results, lap charts, tyre strategies and how our predictions did.`),
-    h("div", { style: { display: "grid", gap: "8px" } }, rows));
+    h("div", { class: "cal-grid" }, cards));
 }

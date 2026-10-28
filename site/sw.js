@@ -2,11 +2,12 @@
 //   App files (HTML, CSS, JS, fonts): served from the phone's cache straight away, refreshed in the background.
 //   Data (JSON): fetched fresh when the network answers within a few seconds, otherwise the saved copy is used.
 //   Lap telemetry: rarely changes, so the saved copy is used first.
-const SHELL = "plg-shell-v19";
+const SHELL = "plg-shell-v20";
+const IMG = "plg-img-v1";
 const DATA = "plg-data-v1";
 const SHELL_FILES = [
   "./", "index.html", "css/style.css",
-  "js/app.js", "js/ui.js", "js/charts.js", "js/icons.js", "js/avatars.js", "js/strategy.js", "js/snapshot.js", "js/car.js", "js/upgrades.js",
+  "js/app.js", "js/ui.js", "js/charts.js", "js/icons.js", "js/avatars.js", "js/strategy.js", "js/snapshot.js", "js/car.js", "js/upgrades.js", "js/media.js", "js/visuals.js",
   "js/pages/home.js", "js/pages/races.js", "js/pages/race.js", "js/pages/compare.js", "js/pages/form.js",
   "js/pages/standings.js", "js/pages/drivers.js", "js/pages/learn.js", "js/pages/accuracy.js", "js/pages/data.js",
   "fonts/atkinson-hyperlegible-latin-400-normal.woff2", "fonts/atkinson-hyperlegible-latin-700-normal.woff2",
@@ -20,7 +21,7 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys()
-    .then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== DATA).map((k) => caches.delete(k))))
+    .then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== DATA && k !== IMG).map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
@@ -47,7 +48,10 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  if (url.pathname.includes("/data/")) {
+  if (url.pathname.includes("/img/") && !url.pathname.endsWith("manifest.json")) {
+    // owner-supplied pictures: each file name carries a version, so a saved copy is always right
+    e.respondWith(caches.open(IMG).then(async (c) => (await c.match(req)) || fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; })));
+  } else if (url.pathname.includes("/data/") || url.pathname.endsWith("img/manifest.json")) {
     e.respondWith(url.pathname.includes("/tel/") ? staleWhileRevalidate(req, DATA) : networkFirst(req));
   } else {
     e.respondWith(staleWhileRevalidate(req, SHELL));

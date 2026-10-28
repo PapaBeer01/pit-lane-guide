@@ -8,3 +8,5 @@ site/history-sample/
 pipeline_status.txt
 upgrades_status.txt
 .vercel/
+site/img/
+images_status.txt

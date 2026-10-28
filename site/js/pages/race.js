@@ -1,9 +1,11 @@
-import { gapBars, lineChart, driverSeries, stintChart } from "../charts.js";
+import { gapBars, lineChart, driverSeries } from "../charts.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
 import { upgradesSection } from "../upgrades.js";
 import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
 import { predictionTable } from "./home.js";
+import { teamArt } from "../media.js";
+import { fastestLapCard, podiumCards, posterCard, quickestMap, sessionPicker, speedCard, tracks, tyreBars } from "../visuals.js";
 
 export const title = (r) => { const ev = eventByRound(r.args[0]); return ev ? ev.name : "Race"; };
 
@@ -17,16 +19,10 @@ export default async function race(route) {
   const shown = keys.filter((k) => done.includes(k) || predicted.has(k));
   let key = route.args[1] && shown.includes(route.args[1]) ? route.args[1] : (done[done.length - 1] || shown[0]);
 
-  const head = h("div", { style: { display: "grid", gap: "6px" } },
-    h("p", { class: "muted" }, h("a", { href: "#/races" }, "All races"), `, round ${ev.round}`),
-    h("h1", {}, ev.name),
-    h("p", { class: "muted" }, `${ev.location}, ${ev.country}${ev.format === "sprint" ? ", sprint weekend" : ""}`));
-  if (!key) return h("div", { style: { display: "grid", gap: "20px" } }, head, empty("Nothing to show yet: this weekend hasn't started and predictions come closer to the time."));
-
-  const tabs = h("div", { class: "tabs", role: "tablist", "aria-label": "Session" },
-    shown.map((k) => h("a", {
-      class: "tab", role: "tab", href: `#/race/${ev.round}/${k}`, "aria-selected": String(k === key), style: { textDecoration: "none" },
-    }, icon(done.includes(k) ? "check" : "gauge", { size: 15 }), SESSION_LABEL[k], done.includes(k) ? null : h("span", { class: "tag" }, "prediction"))));
+  const track = (await tracks())[String(ev.round)];
+  const poster = posterCard(ev, track);
+  if (!key) return h("div", { class: "race-page" }, poster, empty("Nothing to show yet: this weekend hasn't started and predictions come closer to the time."));
+  const picker = sessionPicker(ev, shown, done, key);
 
   const sess = done.includes(key) ? await load(`events/${ev.round}/${key}.json`) : null;
   useSessionTeams(sess);
@@ -36,13 +32,25 @@ export default async function race(route) {
   if (sess) {
     const sStart = ev.sessions.find((s) => s.key === key)?.start;
     const w = sess.weather;
-    body.append(h("div", { class: "round-pill" },
-      h("span", { class: "chip" }, icon("calendar", { size: 14 }), localTime(sStart)),
-      w ? h("span", { class: `chip ${w.rain ? "warn" : ""}` }, icon(w.rain ? "rain" : "sun", { size: 14 }), w.rain ? "Wet" : "Dry") : null,
-      w ? h("span", { class: "chip" }, icon("thermo", { size: 14 }), `Air ${w.air}°C, track ${w.track}°C`) : null));
-    if (key === "R" || key === "S") {
+    const hero = await load(`events/${ev.round}/${key}_hero.json`);
+    const race = key === "R" || key === "S";
+    const top = sess.results.find((r) => r.pos === 1);
+    const gap = race ? (r) => (r.pos === 1 ? "Leader" : raceTime(r, top))
+      : (r) => { if (r.pos === 1) return key === "Q" || key === "SQ" ? "Pole" : "Fastest"; const g = gapTo(r, top); return g === null ? "" : `+${g.toFixed(3)}`; };
+    const stage = h("div", { class: "stage" },
+      h("div", { class: "stage-main" },
+        h("div", { class: "round-pill" },
+          h("span", { class: "chip" }, icon("calendar", { size: 14 }), localTime(sStart)),
+          w ? h("span", { class: `chip ${w.rain ? "warn" : ""}` }, icon(w.rain ? "rain" : "sun", { size: 14 }), w.rain ? "Wet" : "Dry") : null,
+          w ? h("span", { class: "chip" }, icon("thermo", { size: 14 }), `Air ${w.air}°C, track ${w.track}°C`) : null),
+        podiumCards(sess.results, gap, { label: race ? "Podium" : key.startsWith("FP") ? "Fastest three" : "Top three" }),
+        fastestLapCard(hero?.fastest || sess.fastest),
+        h("div", { class: "duo" }, quickestMap(track, hero?.minis), speedCard(hero))),
+      h("aside", { class: "stage-side" }, compactResults(sess, gap, race)));
+    body.append(stage);
+    if (race) {
       body.append(raceStory(sess));
-      body.append(section(["Results", "chequered"], null, resultsTable(sess)));
+      body.append(section(["Full results", "chequered"], "Starting position, places gained or lost, tyres used and points.", resultsTable(sess)));
       body.append(lapChart(sess));
       const pace = await load(`events/${ev.round}/${key}_pace.json`);
       if (pace) body.append(racePaceSection(pace, sess));
@@ -50,10 +58,10 @@ export default async function race(route) {
         const order = sess.results.map((r) => r.code);
         const total = Math.max(...Object.values(sess.laps).map((l) => l.n[l.n.length - 1] || 0));
         body.append(section(["Tyre strategy", "tyre"], h("span", {}, "Each bar is one driver's race. Colours show the ", term("compound", "tyre compound"), "; a new colour means a pit stop."),
-          h("div", { class: "panel" }, stintChart(order, sess.stints, total))));
+          h("div", { class: "panel" }, tyreBars(order, sess.stints, total))));
       }
     } else {
-      body.append(section(["Results", "chequered"], null, resultsTable(sess)));
+      body.append(section(["Lap times", "chequered"], null, resultsTable(sess)));
       body.append(gapSection(sess));
       if (key.startsWith("FP")) {
         const lr = await load(`events/${ev.round}/${key}_pace.json`);
@@ -82,8 +90,7 @@ export default async function race(route) {
   }
   const upg = upgradesSection(await load(`events/${ev.round}/upgrades.json`), { title: "New parts at this race", open: 0 });
   if (upg) body.append(upg);
-  requestAnimationFrame(() => tabs.querySelector('[aria-selected="true"]')?.scrollIntoView({ inline: "center", block: "nearest" }));
-  return h("div", { style: { display: "grid", gap: "20px" } }, head, tabs, body);
+  return h("div", { class: "race-page" }, picker, poster, body);
 }
 
 
@@ -105,15 +112,14 @@ function resultsTable(s) {
       ];
     };
   } else if (k === "Q" || k === "SQ") {
-    const pole = top ? Math.min(...(top.q || []).filter(Boolean)) : null;
     head = ["", "Driver", "Q1", "Q2", "Q3", "Gap"];
     row = (r) => {
-      const best = Math.min(...(r.q || []).filter(Boolean));
+      const g = gapTo(r, top);
       return [
         h("td", { class: "pos" }, r.pos ?? "–"),
         h("td", {}, driverTag(r.code, { full: true })),
         ...[0, 1, 2].map((i) => h("td", { class: "num" }, r.q?.[i] ? lapTime(r.q[i]) : "")),
-        h("td", { class: "num" }, isFinite(best) && pole && r.pos > 1 ? `+${(best - pole).toFixed(3)}` : r.pos === 1 ? "Pole" : ""),
+        h("td", { class: "num" }, r.pos === 1 ? "Pole" : g !== null && r.pos > 1 ? `+${g.toFixed(3)}` : ""),
       ];
     };
   } else {
@@ -130,6 +136,27 @@ function resultsTable(s) {
   return h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data" },
     h("thead", {}, h("tr", {}, head.map((t, i) => h("th", { scope: "col", class: i > 1 ? "num" : "" }, t)))),
     h("tbody", {}, s.results.map((r) => h("tr", { class: (r.class && !/^\d+$/.test(r.class) && (k === "R" || k === "S")) ? "dnf" : r.pos === 1 ? "p1" : "" }, row(r))))));
+}
+
+// Results at a glance: position, team, driver, gap. Leader picked out, retirements faded.
+function compactResults(s, gap, race) {
+  const out = (r) => race && r.class && !/^\d+$/.test(r.class);
+  return h("section", { class: "cr", "aria-label": "Results" },
+    h("div", { class: "cr-head" }, h("span", {}, "Pos"), h("span", {}, "Driver"), h("span", {}, race ? "Time" : "Gap")),
+    h("ol", { class: "cr-list" }, s.results.map((r, i) => h("li", {
+      class: `cr-row${r.pos === 1 ? " p1" : ""}${out(r) ? " out" : ""}`, style: { "--tc": driver(r.code).color, animationDelay: `${Math.min(i, 12) * 25}ms` },
+    },
+      h("span", { class: "cr-pos" }, out(r) ? "–" : r.pos ?? "–"),
+      h("a", { class: "cr-who", href: `#/driver/${r.code}` }, teamArt(driver(r.code).team, { size: 22 }), h("b", {}, r.code), h("small", {}, driver(r.code).last || "")),
+      h("span", { class: "cr-gap" }, out(r) ? "Out" : gap(r), s.fastest?.code === r.code ? h("span", { class: "cr-fl", title: "Fastest lap" }, icon("timer", { size: 14 })) : null)))));
+}
+
+// Gap to the top: in qualifying, the driver's last part (Q1, Q2 or Q3) against the pole-sitter's time in that same part
+function gapTo(r, top) {
+  if (!r || !top) return null;
+  const q = r.q || [];
+  for (let i = q.length - 1; i >= 0; i--) if (q[i] && top.q?.[i]) return q[i] - top.q[i];
+  return r.best && top.best ? r.best - top.best : null;
 }
 
 function raceTime(r, top) {

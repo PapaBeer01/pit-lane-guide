@@ -392,6 +392,20 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     except Exception as e:
         log.warning("Track history unavailable: %s", e)
 
+    # Pictures for the site: track outlines for coming rounds (last season's qualifying, a few per run),
+    # then the offline extras (missing track maps, season track outlines, session big numbers)
+    from . import visuals
+    track_room = min(3, config.MAX_SESSIONS_PER_RUN - len(batch))   # shares this run's request budget
+    if access and not stopped and not backlog and track_room > 0:
+        try:
+            STATUS["tracks_added"] = visuals.fetch_future_circuits(events, year, max_tracks=track_room)
+        except Exception as e:
+            log.warning("Track maps for coming rounds unavailable: %s", e)
+    try:
+        visuals.build(events)
+    except Exception as e:
+        log.warning("Site visuals not rebuilt: %s", e)   # the site falls back to plain views
+
     for ev in events:
         for s in ev["sessions"]:
             s.pop("ff_name", None)
