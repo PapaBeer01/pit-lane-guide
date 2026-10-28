@@ -227,3 +227,24 @@ def test_raw_simulations_are_saved_with_the_inputs(tmp_path):
     before = (tmp_path / "sims" / "3" / "R.csv.gz").stat().st_mtime_ns
     write_sims(pred, raw, data_dir=tmp_path)                       # same data: file untouched
     assert (tmp_path / "sims" / "3" / "R.csv.gz").stat().st_mtime_ns == before
+
+
+def test_closest_simulation_prefers_the_front_of_the_order(tmp_path):
+    import json
+
+    import numpy as np
+
+    from model.sims import compare_with_reality, write_sims
+    codes = ["AAA", "BBB", "CCC", "DDD"]
+    pos = np.array([[2, 1, 3, 4],     # sim 1: 2 places right, but not the winner
+                    [1, 2, 4, 3],     # sim 2: front two right
+                    [1, 3, 2, 4]])    # sim 3: winner and last right
+    raw = {"pos": pos, "gap": np.zeros((3, 4)), "bad": np.zeros((3, 4), dtype=bool),
+           "inputs": {"codes": codes, "lap_ref": 90.0, "rain": 0, "drivers": {c: {} for c in codes}}}
+    pred = {"round": 1, "target": "Q", "target_name": "Qualifying", "kind": "qualifying", "made_at": "x", "made_after": "FP3"}
+    write_sims(pred, raw, data_dir=tmp_path)
+    session = {"results": [{"code": c, "pos": i + 1} for i, c in enumerate(codes)]}
+    compare_with_reality(1, "Q", session, data_dir=tmp_path)
+    v = json.loads((tmp_path / "sims" / "1" / "Q_detail.json").read_text())["vs_real"]
+    assert v["best_sim"] == 2 and v["best_exact_from_front"] == 2
+    assert v["share"]["winner"] == round(2 / 3, 4) and v["share"]["full"] == 0

@@ -19,10 +19,10 @@ from .data import SeasonData
 from .features import one_lap_gaps, race_pace_gaps
 from .form import Form
 from .pace import practice_pace_report, race_pace_report
-from .predict import predict
+from .predict import MODEL_VERSION, predict
 from .reliability import Reliability
 from .score import score
-from .sims import has_sims, write_sims
+from .sims import compare_with_reality, has_sims, write_sims
 
 
 def _start(ev, key):
@@ -233,7 +233,8 @@ def run_model(now: datetime | None = None) -> list[str]:
                         existing["frozen"] = True
                         write_json(path, existing)
                     elif not existing or (existing.get("backfilled") and (
-                            existing.get("inputs") != _inputs(data, ev, target) or not has_sims(ev["round"], target))):
+                            existing.get("inputs") != _inputs(data, ev, target) or not has_sims(ev["round"], target)
+                            or (existing.get("model") or {}).get("version") != MODEL_VERSION)):
                         # a backtest, made only with data from before this session. Re-made while the
                         # season's older sessions are still loading, or to add its raw simulations;
                         # real (live) predictions are never changed once their session starts.
@@ -260,6 +261,7 @@ def run_model(now: datetime | None = None) -> list[str]:
                 index.append({"round": ev["round"], "target": target, "made_after": pred["made_after"],
                               "frozen": pred["frozen"], "backfilled": pred.get("backfilled", False)})
                 if target in done:
+                    compare_with_reality(ev["round"], target, data.session(ev["round"], target))
                     s = score(pred, data.session(ev["round"], target))
                     if s:
                         scores.append(s)

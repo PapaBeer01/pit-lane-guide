@@ -125,6 +125,9 @@ export default async function dataRoom(route) {
       tile(pct(detail.neutralised.safety_car), "had a safety car"), tile(pct(detail.neutralised.virtual_safety_car), "had a VSC"),
       tile(pct(detail.neutralised.red_flag), "had a red flag"), tile(pct(detail.inputs.rain), "rain chance used")) : null));
 
+  // ---- after the session: the simulation nearest to what really happened ----
+  if (detail.vs_real) view.append(closestSection(detail.vs_real, race, detail.sims));
+
   // ---- heat map of positions ----
   const n = codes.length;
   const cell = (p) => h("td", { class: "num heat", style: { "--p": Math.min(1, p * 3).toFixed(3) }, title: pct(p, 1) }, p >= 0.005 ? Math.round(p * 100) : "");
@@ -137,4 +140,38 @@ export default async function dataRoom(route) {
 
 function tile(v, label) {
   return h("div", { class: "dc-stat" }, h("b", {}, v ?? "–"), h("small", {}, label));
+}
+
+function closestSection(v, race, sims) {
+  const pctOf = (x) => (x === 0 ? "none" : x * sims < 1.5 ? `1 in ${sims.toLocaleString()}` : pct(x, x < 0.01 ? 2 : 1));
+  const front = v.best_exact_from_front;
+  const headline = front >= v.field ? "Every place exactly right."
+    : front >= 2 ? `The first ${front} places exactly right, ${v.best_exact} of ${v.field} right overall.`
+      : front === 1 ? `The winner right, ${v.best_exact} of ${v.field} places right overall.`
+        : `${v.best_exact} of ${v.field} places right, but not the ${race ? "winner" : "pole-sitter"}.`;
+  const flag = (f) => [f.sc && "safety car", f.vsc && "VSC", f.red && "red flag"].filter(Boolean).join(", ") || "none";
+  const rows = v.real.map((code, i) => {
+    const simCode = v.best_order[i];
+    const ok = simCode === code;
+    return h("tr", { class: ok ? "match" : "" },
+      h("td", { class: "pos" }, i + 1),
+      h("td", {}, driverTag(code)),
+      h("td", {}, simCode ? driverTag(simCode) : "–"),
+      h("td", { class: "num" }, ok ? icon("check", { size: 16, label: "Same" }) : ""));
+  });
+  return section(["Closest simulation to reality", "target"],
+    h("span", {}, `Out of ${sims.toLocaleString()} simulations, the one nearest to the real result: right for as long as possible from the front, then the most places right.`),
+    h("div", { class: "callout" },
+      h("p", { style: { fontWeight: 700, display: "flex", gap: "8px", alignItems: "center" } }, icon("target", { size: 20 }), `Simulation #${v.best_sim}: ${headline}`),
+      race && v.best_flags ? h("p", { class: "small muted" }, `Interruptions in that simulation: ${flag(v.best_flags)}. In the real race: ${flag(v.real_flags)}.`) : null),
+    h("div", { class: "trait-tiles" },
+      tile(pctOf(v.share.winner), race ? "had the right winner" : "had the right pole-sitter"),
+      tile(pctOf(v.share.top3), "had the exact top 3"),
+      tile(pctOf(v.share.top5), "had the exact top 5"),
+      tile(pctOf(v.share.top10), "had the exact top 10"),
+      tile(pctOf(v.share.full), "had the whole order"),
+      tile(v.avg_exact, "places right on average")),
+    h("div", { class: "panel-flush scroll-x" }, h("table", { class: "data closest" },
+      h("thead", {}, h("tr", {}, ["", "Real result", `Simulation #${v.best_sim}`, ""].map((t, i) => h("th", { class: i === 3 ? "num" : "" }, t)))),
+      h("tbody", {}, rows))));
 }

@@ -91,3 +91,57 @@ def write_sims(pred: dict, raw: dict | None, data_dir=None) -> None:
 
 def has_sims(rnd: int, target: str, data_dir=None) -> bool:
     return ((data_dir or config.DATA_DIR) / "sims" / str(rnd) / f"{target}_detail.json").exists()
+
+
+def _read_csv(path):
+    import csv
+    rows = list(csv.reader(io.StringIO(gzip.decompress(path.read_bytes()).decode())))
+    return rows[0], rows[1:]
+
+
+def compare_with_reality(rnd: int, target: str, session: dict, data_dir=None) -> None:
+    """After a session: which simulation came closest to what really happened, and how often the
+    simulations got the front of the order exactly right. Added to <target>_detail.json as "vs_real"
+    (recomputed if the official result changes, e.g. after a penalty)."""
+    d = (data_dir or config.DATA_DIR) / "sims" / str(rnd)
+    det_path, csv_path = d / f"{target}_detail.json", d / f"{target}.csv.gz"
+    if not (det_path.exists() and csv_path.exists()):
+        return
+    real = sorted((r for r in session.get("results", []) if r.get("pos")), key=lambda r: r["pos"])
+    real_order = [r["code"] for r in real]
+    detail = json.loads(det_path.read_text())
+    if (detail.get("vs_real") or {}).get("real") == real_order:
+        return
+    head, rows = _read_csv(csv_path)
+    codes = [h[:-4] for h in head if h.endswith("_pos")]
+    pos = np.array([[int(r[head.index(f"{c}_pos")]) for c in codes] for r in rows])
+    actual = np.array([real_order.index(c) + 1 if c in real_order else 99 for c in codes])
+    same = pos == actual
+    exact = same.sum(1)
+
+    def front(k):
+        idx = [codes.index(c) for c in real_order[:k] if c in codes]
+        return float(np.all(same[:, idx], axis=1).mean()) if len(idx) == k else 0.0
+    top10 = [codes.index(c) for c in real_order[:10] if c in codes]
+    off = np.abs(np.where(actual < 99, pos - actual, 0)).sum(1)
+    # closest = right for longest from the front (winner, then P2, ...), then most places right overall
+    in_order = [codes.index(c) for c in real_order if c in codes]
+    from_front = np.cumprod(same[:, in_order], axis=1).sum(1)
+    best = max(range(len(rows)), key=lambda i: (from_front[i], exact[i], -off[i]))
+    sim_order = [c for _, c in sorted(zip(pos[best], codes))]
+    out = {
+        "real": real_order, "best_sim": int(rows[best][0]), "best_order": sim_order,
+        "best_exact": int(exact[best]), "field": len(real_order),
+        "best_exact_from_front": int(from_front[best]),
+        "avg_exact": round(float(exact.mean()), 2),
+        "share": {"winner": round(front(1), 4), "top3": round(front(3), 4), "top5": round(front(5), 4),
+                  "top10": round(front(10), 4), "full": round(front(len(real_order)), 4)},
+    }
+    if "safety_car" in head:
+        r = rows[best]
+        out["best_flags"] = {"sc": int(r[head.index("safety_car")]), "vsc": int(r[head.index("virtual_safety_car")]),
+                             "red": int(r[head.index("red_flag")])}
+        f = session.get("flags") or {}
+        out["real_flags"] = {"sc": int(bool(f.get("sc"))), "vsc": int(bool(f.get("vsc"))), "red": int(bool(f.get("red")))}
+    detail["vs_real"] = out
+    _write_if_changed(det_path, json.dumps(detail, separators=(",", ":")).encode())

@@ -440,6 +440,8 @@ details.explain .body { padding: 0 16px 18px 64px; display: grid; gap: 10px; col
 .upg-change { margin: 0; color: var(--ink-2); }
 .upg-how { margin: 0; color: var(--muted); font-size: .9375rem; }
 /* ---------- data room heat map ---------- */
+table.closest tr.match td { background: color-mix(in srgb, var(--green) 12%, transparent); }
+table.closest tr.match td:last-child { color: var(--green); }
 table.heatmap td.heat { text-align: center; min-width: 30px; padding: 6px 4px; font-size: .8125rem;
   background: color-mix(in srgb, var(--purple) calc(var(--p) * 85%), transparent); color: var(--ink); }
 table.heatmap th { text-align: center; }

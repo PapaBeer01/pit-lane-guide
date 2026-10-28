@@ -25,7 +25,7 @@ from .strategy import predict_strategy
 from .track import TrackModel
 from .reliability import Reliability
 
-MODEL_VERSION = "1.2"
+MODEL_VERSION = "1.3"
 
 # How noisy each session is as evidence, in % of lap time (smaller = trusted more)
 ONE_LAP_NOISE = {"FP1": 0.50, "FP2": 0.42, "FP3": 0.34, "SQ": 0.18, "Q": 0.15, "S": 0.40, "R": 0.45}
@@ -33,7 +33,23 @@ RACE_NOISE = {"FP1": 0.50, "FP2": 0.36, "FP3": 0.55, "SQ": 0.38, "Q": 0.34, "S":
 FORM_BASE_SD = 0.30         # how much a car's pace varies track to track
 EXEC_SD = 0.11              # lap-to-lap execution noise in a qualifying session
 NEW_DRIVER_SD = 0.8
-BAD_SESSION_PENALTY = (0.5, 1.4)   # % lap time lost in a bad qualifying (mistake, traffic, problem)
+BAD_SESSION_PENALTY = (0.5, 1.4)
+# A driver can have an unusual qualifying: a shock lap far better (or worse) than their form
+# suggests, like Gasly's dry-weather pole at Monza in 2026, which none of 4,000 simulations had.
+# Each driver gets a 2% chance per session of a draw 4x wider than usual. Backtested over all
+# 24 qualifying sessions of 2026: better score for the real order and for the pole-sitter, no
+# pole-sitter left at 0%, same number of favourites right. Not used for races: their extra luck
+# (safety cars, retirements, strategy) already covers surprises, and it didn't help there.
+QUALI_SHOCK = (0.02, 4.0)
+
+
+def _draw(rng, mu, sd, size, shock=None):
+    out = rng.normal(mu, sd, size=size)
+    if shock:
+        chance, width = shock
+        odd = rng.random(size) < chance
+        out = np.where(odd, mu + rng.normal(0, 1, size=size) * sd * width, out)
+    return out   # % lap time lost in a bad qualifying (mistake, traffic, problem)
 
 
 def _weighted_form(past, current_round, extractor, keys, same_team=None) -> dict[str, tuple[float, float]]:
@@ -132,7 +148,7 @@ def _order(rows: list[dict], chances: tuple[str, ...]) -> list[dict]:
 def _quali_samples(rng, codes, post, form, sims, exec_sd, with_bad=False):
     mu = np.array([post[c][0] for c in codes])
     sd = np.array([math.sqrt(post[c][1] ** 2 + exec_sd ** 2) for c in codes])
-    samples = rng.normal(mu, sd, size=(sims, len(codes)))
+    samples = _draw(rng, mu, sd, (sims, len(codes)), QUALI_SHOCK)
     # trouble record: each driver's chance of a bad session, from past weekends
     p_fail = np.array([form.quali_fail(c) for c in codes])
     bad = rng.random((sims, len(codes))) < p_fail
