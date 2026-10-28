@@ -203,3 +203,27 @@ def test_predicted_order_follows_the_chances():
     assert [r["code"] for r in out] == ["VER", "HAM", "GAS", "ALB"]     # ties fall back to average position
     assert [r["pred"] for r in out] == [1, 2, 3, 4]
     assert all(r["lo"] <= r["pred"] <= r["hi"] for r in out)
+
+
+def test_raw_simulations_are_saved_with_the_inputs(tmp_path):
+    import gzip
+    import json
+
+    import numpy as np
+
+    from model.sims import write_sims
+    rng = np.random.default_rng(0)
+    codes = ["AAA", "BBB", "CCC"]
+    pos = np.array([rng.permutation(3) + 1 for _ in range(50)])
+    raw = {"pos": pos, "grid": pos, "dnf": pos == 3, "fastest": np.zeros(50, dtype=int), "pace": rng.normal(size=(50, 3)),
+           "sc": rng.random(50) < .5, "vsc": rng.random(50) < .5, "red": rng.random(50) < .1,
+           "inputs": {"codes": codes, "lap_ref": 90.0, "rain": 0.1, "drivers": {c: {"team": "T"} for c in codes}}}
+    pred = {"round": 3, "target": "R", "target_name": "Grand Prix", "kind": "race", "made_at": "x", "made_after": "Q"}
+    write_sims(pred, raw, data_dir=tmp_path)
+    rows = gzip.decompress((tmp_path / "sims" / "3" / "R.csv.gz").read_bytes()).decode().splitlines()
+    assert len(rows) == 51 and rows[0].startswith("sim,safety_car,virtual_safety_car,red_flag,fastest_lap,AAA_grid")
+    detail = json.loads((tmp_path / "sims" / "3" / "R_detail.json").read_text())
+    assert all(abs(sum(v) - 1) < 1e-6 for v in detail["position_chances"].values())
+    before = (tmp_path / "sims" / "3" / "R.csv.gz").stat().st_mtime_ns
+    write_sims(pred, raw, data_dir=tmp_path)                       # same data: file untouched
+    assert (tmp_path / "sims" / "3" / "R.csv.gz").stat().st_mtime_ns == before

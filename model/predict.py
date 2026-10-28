@@ -129,14 +129,15 @@ def _order(rows: list[dict], chances: tuple[str, ...]) -> list[dict]:
     return rows
 
 
-def _quali_samples(rng, codes, post, form, sims, exec_sd):
+def _quali_samples(rng, codes, post, form, sims, exec_sd, with_bad=False):
     mu = np.array([post[c][0] for c in codes])
     sd = np.array([math.sqrt(post[c][1] ** 2 + exec_sd ** 2) for c in codes])
     samples = rng.normal(mu, sd, size=(sims, len(codes)))
     # trouble record: each driver's chance of a bad session, from past weekends
     p_fail = np.array([form.quali_fail(c) for c in codes])
     bad = rng.random((sims, len(codes))) < p_fail
-    return samples + bad * rng.uniform(*BAD_SESSION_PENALTY, size=(sims, len(codes)))
+    out = samples + bad * rng.uniform(*BAD_SESSION_PENALTY, size=(sims, len(codes)))
+    return (out, bad) if with_bad else out
 
 
 def this_season_at_track(data, ev: dict) -> list[dict]:
@@ -208,7 +209,9 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
     wet_boost = 1 + 1.8 * rain
 
     if target in config.QUALI_SESSIONS:
-        pos = _rank(_quali_samples(rng, codes, q_post, form, sims, EXEC_SD * wet_boost))
+        laps_q, bad_q = _quali_samples(rng, codes, q_post, form, sims, EXEC_SD * wet_boost, with_bad=True)
+        pos = _rank(laps_q)
+        raw = {"pos": pos, "gap": laps_q, "bad": bad_q}
         rows = _summary(pos, codes)
         idx = {c: j for j, c in enumerate(codes)}
         for r in rows:
@@ -271,6 +274,8 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
         lap_best = pace + rng.normal(0, 0.28 * wet_boost, size=(sims, n))
         lap_best = np.where(dnf, np.inf, lap_best)
         fl = np.argmin(lap_best, axis=1)
+        raw = {"pos": pos, "grid": grid, "dnf": dnf, "fastest": fl, "pace": pace,
+               "sc": sc_happens, "vsc": vsc_happens, "red": red_happens}
 
         rows = _summary(pos, codes)
         for r in rows:
@@ -302,7 +307,26 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
             season_races = [s_ for _, k, s_ in past if k == "R"]
             extra["strategy"] = predict_strategy(weekend_sessions, season_races, track, laps, traits["overtake"])
 
+    inputs = {
+        "codes": codes, "lap_ref": round(float(lap_ref), 3), "rain": round(rain, 3),
+        "drivers": {c: {
+            "team": team_of(c),
+            "one_lap_gap": round(q_post[c][0], 4), "one_lap_sd": round(q_post[c][1], 4),
+            "race_gap": round(r_post[c][0], 4), "race_sd": round(r_post[c][1], 4),
+            "bad_quali_chance": round(form.quali_fail(c), 4),
+        } for c in codes},
+    }
+    if kind == "race":
+        inputs.update({"laps": laps, "overtake": traits["overtake"], "slot_cost_s": round(slot_cost, 3),
+                       "spread_s": round(spread, 3), "grid_from": "actual qualifying" if quali_done else "simulated qualifying",
+                       "sc_prob": round(track.sc_prob, 3), "vsc_prob": round(track.vsc_prob, 3), "red_prob": round(track.red_prob, 3)})
+        for j, c in enumerate(codes):
+            inputs["drivers"][c]["retire_chance"] = round(float(p_dnf[j]), 4)
+            inputs["drivers"][c]["lost_practice"] = c in issues
+    raw["inputs"] = inputs
+
     return {
+        "_raw": raw,
         "round": rnd, "target": target, "target_name": config.SESSION_NAMES[target], "kind": kind,
         "made_after": used[-1] if used else "pre-weekend",
         "made_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),

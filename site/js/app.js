@@ -13,6 +13,7 @@ const routes = {
   standings: () => import("./pages/standings.js"),
   learn: () => import("./pages/learn.js"),
   accuracy: () => import("./pages/accuracy.js"),
+  data: () => import("./pages/data.js"),          // Data room: not in the menus
 };
 const NAV = [
   ["", "This weekend", "flag"],
