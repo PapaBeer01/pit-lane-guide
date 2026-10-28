@@ -7,3 +7,4 @@ pipeline_problems.txt
 site/history-sample/
 pipeline_status.txt
 upgrades_status.txt
+.vercel/

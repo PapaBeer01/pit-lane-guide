@@ -1,8 +1,8 @@
-# Pit Lane Guide
+# The Pit Lane
 
 A free, self-updating Formula 1 site for new fans: every session's results, predictions for qualifying, sprints and Grand Prix, a driver-vs-driver lap comparison, a form guide, standings, and an honest accuracy record.
 
-It runs entirely on free GitHub services: **$0 to host, $0 to update**.
+It runs on free services: GitHub Actions updates it, Vercel (free Hobby plan) hosts it, with a backup copy on GitHub Pages. **$0 to host, $0 to update**.
 
 ## How it works
 
@@ -34,6 +34,15 @@ Every 20 min on race weekends (every 6 h otherwise), GitHub Actions:
 7. **Visit your site** at `https://<your-username>.github.io/<repository-name>/`.
 
 From then on it updates itself. A free address like this costs nothing; you can add your own domain later in **Settings → Pages** (about $10–15 a year) if you want one.
+
+### Hosting on Vercel (free)
+
+Some networks block `*.github.io`, so the main address is on Vercel.
+
+1. Sign up free at **vercel.com** with **Continue with GitHub** (Hobby plan).
+2. Avatar → **Account Settings → Tokens → Create**. Name it `pit-lane-updater`, scope your Hobby account, expiration **No expiration** (or a year), and copy the token.
+3. In this GitHub repository: **Settings → Secrets and variables → Actions → New repository secret**, name `VERCEL_TOKEN`, paste the token.
+4. **Actions → Update data and publish site → Run workflow.** The run summary shows the address (usually `https://thepitlane.vercel.app`).
 
 ### Once a year
 

@@ -7,7 +7,8 @@ const NS = "http://www.w3.org/2000/svg";
 const CARD_W = 600;         // layout width in CSS pixels (phone-like, so text stays readable)
 const SCALE = 3;            // output is 1800 px wide: sharp on any screen, fine for WhatsApp/X
 const PAD = 28;
-const SITE = "papabeer01.github.io/pit-lane-guide";
+// Shown on saved images: the address the picture was made on (Vercel, GitHub Pages, or a custom domain later).
+const SITE = (location.host + location.pathname.replace(/\/[^/]*$/, "")) || "thepitlane.vercel.app";
 const FONTS = [
   ["Atkinson Hyperlegible", 400, "atkinson-hyperlegible-latin-400-normal.woff2"],
   ["Atkinson Hyperlegible", 700, "atkinson-hyperlegible-latin-700-normal.woff2"],
@@ -192,7 +193,7 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
   y += 30;
   ctx.font = font(800, 22, "Big Shoulders Display");
   ctx.fillStyle = tok("--ink");
-  ctx.fillText("Pit Lane Guide", PAD, y);
+  ctx.fillText("The Pit Lane", PAD, y);
   ctx.font = font(400, 13, "Atkinson Hyperlegible");
   ctx.fillStyle = tok("--muted");
   ctx.textAlign = "right";

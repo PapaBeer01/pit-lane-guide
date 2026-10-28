@@ -72,7 +72,7 @@ async function render() {
     app.replaceChildren(view);
     void app.offsetWidth;
     app.classList.add("enter");
-    document.title = mod.title ? `${mod.title(route)} | Pit Lane Guide` : "Pit Lane Guide";
+    document.title = mod.title ? `${mod.title(route)} | The Pit Lane` : "The Pit Lane";
   } catch (e) {
     clearTimeout(slow);
     console.error(e);

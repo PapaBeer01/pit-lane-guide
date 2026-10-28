@@ -147,7 +147,7 @@ def fetch(year: int, ev: dict, known_teams: list[str]) -> dict | None:
     import requests
     for url in urls(year, ev["name"]):
         try:
-            r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0 (pit-lane-guide fan site)"})
+            r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0 (The Pit Lane fan site)"})
         except requests.RequestException as e:
             log.warning("Upgrades %s: %s", ev["name"], e)
             return None

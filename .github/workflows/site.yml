@@ -22,9 +22,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Second copy of the site on Cloudflare Pages (some networks, e.g. in Lagos, refuse *.github.io).
-      # Switched on by adding the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets.
-      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+      # Main address on Vercel (free Hobby plan): some networks, e.g. in Lagos, refuse *.github.io.
+      # Switched on by adding the VERCEL_TOKEN repository secret. GitHub Pages stays as a backup copy.
+      HAS_VERCEL: ${{ secrets.VERCEL_TOKEN != '' }}
     timeout-minutes: 60
     outputs:
       problems: ${{ steps.update.outputs.problems }}
@@ -135,19 +135,26 @@ jobs:
         run: gh workflow run site.yml --ref main --repo "$GITHUB_REPOSITORY"
 
       # Only when something changed (code, data, or a manual run): the free plan allows 500 publishes a month.
-      - name: Publish a copy on Cloudflare Pages
-        if: always() && env.HAS_CLOUDFLARE == 'true' && (github.event_name != 'schedule' || steps.save.outputs.changed == 'true')
-        continue-on-error: true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          npx --yes wrangler@3 pages project create pit-lane-guide --production-branch main 2>/dev/null || true
-          npx --yes wrangler@3 pages deploy site --project-name pit-lane-guide --branch main --commit-dirty=true
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+
+      # Vercel Hobby: up to 100 deployments a day and 100 MB of files per upload (site/ is ~50 MB in Oct 2026).
+      # Only changed files are uploaded. The project "thepitlane" is created on the first run.
+      - name: Publish The Pit Lane on Vercel
+        if: always() && env.HAS_VERCEL == 'true' && (github.event_name != 'schedule' || steps.save.outputs.changed == 'true')
+        continue-on-error: true
+        working-directory: site
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TELEMETRY_DISABLED: "1"
+        run: |
+          npx --yes vercel@latest link --yes --project thepitlane --token "$VERCEL_TOKEN"
+          url=$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN")
+          echo "Published: $url"
+          echo "### The Pit Lane is live" >> "$GITHUB_STEP_SUMMARY"
+          npx --yes vercel@latest inspect "$url" --token "$VERCEL_TOKEN" 2>&1 | grep -i "https://" | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true
+          rm -rf .vercel
 
   deploy:
     needs: build
