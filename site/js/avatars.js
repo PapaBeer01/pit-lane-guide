@@ -1,6 +1,7 @@
 // Original illustrated avatars, drawn in the browser so they cost nothing to download.
 // helmet(code): a generic racing helmet in the driver's team colour with a per-driver stripe pattern.
 // teamBadge(team): a shield in the team colour with short initials. Neither copies any real helmet or logo.
+import { picImg, pics } from "./pics.js";
 import { driver, teamColor } from "./ui.js";
 
 function hash(s) { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; }
@@ -21,6 +22,13 @@ const ACCENTS = ["#FFFFFF", "#11151B", "#FFC400", "#E10600", "#2D7FF9"];
 
 export function helmet(code, { size = 48, cls = "" } = {}) {
   const d = driver(code);
+  if (pics.helmets[code]) {                       // uploaded helmet picture
+    const span = document.createElement("span");
+    span.className = `helmet pic-helmet ${cls}`.trim();
+    span.style.setProperty("--tc", d.color || "#8A929C");
+    span.append(picImg(pics.helmets[code], `${d.name || code} helmet`, "", size));
+    return span;
+  }
   const base = d.color || "#8A929C";
   const hsh = hash(code);
   const light = luminance(base) > 0.45;
@@ -61,7 +69,8 @@ export function avatar(code, { size = 44, ring = true } = {}) {
   el.className = `avatar${ring ? " ring" : ""}`;
   el.style.setProperty("--tc", driver(code).color || "#8A929C");
   el.style.setProperty("--sz", `${size}px`);
-  el.append(helmet(code, { size: Math.round(size * 0.86) }));
+  if (pics.drivers[code]) { el.classList.add("photo"); el.append(picImg(pics.drivers[code], driver(code).name || code)); }
+  else el.append(helmet(code, { size: Math.round(size * 0.86) }));
   el.setAttribute("role", "img");
   el.setAttribute("aria-label", `${driver(code).name || code} helmet illustration`);
   return el;
@@ -76,6 +85,13 @@ export function initials(team) {
 }
 
 export function teamBadge(team, { size = 28 } = {}) {
+  if (pics.teams[team]) {                          // uploaded team logo
+    const span = document.createElement("span");
+    span.className = "team-badge pic-logo";
+    span.style.setProperty("--sz", `${size}px`);
+    span.append(picImg(pics.teams[team], `${team} logo`, "", size));
+    return span;
+  }
   const c = teamColor(team);
   const ink = luminance(c) > 0.45 ? "#11151B" : "#FFFFFF";
   const span = document.createElement("span");

@@ -7,6 +7,7 @@ starts a run). Anything missing keeps the site's own helmet and badge drawings.
 | Folder | What goes in | Name each file by |
 |---|---|---|
 | `drivers/` | Driver head-and-shoulders photos | Driver code, surname or car number: `VER.jpg`, `leclerc.png`, `44.webp` |
+| `helmets/` | Helmet pictures, side-on (transparent PNG looks best) | Same as drivers: `VER.png`, `leclerc.png`, `44.png` |
 | `teams/` | Team logos (transparent PNG or SVG look best) | Team: `ferrari.png`, `red-bull-racing.svg`, `haas.png` |
 | `cars/` | Side-on car pictures (transparent PNG looks best) | Team, like the logos: `mclaren.png` |
 

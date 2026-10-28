@@ -941,3 +941,25 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 :root[data-theme="light"] .tb-stint.t-H { background: #FFFFFF; box-shadow: inset 0 0 0 1.5px #C9CFD8, inset 0 -3px 0 rgba(0,0,0,.08); }
 .poster-track:empty { display: none; }
 .poster:has(.poster-track:empty) { padding-bottom: 34px; }
+
+/* uploaded pictures in the drawing slots */
+.pic { opacity: 0; transition: opacity .35s var(--ease); }
+.pic.in { opacity: 1; }
+.pic-helmet img { display: block; width: var(--sz, 48px); height: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+.avatar .pic-helmet img { width: 100%; }
+.pic-logo { display: inline-grid; place-items: center; width: var(--sz, 28px); height: var(--sz, 28px); flex: none; }
+.pic-logo img { width: 100%; height: 100%; object-fit: contain; }
+.pc-mark .pic-logo { width: 100%; height: 110px; opacity: .95; transform: none; }
+.pc-mark .pic-logo img { filter: drop-shadow(0 6px 16px rgba(0,0,0,.35)); }
+.cr-who .pic-logo { width: 24px; height: 22px; }
+.car-photo { height: auto; object-fit: contain; display: block; }
+.ph-helmet .driver-photo { width: auto; max-width: 100%; height: 240px; }
+.ph-helmet .pic-helmet img { width: 220px; }
+.pc-art:has(.driver-photo) { height: 190px; padding: 6px 0 0 0; margin-bottom: -46px; position: relative; z-index: 0; }
+.pc-art .driver-photo { height: 100%; max-width: 70%; }
+.pc-strip { position: relative; z-index: 1; }
+.pc-mark:has(.pic-logo) { width: 42%; top: 12px; right: 12px; }
+.pc-mark .pic-logo { height: 96px; }
+@media (max-width: 639px) { .pc-art:has(.driver-photo) { height: 168px; } .pc-mark .pic-logo { height: 84px; } }
+.pc-art:has(.driver-photo) { height: 170px; margin-bottom: -10px; padding: 8px 0 0 14px; }
+@media (max-width: 639px) { .pc-art:has(.driver-photo) { height: 160px; } .pc-mark:has(.pic-logo) { width: 36%; top: 18px; } .pc-mark .pic-logo { height: 76px; } }

@@ -2,12 +2,12 @@
 //   App files (HTML, CSS, JS, fonts): served from the phone's cache straight away, refreshed in the background.
 //   Data (JSON): fetched fresh when the network answers within a few seconds, otherwise the saved copy is used.
 //   Lap telemetry: rarely changes, so the saved copy is used first.
-const SHELL = "plg-shell-v20";
+const SHELL = "plg-shell-v21";
 const IMG = "plg-img-v1";
 const DATA = "plg-data-v1";
 const SHELL_FILES = [
   "./", "index.html", "css/style.css",
-  "js/app.js", "js/ui.js", "js/charts.js", "js/icons.js", "js/avatars.js", "js/strategy.js", "js/snapshot.js", "js/car.js", "js/upgrades.js", "js/media.js", "js/visuals.js",
+  "js/app.js", "js/ui.js", "js/charts.js", "js/icons.js", "js/avatars.js", "js/strategy.js", "js/snapshot.js", "js/car.js", "js/upgrades.js", "js/media.js", "js/visuals.js", "js/pics.js",
   "js/pages/home.js", "js/pages/races.js", "js/pages/race.js", "js/pages/compare.js", "js/pages/form.js",
   "js/pages/standings.js", "js/pages/drivers.js", "js/pages/learn.js", "js/pages/accuracy.js", "js/pages/data.js",
   "fonts/atkinson-hyperlegible-latin-400-normal.woff2", "fonts/atkinson-hyperlegible-latin-700-normal.woff2",

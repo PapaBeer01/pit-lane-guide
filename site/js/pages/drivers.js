@@ -1,5 +1,5 @@
 import { avatar, helmet, teamBadge } from "../avatars.js";
-import { carSvg } from "../car.js";
+import { carArt, driverArt } from "../media.js";
 import { lineChart } from "../charts.js";
 import { icon } from "../icons.js";
 import { animatedNumber, ctx, driver, empty, eventByRound, h, load, nextEvent, pct, probBar, section, stintText, term } from "../ui.js";
@@ -25,7 +25,7 @@ export default async function drivers() {
   let i = 0;
   const blocks = ordered.map((team, ti) => h("section", { class: "team-block", style: { "--tc": driver(teams[team][0]).color, "--i": Math.min(ti, 10) } },
     h("div", { class: "team-head" }, teamBadge(team, { size: 30 }), h("h2", {}, team),
-      carSvg({ color: driver(teams[team][0]).color, width: 110, cls: "team-car", label: `${team} car, in team colour` })),
+      carArt(team, { color: driver(teams[team][0]).color, width: 110, cls: "team-car", label: `${team} car` })),
     h("div", { class: "driver-cards" }, teams[team].map((code) => card(code, stats[code], i++)))));
   const roundsText = (d) => {
     const n = d.race_rounds?.length || 0;
@@ -84,7 +84,7 @@ export async function profile(route) {
   const f = form?.drivers.find((x) => x.code === code);
 
   const hero = h("section", { class: "profile-hero", style: { "--tc": d.color } },
-    h("div", { class: "ph-helmet" }, helmet(code, { size: 220 })),
+    h("div", { class: "ph-helmet" }, driverArt(code, { size: 220 })),
     h("div", { class: "ph-text" },
       h("div", { class: "who-row" }, teamBadge(d.team, { size: 26 }), h("span", { class: "muted" }, d.team), d.num ? h("span", { class: "chip" }, `#${d.num}`) : null,
         d.current === false ? h("span", { class: "chip warn" }, d.race_rounds?.length ? "Not in the latest line-up" : "Friday practice only") : null),

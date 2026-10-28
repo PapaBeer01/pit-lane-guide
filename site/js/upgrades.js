@@ -1,5 +1,5 @@
 // New car parts declared to the FIA for a race weekend, team by team, in the teams' own words.
-import { carSvg } from "./car.js";
+import { carArt } from "./media.js";
 import { h, section, teamColor } from "./ui.js";
 
 // what the FIA's "primary reason" wording means, in plain language
@@ -42,7 +42,7 @@ export function upgradesSection(data, { title = "New parts this weekend", open =
     const color = teamColor(t.team);
     return h("details", { class: "upg-team", open: i < open, style: { "--tc": color } },
       h("summary", {},
-        carSvg({ color, width: 72, cls: "upg-car" }),
+        carArt(t.team, { color, width: 72, cls: "upg-car" }),
         h("b", {}, t.team),
         h("span", { class: "chip" }, `${t.updates.length} new part${t.updates.length === 1 ? "" : "s"}`)),
       h("ul", { class: "upg-list" }, packaged(t.updates).map((u) => h("li", {},
