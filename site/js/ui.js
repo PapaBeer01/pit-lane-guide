@@ -37,10 +37,18 @@ export async function load(path) {
 
 // ---------- season context ----------
 export const ctx = { season: null, drivers: {}, override: {} };
+// Official 2026 team colours (supplied by the site owner); data colours are the fallback
+export const TEAM_COLORS = {
+  "Red Bull Racing": "#4570C0", Ferrari: "#D52E37", Mercedes: "#75F1D3", McLaren: "#EF8733",
+  "Aston Martin": "#4B9774", Alpine: "#479FE2", Williams: "#3267D4", "Racing Bulls": "#7091F8",
+  "Haas F1 Team": "#DFE1E2", Audi: "#EB4526", Cadillac: "#AAAADD",
+};
 export function driver(code) {
   const base = ctx.drivers[code] || { code, name: code, team: "", color: "#8A929C", last: code };
   const o = ctx.override[code];
-  return o ? { ...base, ...o } : base;
+  const d = o ? { ...base, ...o } : base;
+  const c = TEAM_COLORS[d.team];
+  return c ? { ...d, color: c } : d;
 }
 // A race page shows teams as they were that weekend: a substitute or a driver who has since
 // moved keeps that weekend's team and colour. The router clears this on every page change.
