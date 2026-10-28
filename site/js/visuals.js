@@ -3,7 +3,7 @@
 // "who was quickest where" track map, chunky tyre-strategy bars and the session picker.
 import { icon } from "./icons.js";
 import { driverArt, teamArt } from "./media.js";
-import { ctx, driver, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT } from "./ui.js";
+import { ctx, driver, TEAM_DEEP, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT } from "./ui.js";
 
 const NS = "http://www.w3.org/2000/svg";
 function s(tag, attrs = {}, ...kids) {
@@ -94,7 +94,7 @@ export function podiumCards(rows, gapText, { label = "Podium" } = {}) {
     const light = isLight(c);
     return h("a", {
       class: `pod-card${light ? " light" : ""}`, href: `#/driver/${r.code}`,
-      style: { "--tc": c, animationDelay: `${i * 90}ms` }, "aria-label": `P${r.pos} ${d.name}, ${d.team}: ${gapText(r)}`,
+      style: { "--tc": c, "--deep": TEAM_DEEP[d.team] || null, animationDelay: `${i * 90}ms` }, "aria-label": `P${r.pos} ${d.name}, ${d.team}: ${gapText(r)}`,
     },
       h("span", { class: "pc-mark", "aria-hidden": "true" }, teamArt(d.team, { size: 120 })),
       h("span", { class: "pc-art" }, driverArt(r.code, { size: 150 })),

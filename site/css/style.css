@@ -984,3 +984,8 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
   .pc-mark:has(.pic-logo) { width: 26%; top: 16px; }
   .pc-mark .pic-logo { height: 54px; }
 }
+.pod-card.light[style*="--deep"] {
+  background:
+    linear-gradient(118deg, transparent 0 56%, rgba(255,255,255,.35) 56% 57%, transparent 57%),
+    linear-gradient(118deg, color-mix(in srgb, var(--deep) 80%, #03100D) 0%, var(--deep) 56%, var(--tc) 56%, color-mix(in srgb, var(--tc) 80%, #fff) 100%);
+}
