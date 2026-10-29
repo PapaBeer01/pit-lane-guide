@@ -1,6 +1,5 @@
-import { brandCar } from "./car.js";
 import { icon } from "./icons.js";
-import { brandCars, loadMedia, loaderCar } from "./media.js";
+import { loadMedia, loaderCar } from "./media.js";
 import { clearSessionTeams, ctx, h, load, localTime, reducedMotion } from "./ui.js";
 
 const routes = {
@@ -33,7 +32,7 @@ function parse() {
 }
 
 function buildChrome() {
-  document.querySelector(".brand svg")?.replaceWith(brandCar());
+  // the logo stays the chequered flag from index.html
   document.getElementById("nav").replaceChildren(...NAV.map(([r, label, ic]) =>
     h("a", { href: `#/${r}`, "data-route": r }, icon(ic, { size: 20 }), label)));
   const themeBtn = h("button", { class: "icon-btn", type: "button", "aria-label": "Switch light or dark mode" });
@@ -120,8 +119,6 @@ async function start() {
       h("p", {}, "The first data update hasn't finished yet. This page fills in automatically once it has.")));
     return;
   }
-  const cars = brandCars();                         // uploaded cars take turns in the logo
-  if (cars) document.querySelector(".brand .brand-car")?.replaceWith(cars);
   ctx.season = season;
   ctx.drivers = Object.fromEntries(season.drivers.map((d) => [d.code, d]));
   document.getElementById("sample-strip").hidden = !season.sample;
