@@ -2,7 +2,7 @@
 //   App files (HTML, CSS, JS, fonts): served from the phone's cache straight away, refreshed in the background.
 //   Data (JSON): fetched fresh when the network answers within a few seconds, otherwise the saved copy is used.
 //   Lap telemetry: rarely changes, so the saved copy is used first.
-const SHELL = "plg-shell-v34";
+const SHELL = "plg-shell-v35";
 const IMG = "plg-img-v1";
 const DATA = "plg-data-v1";
 const SHELL_FILES = [

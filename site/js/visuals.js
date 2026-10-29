@@ -76,7 +76,7 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
   }
   // a team car instead of the start dot: it drives one lap, drawing the white line behind it, then parks on the line
   svg.append(s("rect", { x: t.p[0] - 0.6, y: t.p[1] - 3.2, width: 1.2, height: 6.4, class: "tr-startline" }));
-  const sizeFor = (top) => (top ? { width: carSize * 1.1, height: carSize * 0.55, x: -carSize * 0.55, y: -carSize * 0.275, preserveAspectRatio: "xMidYMid meet" }
+  const sizeFor = (top) => (top ? { width: carSize * 0.9, height: carSize * 0.36, x: -carSize * 0.45, y: -carSize * 0.18, preserveAspectRatio: "xMidYMid meet" }
     : { width: carSize, height: carSize * 0.32, x: -carSize / 2, y: -carSize * 0.26, preserveAspectRatio: "xMidYMax meet" });
   let isTop = !!topOf(team);
   const car = s("image", { href: carSrc, class: "tr-car", ...sizeFor(isTop) });
