@@ -1,5 +1,5 @@
 // Hand-built SVG charts: thin marks, recessive axes, a hover layer on every chart.
-import { h, driver, isSecondDriver } from "./ui.js";
+import { h, driver, isSecondDriver, teamLogoSrc, teamMark } from "./ui.js";
 
 const NS = "http://www.w3.org/2000/svg";
 function s(tag, attrs = {}, ...kids) {
@@ -36,7 +36,7 @@ export function lineChart(series, opts = {}) {
     wrap.querySelector("svg")?.remove();
     const W = Math.max(280, wrap.clientWidth || 600);
     const H = opts.height || 260;
-    const m = { t: 12, r: opts.labels ? 52 : 14, b: 30, l: 44 };
+    const m = { t: 12, r: opts.labels ? 70 : 14, b: 30, l: 44 };
     const all = series.flatMap((se) => se.points.filter((p) => p[1] !== null && p[1] !== undefined));
     if (!all.length) return;
     const xMin = opts.xMin ?? Math.min(...all.map((p) => p[0]));
@@ -87,14 +87,15 @@ export function lineChart(series, opts = {}) {
       }));
       if (opts.labels && se.points.length) {
         const last = [...se.points].reverse().find((p) => p[1] !== null);
-        if (last && !dim) endLabels.push({ x: x(last[0]) + 6, y: y(last[1]) + 4, text: se.name, color: se.color });
+        if (last && !dim) endLabels.push({ x: x(last[0]) + 6, y: y(last[1]) + 4, text: se.name, color: se.color, logo: se.id ? teamLogoSrc(se.id) : null });
       }
     }
     // keep end labels at least 14px apart so they never overlap
     endLabels.sort((a, b) => a.y - b.y);
     for (let i = 1; i < endLabels.length; i++) endLabels[i].y = Math.max(endLabels[i].y, endLabels[i - 1].y + 14);
     for (const l of endLabels) {
-      const tx = s("text", { x: l.x, y: l.y, class: "label" });
+      if (l.logo) lines.append(s("image", { href: l.logo, x: l.x, y: l.y - 11, width: 14, height: 14, preserveAspectRatio: "xMidYMid meet" }));
+      const tx = s("text", { x: l.x + (l.logo ? 17 : 0), y: l.y, class: "label" });
       tx.textContent = l.text;
       lines.append(tx);
     }
@@ -165,7 +166,7 @@ export function driverSeries(code, points, extra = {}) {
 export function legend(codes) {
   return h("div", { class: "legend" }, codes.map((c) => {
     const d = driver(c);
-    return h("span", {}, h("i", { class: isSecondDriver(c) ? "dash" : "", style: { background: d.color, "--c": d.color } }), c);
+    return h("span", {}, h("i", { class: isSecondDriver(c) ? "dash" : "", style: { background: d.color, "--c": d.color } }), teamMark(c, { size: 14 }), c);
   }));
 }
 
@@ -175,8 +176,8 @@ export function gapBars(rows, { unit = "s", max } = {}) {
   const list = h("div", { style: { display: "grid", gap: "6px" }, role: "list" });
   for (const r of rows) {
     const d = driver(r.code);
-    list.append(h("div", { role: "listitem", style: { display: "grid", gridTemplateColumns: "56px 1fr 70px", alignItems: "center", gap: "10px" } },
-      h("span", { class: "driver" }, h("i", { class: "team-dot", style: { background: d.color } }), r.code),
+    list.append(h("div", { role: "listitem", style: { display: "grid", gridTemplateColumns: "64px 1fr 70px", alignItems: "center", gap: "10px" } },
+      h("span", { class: "driver" }, teamMark(r.code), r.code),
       h("span", { style: { height: "12px", background: "var(--surface-2)", borderRadius: "4px", position: "relative" } },
         h("i", { style: { position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.max(1.5, (r.value / top) * 100)}%`, background: d.color, borderRadius: "0 4px 4px 0", display: "block" } })),
       h("span", { class: "small", style: { textAlign: "right" } }, r.label ?? (r.value === 0 ? "Fastest" : `+${r.value.toFixed(3)}${unit}`))));

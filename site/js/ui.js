@@ -1,5 +1,6 @@
 // Small helpers shared by every page: DOM building, data loading, formatting, glossary, motion.
 import { icon } from "./icons.js";
+import { picImg, pics } from "./pics.js";
 
 export function h(tag, attrs = {}, ...kids) {
   const el = document.createElement(tag);
@@ -90,10 +91,25 @@ export function isSecondDriver(code) {
   return mates.length > 1 && mates.indexOf(code) === 1;
 }
 
+// The team's mark beside a driver code: the uploaded team logo if there is one, else a dot in team colour
+export function teamMark(code, { size = 16 } = {}) {
+  const d = driver(code);
+  const src = pics.teams[d.team];
+  if (src) {
+    const im = picImg(src, "", "team-mark", null);
+    im.setAttribute("aria-hidden", "true");
+    im.style.setProperty("--sz", `${size}px`);
+    im.title = d.team;
+    return im;
+  }
+  return h("i", { class: "team-dot", style: { background: d.color, boxShadow: `0 0 8px ${d.color}` }, "aria-hidden": "true" });
+}
+export const teamLogoSrc = (code) => pics.teams[driver(code).team] || null;
+
 export function driverTag(code, { full = false } = {}) {
   const d = driver(code);
   return h("span", { class: "driver" },
-    h("i", { class: "team-dot", style: { background: d.color, boxShadow: `0 0 8px ${d.color}` }, "aria-hidden": "true" }),
+    teamMark(code),
     code, full ? h("span", { class: "full" }, d.name) : null);
 }
 

@@ -2,7 +2,7 @@ import { gapBars, lineChart, driverSeries } from "../charts.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
 import { upgradesSection } from "../upgrades.js";
-import { driver, driverTag, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
+import { driver, driverTag, teamMark, empty, eventByRound, h, lapTime, load, localTime, noteList, reducedMotion, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
 import { predictionTable } from "./home.js";
 import { teamArt } from "../media.js";
 import { fastestLapCard, podiumCards, posterCard, quickestMap, sessionPicker, speedCard, tracks, tyreBars } from "../visuals.js";
@@ -273,7 +273,7 @@ function longRunSection(p) {
     chips.replaceChildren(...codes.map((c) => h("button", {
       class: "toggle-chip", type: "button", "aria-pressed": String(picked.has(c)), style: { "--tc": driver(c).color },
       onclick: () => { if (picked.has(c)) { if (picked.size > 1) picked.delete(c); } else picked.add(c); draw(); },
-    }, h("i"), c)));
+    }, teamMark(c), c)));
     const series = [...picked].map((c) => driverSeries(c, longestRun(c).times.map((t, i) => [i + 1, t])));
     const all = series.flatMap((x) => x.points.map((q) => q[1])).filter((t) => t);
     if (!all.length) { chartBox.replaceChildren(h("p", { class: "muted" }, "No long runs to show.")); return; }
@@ -349,7 +349,7 @@ function racePaceSection(p, sess) {
     chips.replaceChildren(...codes.map((c) => h("button", {
       class: "toggle-chip", type: "button", "aria-pressed": String(picked.has(c)), style: { "--tc": driver(c).color },
       onclick: () => { if (picked.has(c)) { if (picked.size > 1) picked.delete(c); } else picked.add(c); drawChart(); },
-    }, h("i"), c)));
+    }, teamMark(c), c)));
     const series = [...picked].map((c) => driverSeries(c, (p.laps[c] || []).map(([n, t]) => [n, t])));
     const all = series.flatMap((x) => x.points.map((q) => q[1]));
     if (!all.length) { chartBox.replaceChildren(h("p", { class: "muted" }, "No clean laps to show.")); return; }

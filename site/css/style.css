@@ -999,3 +999,11 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .brand-cars img.on.in { opacity: 1; transform: none; }
 .loader-car { width: min(260px, 80vw); height: auto; display: block; animation: bob .3s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .brand-cars img { transition: none; } .loader-car { animation: none; } }
+
+/* team logo beside a driver code (when logos are uploaded) */
+.team-mark { width: var(--sz, 16px); height: var(--sz, 16px); object-fit: contain; flex: none; display: inline-block; vertical-align: middle; }
+.toggle-chip .team-mark { width: 14px; height: 14px; }
+.tb-code { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; }
+.tb-row, .tb-axis { grid-template-columns: 62px 1fr; }
+.tb-pop { left: 70px; }
+.legend span { align-items: center; }

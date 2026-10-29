@@ -3,7 +3,7 @@
 // "who was quickest where" track map, chunky tyre-strategy bars and the session picker.
 import { icon } from "./icons.js";
 import { driverArt, teamArt } from "./media.js";
-import { ctx, driver, TEAM_DEEP, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT } from "./ui.js";
+import { ctx, driver, teamMark, TEAM_DEEP, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT } from "./ui.js";
 
 const NS = "http://www.w3.org/2000/svg";
 function s(tag, attrs = {}, ...kids) {
@@ -116,7 +116,7 @@ export function fastestLapCard(f) {
       f.lap ? h("span", { class: "hn-side" }, icon("flag", { size: 16 }), `Lap ${f.lap}`) : null),
     h("p", { class: "hn-big" }, lapTime(f.time)),
     h("div", { class: "hn-row" },
-      h("span", { class: "hn-who" }, h("i", { class: "team-dot", style: { background: d.color } }), f.code, h("small", {}, d.name)),
+      h("span", { class: "hn-who" }, teamMark(f.code, { size: 22 }), f.code, h("small", {}, d.name)),
       t ? h("span", { class: "hn-tyre" }, h("span", { class: `tyre-dot t-${t.c}` }, t.c), TYRE_NAME[t.c] || "") : null),
     t ? h("div", { class: "hn-foot" },
       h("span", {}, icon(t.new ? "sparkle" : "layers", { size: 16 }), t.new ? "Fresh set of tyres" : "Used tyres"),
@@ -154,7 +154,7 @@ export function speedCard(hero) {
       h("span", { class: "ts-label" }, icon("bolt", { size: 18 }), "Top speed"),
       h("p", { class: "ts-big" }, `${ts.kmh}`, h("small", {}, " km/h")),
       h("p", { class: "ts-mph" }, `${ts.mph} mph`),
-      h("p", { class: "ts-who" }, h("i", { class: "team-dot", style: { background: driver(ts.code).color } }), ts.code, h("small", {}, " on their fastest lap"))) : null);
+      h("p", { class: "ts-who" }, teamMark(ts.code, { size: 18 }), ts.code, h("small", {}, " on their fastest lap"))) : null);
 }
 
 // ---------- who was quickest where (top three) ----------
@@ -183,7 +183,7 @@ export function quickestMap(t, minis) {
   return h("section", { class: "panel qmap-card" },
     h("h3", { class: "qm-title" }, icon("pin", { size: 18 }), "Who was quickest where"),
     svg,
-    h("div", { class: "qm-key" }, minis.codes.map((c, i) => h("span", {}, h("i", { style: { background: colors[i] } }), h("b", {}, c), `${counts[i]} of ${k} parts`))),
+    h("div", { class: "qm-key" }, minis.codes.map((c, i) => h("span", {}, h("i", { style: { background: colors[i] } }), teamMark(c, { size: 14 }), h("b", {}, c), `${counts[i]} of ${k} parts`))),
     h("p", { class: "small muted" }, "The lap split into equal parts, coloured by which of the top three was fastest through each one on their best lap."));
 }
 
@@ -198,7 +198,7 @@ export function tyreBars(order, stints, totalLaps) {
     const st = stints[code];
     const label = st.map((x) => `${TYRE_NAME[x.c] || "Unknown"} for ${x.to - x.from + 1} laps`).join(", then ");
     const row = h("button", { class: "tb-row", type: "button", "aria-label": `${code}: ${label}` },
-      h("span", { class: "tb-code" }, code),
+      h("span", { class: "tb-code" }, teamMark(code, { size: 14 }), code),
       h("span", { class: "tb-track" }, st.map((x, i) => {
         const laps = x.to - x.from + 1;
         return h("span", {
