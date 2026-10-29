@@ -85,11 +85,12 @@ export function initials(team) {
 }
 
 export function teamBadge(team, { size = 28 } = {}) {
-  if (pics.teams[team]) {                          // uploaded team logo
+  const logo = size <= 40 ? (pics.icons[team] || pics.teams[team]) : (pics.teams[team] || pics.icons[team]);
+  if (logo) {                                      // uploaded icon (small sizes) or full logo (large)
     const span = document.createElement("span");
     span.className = "team-badge pic-logo";
     span.style.setProperty("--sz", `${size}px`);
-    span.append(picImg(pics.teams[team], `${team} logo`, "", size));
+    span.append(picImg(logo, `${team} logo`, "", size));
     return span;
   }
   const c = teamColor(team);

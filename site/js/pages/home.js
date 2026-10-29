@@ -3,7 +3,7 @@ import { carArt } from "../media.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
 import { upgradesSection } from "../upgrades.js";
-import { animatedNumber, ctx, driver, driverTag, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
+import { animatedNumber, ctx, driver, driverTag, teamMark, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
 
 export const title = () => "This weekend";
 
@@ -120,7 +120,7 @@ function startingGrid(rows, kind, raceKey) {
       return h("div", { class: `slot${i === 0 ? " pole" : ""}`, style: { animationDelay: `${i * 70}ms`, "--tc": d.color }, title: d.name },
         helmet(r.code, { size: 40 }),
         h("span", { class: "p" }, i + 1),
-        h("span", { class: "code" }, h("i"), r.code),
+        h("span", { class: "code" }, teamMark(r.code, { size: 18 }), r.code),
         h("span", { class: "sub" }, r.risk ? icon("wrench", { size: 13, label: "Recent qualifying trouble" }) : null, r.sub));
     }));
     btn.replaceChildren(icon(showAll ? "up" : "down", { size: 16 }), showAll ? "Show top 10" : `Show all ${rows.length}`);

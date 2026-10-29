@@ -3,7 +3,7 @@ import { tyreBars as stintChart } from "../visuals.js";
 import { avatar, helmet } from "../avatars.js";
 import { icon } from "../icons.js";
 import { canShareFiles, imageButton, makeImage, offscreen } from "../snapshot.js";
-import { ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
+import { teamMark, ctx, driver, empty, h, lapTime, load, noteList, section, SESSION_LABEL, term, tyre, useSessionTeams } from "../ui.js";
 
 export const title = () => "Compare drivers";
 const NEUTRAL = "#8A929C";
@@ -83,8 +83,8 @@ export default async function compare(route) {
     noteList(insights, "bolt"));
 
   const keyLegend = h("div", { class: "legend" },
-    h("span", {}, h("i", { style: { background: colA } }), `${a} ${driver(a).last}`),
-    h("span", {}, h("i", { class: dashB ? "dash" : "", style: { background: colB, "--c": colB } }), `${b} ${driver(b).last}`));
+    h("span", {}, h("i", { style: { background: colA } }), teamMark(a, { size: 14 }), `${a} ${driver(a).last}`),
+    h("span", {}, h("i", { class: dashB ? "dash" : "", style: { background: colB, "--c": colB } }), teamMark(b, { size: 14 }), `${b} ${driver(b).last}`));
 
   const mapOpts = {
     colourAt: (dist) => segWinner(dist, d, delta) === "a" ? colA : colB,

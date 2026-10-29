@@ -2,7 +2,7 @@ import { avatar, helmet, teamBadge } from "../avatars.js";
 import { carArt, driverArt } from "../media.js";
 import { lineChart } from "../charts.js";
 import { icon } from "../icons.js";
-import { animatedNumber, ctx, driver, empty, eventByRound, h, load, nextEvent, pct, probBar, section, stintText, term } from "../ui.js";
+import { teamMark, animatedNumber, ctx, driver, empty, eventByRound, h, load, nextEvent, pct, probBar, section, stintText, term } from "../ui.js";
 
 export const title = () => "Meet the grid";
 
@@ -42,7 +42,7 @@ export default async function drivers() {
         card(d.code, stats[d.code], i++), h("p", { class: "small muted" }, roundsText(d)))))) : null,
     fridays.length ? section(["Friday practice only", "wrench"], "Teams must give young or reserve drivers some practice running, so these drivers took over a car for a Friday session.",
       h("div", { class: "panel" }, h("ul", { class: "legend", style: { listStyle: "none", margin: 0, padding: 0 } },
-        fridays.map((d) => h("li", {}, h("i", { style: { background: d.color } }), `${d.name} (${d.team || "reserve"})`))))) : null,
+        fridays.map((d) => h("li", {}, teamMark(d.code), `${d.name} (${d.team || "reserve"})`))))) : null,
     h("p", { class: "small muted" }, "Helmets are our own illustrations in team colours, not the drivers' real designs."));
 }
 

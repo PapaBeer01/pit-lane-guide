@@ -1,6 +1,6 @@
 // Which owner-supplied pictures exist (site/img/manifest.json). Kept in its own tiny module so the
 // drawing helpers (avatars.js) and media.js can both ask without importing each other.
-export const pics = { drivers: {}, teams: {}, cars: {}, helmets: {} };
+export const pics = { drivers: {}, teams: {}, icons: {}, cars: {}, helmets: {} };
 
 export async function loadPics() {
   if (window.__DATA__) return;

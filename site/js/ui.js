@@ -94,7 +94,7 @@ export function isSecondDriver(code) {
 // The team's mark beside a driver code: the uploaded team logo if there is one, else a dot in team colour
 export function teamMark(code, { size = 16 } = {}) {
   const d = driver(code);
-  const src = pics.teams[d.team];
+  const src = pics.icons[d.team] || pics.teams[d.team];      // icon-only mark first: clearer when small
   if (src) {
     const im = picImg(src, "", "team-mark", null);
     im.setAttribute("aria-hidden", "true");
@@ -104,7 +104,7 @@ export function teamMark(code, { size = 16 } = {}) {
   }
   return h("i", { class: "team-dot", style: { background: d.color, boxShadow: `0 0 8px ${d.color}` }, "aria-hidden": "true" });
 }
-export const teamLogoSrc = (code) => pics.teams[driver(code).team] || null;
+export const teamLogoSrc = (code) => pics.icons[driver(code).team] || pics.teams[driver(code).team] || null;
 
 export function driverTag(code, { full = false } = {}) {
   const d = driver(code);
