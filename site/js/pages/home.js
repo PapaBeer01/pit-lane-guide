@@ -1,5 +1,5 @@
 import { avatar, helmet } from "../avatars.js";
-import { carSvg } from "../car.js";
+import { carArt } from "../media.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
 import { upgradesSection } from "../upgrades.js";
@@ -85,7 +85,8 @@ function startLights(gridEl, reveal, leader) {
   });
   const caption = h("div", { class: "lights-caption", "aria-live": "polite" }, "");
   const color = leader ? driver(leader).color : "var(--flag)";
-  const car = carSvg({ color, tyre: "var(--tyre-S)", width: 240, cls: "revving" });
+  const car = carArt(leader ? driver(leader).team : "", { color, width: 240, cls: "car revving", label: "Car on the grid" });   // the pole favourite's team car
+  if (car.tagName === "IMG") { car.loading = "eager"; car.style.width = ""; }
   const launch = h("div", { class: "launch", style: { "--car": color } }, h("span", { class: "smoke" }), car);
   const wrap = h("div", { class: "lights-wrap", role: "img", "aria-label": "Start lights", onclick: () => done() },
     h("div", { class: "lights" }, cols), launch, caption);
