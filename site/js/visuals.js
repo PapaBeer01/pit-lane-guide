@@ -221,7 +221,8 @@ export function tyreBars(order, stints, totalLaps) {
       pop.replaceChildren(h("b", {}, `${code}  ${driver(code).name}`),
         ...st.map((x) => h("span", { class: "tb-line" }, tyreDot(x.c),
           h("b", { class: `tb-c t-${x.c}` }, `${TYRE_NAME[x.c] || "Unknown"}: ${x.to - x.from + 1} laps`),
-          h("small", {}, `laps ${x.from}–${x.to}${x.new === false ? ", used set" : ""}`))));
+          h("small", {}, `laps ${x.from}–${x.to}${x.new === false ? ", used set" : ""}`))),
+        h("small", { class: "muted" }, "Tap a tyre to see what it means."));
       pop.hidden = false;
       const top = row.offsetTop + row.offsetHeight + 6;
       pop.style.top = `${top + pop.offsetHeight > wrap.offsetHeight ? row.offsetTop - pop.offsetHeight - 6 : top}px`;

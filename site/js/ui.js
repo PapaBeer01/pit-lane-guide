@@ -252,19 +252,44 @@ export function rangeBar(lo, hi, pred, n, actual) {
     h("span", { class: "dot", style: { left: x(pred) } }),
     actual ? h("span", { class: "act", style: { left: x(actual) } }) : null);
 }
-// A tyre marker with its letter: the uploaded tyre picture if there is one, else our coloured ring
+// What each tyre means, for new fans: shown when any tyre marker is tapped
+export const TYRES = {
+  S: ["Soft (red)", "The fastest tyre over one lap, but it wears out quickest: usually good for about 15 to 20 laps in a race. Used for qualifying and short, attacking stints.", "Quickest"],
+  M: ["Medium (yellow)", "The middle choice: around half a second a lap slower than the soft, but it lasts longer, often 25 to 30 laps. A common race starting tyre.", "+0.4 to 0.5s a lap"],
+  H: ["Hard (white)", "The slowest dry tyre, nearly a second a lap off the soft, but the toughest: it can run 35 to 45 laps. Teams use it to make fewer pit stops.", "+0.8 to 1s a lap"],
+  I: ["Intermediate (green)", "For a damp track or light rain. Grooves clear some water; on a fully dry track it overheats and wears fast.", "Damp track"],
+  W: ["Wet (blue)", "For heavy rain and standing water. Deep grooves push water away so the car doesn't aquaplane, but it's slow once the track dries.", "Heavy rain"],
+};
+const TYRE_SHORT = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" };
+export function explainTyre(anchor, c) {
+  const t = TYRES[c];
+  if (!t) return;
+  showPop(anchor, t[0],
+    h("div", { class: "pop-tyre" }, pics.tyres[c] ? picImg(pics.tyres[c], "", "pop-tyre-pic in", null) : h("span", { class: `tyre-dot big t-${c}` }, c),
+      h("span", { class: "chip" }, t[2])),
+    h("p", {}, t[1]),
+    h("p", { class: "small muted" }, "Every driver must use at least two different dry tyres in a dry race."));
+}
+function tyreButton(c, inner) {
+  const btn = h("button", { class: "tyre-btn", type: "button", "aria-haspopup": "dialog", "aria-label": `${TYRE_SHORT[c] || "Unknown"} tyre: what it means` }, inner);
+  btn.addEventListener("click", (e) => { e.stopPropagation(); explainTyre(btn, c); });
+  return btn;
+}
+// A tyre marker with its letter: the uploaded tyre picture if there is one, else our coloured ring. Tap to learn what it means.
 export function tyreDot(c, extra = {}) {
-  const name = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" }[c] || "Unknown";
+  const name = TYRE_SHORT[c] || "Unknown";
   if (pics.tyres[c]) {
     const im = picImg(pics.tyres[c], `${name} tyre`, "tyre-pic", null);
-    im.title = name;
-    return im;
+    return tyreButton(c, im);
   }
-  return h("span", { class: `tyre-dot t-${c}`, ...extra }, c);
+  return tyreButton(c, h("span", { class: `tyre-dot t-${c}`, ...extra }, c));
 }
 export function tyre(c) {
-  const name = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" }[c] || "Unknown";
-  if (pics.tyres[c]) { const im = picImg(pics.tyres[c], `${name} tyre`, "tyre-pic small", null); im.title = `${name} tyre`; return im; }
+  const name = TYRE_SHORT[c] || "Unknown";
+  if (pics.tyres[c]) return tyreButton(c, picImg(pics.tyres[c], `${name} tyre`, "tyre-pic small", null));
+  return tyreButton(c, tyreRing(c, name));
+}
+function tyreRing(c, name) {
   return h("span", { class: "tyre", style: { "--c": `var(--tyre-${c})` }, title: `${name} tyre`, "aria-label": `${name} tyre` });
 }
 
@@ -290,9 +315,16 @@ export function term(key, text) {
   const btn = h("button", { class: "term", type: "button", "aria-haspopup": "dialog" }, text || GLOSSARY[key][0]);
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
-    closePop();
     const [title, body] = GLOSSARY[key];
-    const pop = h("div", { class: "pop", role: "dialog", "aria-label": title }, h("h3", {}, title), h("p", {}, body));
+    showPop(btn, title, h("p", {}, body));
+  });
+  return btn;
+}
+// A small explainer bubble next to whatever was tapped
+export function showPop(btn, title, ...body) {
+  {
+    closePop();
+    const pop = h("div", { class: "pop", role: "dialog", "aria-label": title }, h("h3", {}, title), ...body);
     document.body.append(pop);
     const r = btn.getBoundingClientRect();
     const w = Math.min(300, window.innerWidth - 32);
@@ -301,8 +333,7 @@ export function term(key, text) {
     const below = r.bottom + 8;
     pop.style.top = `${below + pop.offsetHeight > window.innerHeight ? r.top - pop.offsetHeight - 8 : below}px`;
     openPop = pop;
-  });
-  return btn;
+  }
 }
 export function closePop() { if (openPop) { openPop.remove(); openPop = null; } }
 document.addEventListener("click", closePop);

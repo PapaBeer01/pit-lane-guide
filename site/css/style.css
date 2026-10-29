@@ -1020,3 +1020,11 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .tb-stint .stint-tyre { position: absolute; left: 3px; top: 50%; width: 24px; height: 24px; transform: translateY(-50%); object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
 .tb-stint:has(.stint-tyre) .stint-n { padding-left: 18px; }
 .plan-bar .stint .stint-tyre { width: 20px; height: 20px; object-fit: contain; }
+
+/* tap any tyre to learn what it means */
+.tyre-btn { background: none; border: 0; padding: 2px; margin: -2px; cursor: help; display: inline-flex; align-items: center; border-radius: 999px; line-height: 0; min-width: 24px; min-height: 24px; justify-content: center; }
+.tyre-btn:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+.pop-tyre { display: flex; align-items: center; gap: 12px; margin: 4px 0 8px; }
+.pop-tyre-pic { width: 52px; height: 52px; object-fit: contain; }
+.tyre-dot.big { width: 44px; height: 44px; font-size: 1.1rem; }
+.pop p + p { margin-top: 6px; }
