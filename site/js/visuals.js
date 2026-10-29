@@ -64,7 +64,10 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
   if (glowEl) svg.append(glowEl);
   // lap cars: a top view if uploaded (turns naturally), else the side-on picture
   const topOf = (tm) => pics["cars-top"]?.[tm];
-  const lapSrc = (tm) => topOf(tm) || pics.cars[tm];
+  // only top-view cars lap the maps; if the leader's team has none, one of the top-view cars drives instead
+  const topTeams = Object.keys(pics["cars-top"] || {});
+  const lapSrc = (tm) => topOf(tm);
+  if (team && !topOf(team)) team = rotate && topTeams.length ? topTeams[Math.floor(Math.random() * topTeams.length)] : null;
   const carSrc = team && lapSrc(team);
   const animate = draw && !reducedMotion();
   rotate = rotate && animate;
@@ -109,8 +112,9 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
     requestAnimationFrame(step);
   });
   // after the first lap, the other teams' cars take turns lapping (paused when off screen or in another tab)
-  const others = rotate ? [...new Set([...Object.keys(pics["cars-top"] || {}), ...Object.keys(pics.cars)])].filter((tm) => tm !== team).map((tm) => [tm, lapSrc(tm)]) : [];
-  let turn = Math.floor(Math.random() * Math.max(1, others.length));
+  // the top-view cars take turns, the leader's included (with two cars they simply alternate)
+  const others = rotate && topTeams.length > 1 ? [...topTeams.filter((tm) => tm !== team), team].map((tm) => [tm, lapSrc(tm)]) : [];
+  let turn = 0;
   let visible = true;
   if (rotate && "IntersectionObserver" in window) new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(svg);
   function nextLap(total) {

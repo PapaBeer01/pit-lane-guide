@@ -92,7 +92,7 @@ export default async function race(route) {
   if (upg) body.append(upg);
   // the session's leader (or the predicted favourite) drives the lap on the poster
   const lead = sess?.results?.find((r) => r.pos === 1)?.code || pred?.drivers?.[0]?.code || pred?.order?.[0];
-  if (lead && driver(lead).team) poster = posterCard(ev, track, { team: driver(lead).team });
+  poster = posterCard(ev, track, { team: lead ? driver(lead).team || "any" : "any" });
   return h("div", { class: "race-page" }, picker, poster, body);
 }
 
