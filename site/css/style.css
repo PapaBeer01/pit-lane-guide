@@ -1038,3 +1038,20 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .odds .chip { white-space: normal; text-align: center; justify-content: center; }
 .pred-probs > span { min-width: 0; }
 .pred-probs .prob { min-width: 0; max-width: 100%; }
+
+/* driver page header with a photo: the photo stands on the card's bottom edge, no gap beneath */
+.profile-hero:has(.driver-photo) { padding-bottom: 0; align-items: end; }
+.profile-hero:has(.driver-photo) .ph-helmet { align-self: end; line-height: 0; margin-bottom: 0; }
+.profile-hero .ph-helmet .driver-photo { display: block; height: 300px; width: auto; max-width: 100%; object-fit: contain; object-position: bottom; }
+@media (max-width: 759px) {
+  .profile-hero:has(.driver-photo) { padding-top: 0; }
+  .profile-hero:has(.driver-photo) .ph-helmet { order: 0; justify-self: center; margin: 0 -18px; }
+  .profile-hero .ph-helmet .driver-photo { height: 280px; }
+  /* name block sits over the bottom of the photo on a soft fade, like a team graphic */
+  .profile-hero:has(.driver-photo) .ph-text { margin-top: -64px; padding: 56px 0 22px;
+    background: linear-gradient(180deg, transparent, var(--surface) 46px); margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
+}
+@media (min-width: 760px) {
+  .profile-hero:has(.driver-photo) { padding-top: 18px; min-height: 280px; }
+  .profile-hero:has(.driver-photo) .ph-text { align-self: center; padding-bottom: 28px; }
+}
