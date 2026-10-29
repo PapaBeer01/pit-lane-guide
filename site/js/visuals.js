@@ -55,7 +55,7 @@ function pathOf(p) {
   return `${d}Z`;
 }
 
-export function trackOutline(t, { cls = "track-art", glow = true, draw = true, label = "Track layout", team = null, carSize = 24 } = {}) {
+export function trackOutline(t, { cls = "track-art", glow = true, draw = true, label = "Track layout", team = null, carSize = 24, rotate = false } = {}) {
   if (!t) return null;
   const pad = 9;
   const svg = s("svg", { viewBox: `${-pad} ${-pad} ${t.w + pad * 2} ${t.h + pad * 2}`, class: cls, role: "img", "aria-label": label });
@@ -64,6 +64,7 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
   if (glowEl) svg.append(glowEl);
   const carSrc = team && pics.cars[team];
   const animate = draw && !reducedMotion();
+  rotate = rotate && animate;
   const line = s("path", { d, class: `tr-line${animate && !carSrc ? " draw" : ""}`, "pathLength": 1 });
   svg.append(line);
   if (!carSrc) {
@@ -96,11 +97,34 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
       place(e * total, total);
       for (const el of [line, glowEl]) if (el) el.style.strokeDashoffset = String(1 - e);
       if (k < 1 && svg.isConnected) requestAnimationFrame(step);
-      else if (k >= 1) { place(0, total); for (const el of [line, glowEl]) if (el) el.style.strokeDashoffset = "0"; }
+      else if (k >= 1) { place(0, total); for (const el of [line, glowEl]) if (el) el.style.strokeDashoffset = "0"; if (rotate) setTimeout(() => nextLap(total), 1400); }
     };
     place(0, total);
     requestAnimationFrame(step);
   });
+  // after the first lap, the other teams' cars take turns lapping (paused when off screen or in another tab)
+  const others = rotate ? Object.entries(pics.cars).filter(([tm]) => tm !== team) : [];
+  let turn = Math.floor(Math.random() * Math.max(1, others.length));
+  let visible = true;
+  if (rotate && "IntersectionObserver" in window) new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(svg);
+  function nextLap(total) {
+    if (!svg.isConnected || !others.length) return;
+    if (!visible || document.hidden) { setTimeout(() => nextLap(total), 1000); return; }
+    const [, src] = others[turn++ % others.length];
+    holder.style.opacity = "0";
+    setTimeout(() => {
+      car.setAttribute("href", src);
+      holder.style.opacity = "1";
+      const dur = 3200, start = performance.now() + 150;
+      const lap = (now) => {
+        if (!svg.isConnected) return;
+        const k = Math.max(0, Math.min(1, (now - start) / dur));
+        place((k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2) * total, total);
+        if (k < 1) requestAnimationFrame(lap); else { place(0, total); setTimeout(() => nextLap(total), 1600); }
+      };
+      requestAnimationFrame(lap);
+    }, 300);
+  }
   return svg;
 }
 
@@ -120,7 +144,7 @@ export function posterCard(ev, track, { compact = false, team = null } = {}) {
         h("span", { class: "pill" }, icon("pin", { size: 14 }), `${ev.location}, ${ev.country}`),
         span ? h("span", { class: "pill light" }, span) : null,
         track?.length ? h("span", { class: "pill" }, `${(track.length / 1000).toFixed(2)} km lap`) : null)),
-    h("div", { class: "poster-track" }, trackOutline(track, { label: `${ev.location} track layout`, team })));
+    h("div", { class: "poster-track" }, trackOutline(track, { label: `${ev.location} track layout`, team, rotate: true })));
 }
 
 // ---------- podium cards ----------

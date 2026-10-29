@@ -1059,3 +1059,4 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .track-art .tr-car { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.6)); }
 .track-art .tr-car { filter: drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 3px rgba(255,255,255,.55)); }
 .track-art.small .tr-car { filter: drop-shadow(0 0 1px rgba(255,255,255,.8)); }
+.track-art g:has(> .tr-car) { transition: opacity .3s var(--ease); }
