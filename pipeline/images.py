@@ -5,6 +5,7 @@ Put files in the repo's images/ folder (any of .jpg .jpeg .png .webp .svg):
   images/helmets/  named like the driver photos                           (VER.png)
   images/teams/    named by team                                           (ferrari.png, red-bull-racing.svg)
   images/icons/    small icon-only team marks, named like the logos        (ferrari.png)
+  images/tyres/    tyre pictures, named by compound                        (soft.png, medium.png, hard.png, intermediate.png, wet.png)
   images/cars/     named by team, like the logos                           (mclaren.png)
 
 This turns them into small web files under site/img/ (built on every run, not saved in the repo)
@@ -30,7 +31,7 @@ SRC = config.ROOT / "images"
 OUT = config.SITE_DIR / "img"
 EXT = {".jpg", ".jpeg", ".png", ".webp", ".svg"}
 # longest side in pixels, and WebP quality: photos stay around 15-40 KB on a phone
-SIZE = {"drivers": (560, 80), "helmets": (420, 82), "teams": (320, 90), "icons": (128, 90), "cars": (1000, 78)}
+SIZE = {"drivers": (560, 80), "helmets": (420, 82), "teams": (320, 90), "icons": (128, 90), "tyres": (128, 90), "cars": (1000, 78)}
 
 
 def norm(s: str) -> str:
@@ -42,6 +43,10 @@ def slug(s: str) -> str:
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
+
+# tyre pictures: soft.png / S.png / red.png and so on
+TYRES = {"S": {"s", "soft", "red", "c5", "c4"}, "M": {"m", "medium", "yellow", "c3"}, "H": {"h", "hard", "white", "c1", "c2"},
+         "I": {"i", "inter", "intermediate", "intermediates", "green"}, "W": {"w", "wet", "wets", "fullwet", "blue"}}
 
 # older or sponsor names people often use for files
 ALIASES = {"racingbulls": {"rb", "vcarb", "visacashapp", "visacashapprb", "alphatauri", "tororosso"},
@@ -123,11 +128,11 @@ def build(src: Path = SRC, out: Path = OUT) -> dict:
         for t in [d.get("team"), *(d.get("teams") or [])]:
             if t:
                 teams[t] = team_keys(t)
-    manifest: dict = {"drivers": {}, "helmets": {}, "teams": {}, "icons": {}, "cars": {}}
+    manifest: dict = {"drivers": {}, "helmets": {}, "teams": {}, "icons": {}, "tyres": {}, "cars": {}}
     unmatched = []
     if out.exists():
         shutil.rmtree(out)
-    for kind, cands in (("drivers", drivers), ("helmets", drivers), ("teams", teams), ("icons", teams), ("cars", teams)):
+    for kind, cands in (("drivers", drivers), ("helmets", drivers), ("teams", teams), ("icons", teams), ("tyres", TYRES), ("cars", teams)):
         folder = src / kind
         if not folder.is_dir():
             continue
@@ -141,7 +146,7 @@ def build(src: Path = SRC, out: Path = OUT) -> dict:
             if who in manifest[kind]:
                 continue
             try:
-                name = convert(f, out / kind, who if kind in ("drivers", "helmets") else slug(who), kind)
+                name = convert(f, out / kind, who if kind in ("drivers", "helmets", "tyres") else slug(who), kind)
             except Exception as e:
                 log.warning("Picture %s skipped: %s", f.name, e)
                 unmatched.append(f"{kind}/{f.name}")
@@ -157,6 +162,6 @@ def build(src: Path = SRC, out: Path = OUT) -> dict:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     r = build()
-    print(f"Pictures ready: {r['drivers']} drivers, {r['helmets']} helmets, {r['teams']} team logos, {r['icons']} team icons, {r['cars']} cars.")
+    print(f"Pictures ready: {r['drivers']} drivers, {r['helmets']} helmets, {r['teams']} team logos, {r['icons']} team icons, {r['tyres']} tyres, {r['cars']} cars.")
     for u in r["unmatched"]:
         print(f"Couldn't tell who this is, rename it: images/{u}")

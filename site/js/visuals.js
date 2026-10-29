@@ -3,7 +3,7 @@
 // "who was quickest where" track map, chunky tyre-strategy bars and the session picker.
 import { icon } from "./icons.js";
 import { driverArt, teamArt } from "./media.js";
-import { ctx, driver, teamMark, TEAM_DEEP, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT } from "./ui.js";
+import { ctx, driver, teamMark, TEAM_DEEP, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT, tyreDot } from "./ui.js";
 
 const NS = "http://www.w3.org/2000/svg";
 function s(tag, attrs = {}, ...kids) {
@@ -117,7 +117,7 @@ export function fastestLapCard(f) {
     h("p", { class: "hn-big" }, lapTime(f.time)),
     h("div", { class: "hn-row" },
       h("span", { class: "hn-who" }, teamMark(f.code, { size: 22 }), f.code, h("small", {}, d.name)),
-      t ? h("span", { class: "hn-tyre" }, h("span", { class: `tyre-dot t-${t.c}` }, t.c), TYRE_NAME[t.c] || "") : null),
+      t ? h("span", { class: "hn-tyre" }, tyreDot(t.c), TYRE_NAME[t.c] || "") : null),
     t ? h("div", { class: "hn-foot" },
       h("span", {}, icon(t.new ? "sparkle" : "layers", { size: 16 }), t.new ? "Fresh set of tyres" : "Used tyres"),
       h("span", {}, icon("tyre", { size: 16 }), `Tyres ${t.age} lap${t.age === 1 ? "" : "s"} old`)) : null);
@@ -211,7 +211,7 @@ export function tyreBars(order, stints, totalLaps) {
       close();
       openRow = row; row.classList.add("on");
       pop.replaceChildren(h("b", {}, `${code}  ${driver(code).name}`),
-        ...st.map((x) => h("span", { class: "tb-line" }, h("span", { class: `tyre-dot t-${x.c}` }, x.c),
+        ...st.map((x) => h("span", { class: "tb-line" }, tyreDot(x.c),
           h("b", { class: `tb-c t-${x.c}` }, `${TYRE_NAME[x.c] || "Unknown"}: ${x.to - x.from + 1} laps`),
           h("small", {}, `laps ${x.from}–${x.to}${x.new === false ? ", used set" : ""}`))));
       pop.hidden = false;
@@ -227,7 +227,7 @@ export function tyreBars(order, stints, totalLaps) {
   wrap.append(...rows, axis, pop);
   document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) close(); });
   const key = h("div", { class: "legend tb-key" }, ["S", "M", "H", "I", "W"].filter((c) => order.some((code) => (stints[code] || []).some((x) => x.c === c)))
-    .map((c) => h("span", {}, h("span", { class: `tyre-dot t-${c}` }, c), TYRE_NAME[c])), h("span", { class: "muted" }, "Lap"));
+    .map((c) => h("span", {}, tyreDot(c), TYRE_NAME[c])), h("span", { class: "muted" }, "Lap"));
   return h("div", {}, wrap, key);
 }
 

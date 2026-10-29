@@ -1,6 +1,6 @@
 // Shared pieces for race strategy and safety-car odds (used on This weekend and race pages).
 import { icon } from "./icons.js";
-import { animatedNumber, h, noteList, pct, term } from "./ui.js";
+import { animatedNumber, h, noteList, pct, term, tyreDot } from "./ui.js";
 
 const TYRE_NAME = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" };
 
@@ -17,7 +17,7 @@ export function strategySection(st, { actual = null, title = "Race strategy" } =
   const best = Math.max(...st.plans.map((p) => p.prob));
   const plans = st.plans.map((p, i) => h("div", { class: `plan${p.prob === best ? " top" : ""}`, style: { animationDelay: `${i * 90}ms` } },
     h("div", { class: "plan-head" },
-      h("span", { class: "plan-name" }, p.seq.map((c) => h("span", { class: `tyre-dot t-${c}`, title: TYRE_NAME[c] }, c)), h("span", {}, `${p.stops}-stop`)),
+      h("span", { class: "plan-name" }, p.seq.map((c) => tyreDot(c)), h("span", {}, `${p.stops}-stop`)),
       h("span", { class: "plan-prob" }, animatedNumber(p.prob, "pct"))),
     planBar(p.seq, p.stints, st.laps),
     h("div", { class: "plan-meta" },
@@ -27,7 +27,7 @@ export function strategySection(st, { actual = null, title = "Race strategy" } =
   const hist = st.history?.common?.length
     ? h("div", { class: "hist-seqs" }, h("span", { class: "small muted" }, "Most used here before:"),
       st.history.common.slice(0, 4).map(([seq, share]) => h("span", { class: "chip" },
-        seq.split("-").map((c) => h("span", { class: `tyre-dot t-${c}` }, c)), pct(share))))
+        seq.split("-").map((c) => tyreDot(c)), pct(share))))
     : null;
 
   const act = actual ? h("div", { class: "callout", style: { borderLeftColor: actual.stops_right && actual.seq_right ? "var(--green)" : "var(--amber)" } },
@@ -36,7 +36,7 @@ export function strategySection(st, { actual = null, title = "Race strategy" } =
     h("p", { class: "small muted" }, `We expected ${actual.pred_seq.split("-").map((c) => TYRE_NAME[c].toLowerCase()).join(" then ")} (${actual.pred_stops} stop${actual.pred_stops > 1 ? "s" : ""}). `,
       `Stops ${actual.stops_right ? "called right" : "missed"}, tyre order ${actual.seq_right ? "called right" : "missed"}.`),
     h("div", { class: "hist-seqs" }, actual.actual.common.slice(0, 4).map(([seq, share]) => h("span", { class: "chip" },
-      seq.split("-").map((c) => h("span", { class: `tyre-dot t-${c}` }, c)), pct(share))))) : null;
+      seq.split("-").map((c) => tyreDot(c)), pct(share))))) : null;
 
   return h("section", { class: "section" },
     h("div", { class: "section-head" }, h("h2", {}, icon("tyre", { size: 24 }), title),

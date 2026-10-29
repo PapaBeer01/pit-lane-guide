@@ -1009,3 +1009,8 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .legend span { align-items: center; }
 .slot .pic-helmet img { width: 34px; }
 .slot .code { min-width: 0; }
+
+/* uploaded tyre pictures */
+.tyre-pic { width: 22px; height: 22px; object-fit: contain; flex: none; display: inline-block; vertical-align: middle; }
+.tyre-pic.small { width: 18px; height: 18px; }
+.hn-tyre .tyre-pic { width: 30px; height: 30px; }

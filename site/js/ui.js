@@ -252,8 +252,19 @@ export function rangeBar(lo, hi, pred, n, actual) {
     h("span", { class: "dot", style: { left: x(pred) } }),
     actual ? h("span", { class: "act", style: { left: x(actual) } }) : null);
 }
+// A tyre marker with its letter: the uploaded tyre picture if there is one, else our coloured ring
+export function tyreDot(c, extra = {}) {
+  const name = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" }[c] || "Unknown";
+  if (pics.tyres[c]) {
+    const im = picImg(pics.tyres[c], `${name} tyre`, "tyre-pic", null);
+    im.title = name;
+    return im;
+  }
+  return h("span", { class: `tyre-dot t-${c}`, ...extra }, c);
+}
 export function tyre(c) {
   const name = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" }[c] || "Unknown";
+  if (pics.tyres[c]) { const im = picImg(pics.tyres[c], `${name} tyre`, "tyre-pic small", null); im.title = `${name} tyre`; return im; }
   return h("span", { class: "tyre", style: { "--c": `var(--tyre-${c})` }, title: `${name} tyre`, "aria-label": `${name} tyre` });
 }
 
