@@ -2,7 +2,7 @@
 //   App files (HTML, CSS, JS, fonts): served from the phone's cache straight away, refreshed in the background.
 //   Data (JSON): fetched fresh when the network answers within a few seconds, otherwise the saved copy is used.
 //   Lap telemetry: rarely changes, so the saved copy is used first.
-const SHELL = "plg-shell-v37";
+const SHELL = "plg-shell-v38";
 const IMG = "plg-img-v1";
 const DATA = "plg-data-v1";
 const SHELL_FILES = [
@@ -48,6 +48,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith("/_vercel/")) return;           // analytics: always straight to the network
   if (url.pathname.includes("/img/") && !url.pathname.endsWith("manifest.json")) {
     // owner-supplied pictures: each file name carries a version, so a saved copy is always right
     e.respondWith(caches.open(IMG).then(async (c) => (await c.match(req)) || fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; })));

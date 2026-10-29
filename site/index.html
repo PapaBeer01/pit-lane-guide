@@ -33,5 +33,12 @@
     <p id="updated"></p>
   </footer>
   <script type="module" src="js/app.js"></script>
+  <!-- Vercel Web Analytics (no cookies). Only on the Vercel address; the GitHub Pages backup has no /_vercel/ path. -->
+  <script>
+    if (location.hostname.endsWith("vercel.app") || location.hostname === "thepitlane.app") {
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      var vs = document.createElement("script"); vs.defer = true; vs.src = "/_vercel/insights/script.js"; document.head.appendChild(vs);
+    }
+  </script>
 </body>
 </html>
