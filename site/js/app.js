@@ -1,6 +1,6 @@
-import { brandCar, carSvg } from "./car.js";
+import { brandCar } from "./car.js";
 import { icon } from "./icons.js";
-import { loadMedia } from "./media.js";
+import { brandCars, loadMedia, loaderCar } from "./media.js";
 import { clearSessionTeams, ctx, h, load, localTime, reducedMotion } from "./ui.js";
 
 const routes = {
@@ -63,7 +63,7 @@ async function render() {
   // show a skeleton if the page takes more than a moment (slow mobile data)
   // on a slow connection, a car runs on the spot over a moving track until the page arrives
   const slow = setTimeout(() => app.replaceChildren(h("div", { class: "pit-loader", role: "status" },
-    h("div", { class: "loader-road" }, carSvg({ color: "var(--flag)", tyre: "var(--tyre-S)", width: 180 })),
+    h("div", { class: "loader-road" }, loaderCar()),
     h("p", { class: "muted" }, "Loading…"))), 180);
   try {
     const mod = await loader();
@@ -120,6 +120,8 @@ async function start() {
       h("p", {}, "The first data update hasn't finished yet. This page fills in automatically once it has.")));
     return;
   }
+  const cars = brandCars();                         // uploaded cars take turns in the logo
+  if (cars) document.querySelector(".brand .brand-car")?.replaceWith(cars);
   ctx.season = season;
   ctx.drivers = Object.fromEntries(season.drivers.map((d) => [d.code, d]));
   document.getElementById("sample-strip").hidden = !season.sample;

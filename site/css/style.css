@@ -992,3 +992,10 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .pc-art:has(.driver-photo) { height: 260px; margin-bottom: -26px; }
 .pc-art .driver-photo { max-width: 86%; }
 @media (max-width: 639px) { .pc-art:has(.driver-photo) { height: 250px; } }
+
+/* uploaded cars: taking turns in the logo, and on the loading screen */
+.brand-cars { position: relative; display: inline-block; width: 74px; height: 24px; flex: none; }
+.brand-cars img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transform: translateX(-10px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.brand-cars img.on.in { opacity: 1; transform: none; }
+.loader-car { width: min(260px, 80vw); height: auto; display: block; animation: bob .3s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .brand-cars img { transition: none; } .loader-car { animation: none; } }
