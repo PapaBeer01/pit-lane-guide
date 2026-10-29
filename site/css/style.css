@@ -1028,3 +1028,13 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
 .pop-tyre-pic { width: 52px; height: 52px; object-fit: contain; }
 .tyre-dot.big { width: 44px; height: 44px; font-size: 1.1rem; }
 .pop p + p { margin-top: 6px; }
+/* never wider than the phone: grid children may shrink below their content's natural width */
+.race-page, .race-page > div, .stage { grid-template-columns: minmax(0, 1fr); }
+.race-page > *, .race-page > div > *, .stage > * { min-width: 0; }
+@media (min-width: 1000px) { .stage { grid-template-columns: minmax(0, 1fr) 340px; } }
+.section, .panel[style*="grid"] { grid-template-columns: minmax(0, 1fr); }
+.section > *, .panel > * { min-width: 0; }
+.odds { min-width: 0; }
+.odds .chip { white-space: normal; text-align: center; justify-content: center; }
+.pred-probs > span { min-width: 0; }
+.pred-probs .prob { min-width: 0; max-width: 100%; }
