@@ -27,7 +27,7 @@ export default async function races() {
         h("span", { class: "flag-emoji", "aria-hidden": "true" }, flag(e.country)),
         h("span", { class: "cal-name" }, h("b", {}, e.location), h("small", {}, first && race ? `${localDate(first.start)} – ${localDate(race.start)}` : "")),
         h("span", { class: "cal-round" }, e.round)),
-      h("span", { class: "cal-track" }, trackOutline(shapes[String(e.round)], { cls: "track-art small", glow: isNext, draw: false, label: `${e.location} track`, team: w ? driver(w).team : null, carSize: 22 })
+      h("span", { class: "cal-track" }, trackOutline(shapes[String(e.round)], { cls: "track-art small", glow: isNext, draw: false, label: `${e.location} track`, team: w ? driver(w).team : null, carSize: 13 })
         || h("span", { class: "cal-notrack muted small" }, "Track map after first session")),
       h("span", { class: "cal-foot" },
         e.format === "sprint" ? h("span", { class: "chip best" }, icon("bolt", { size: 12 }), "Sprint") : null,

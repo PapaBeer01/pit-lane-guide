@@ -55,7 +55,7 @@ function pathOf(p) {
   return `${d}Z`;
 }
 
-export function trackOutline(t, { cls = "track-art", glow = true, draw = true, label = "Track layout", team = null, carSize = 24, rotate = false } = {}) {
+export function trackOutline(t, { cls = "track-art", glow = true, draw = true, label = "Track layout", team = null, carSize = 11, rotate = false } = {}) {
   if (!t) return null;
   const pad = 9;
   const svg = s("svg", { viewBox: `${-pad} ${-pad} ${t.w + pad * 2} ${t.h + pad * 2}`, class: cls, role: "img", "aria-label": label });
@@ -89,7 +89,7 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
     if (!total) return;
     if (!animate) { place(0, total); return; }
     for (const el of [line, glowEl]) if (el) { el.style.strokeDasharray = "1"; el.style.strokeDashoffset = "1"; }
-    const dur = 2600, start = performance.now() + 250;
+    const dur = 5200, start = performance.now() + 250;
     const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
     const step = (now) => {
       const k = Math.max(0, Math.min(1, (now - start) / dur));
@@ -115,7 +115,7 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
     setTimeout(() => {
       car.setAttribute("href", src);
       holder.style.opacity = "1";
-      const dur = 3200, start = performance.now() + 150;
+      const dur = 6000, start = performance.now() + 150;
       const lap = (now) => {
         if (!svg.isConnected) return;
         const k = Math.max(0, Math.min(1, (now - start) / dur));
