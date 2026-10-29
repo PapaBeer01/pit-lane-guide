@@ -55,19 +55,57 @@ function pathOf(p) {
   return `${d}Z`;
 }
 
-export function trackOutline(t, { cls = "track-art", glow = true, draw = true, label = "Track layout" } = {}) {
+export function trackOutline(t, { cls = "track-art", glow = true, draw = true, label = "Track layout", team = null, carSize = 24 } = {}) {
   if (!t) return null;
-  const pad = 7;
+  const pad = 9;
   const svg = s("svg", { viewBox: `${-pad} ${-pad} ${t.w + pad * 2} ${t.h + pad * 2}`, class: cls, role: "img", "aria-label": label });
   const d = pathOf(t.p);
-  if (glow) svg.append(s("path", { d, class: "tr-glow", "pathLength": 1 }));
-  svg.append(s("path", { d, class: `tr-line${draw && !reducedMotion() ? " draw" : ""}`, "pathLength": 1 }));
-  svg.append(s("circle", { cx: t.p[0], cy: t.p[1], r: 2.4, class: "tr-start" }));
+  const glowEl = glow ? s("path", { d, class: "tr-glow", "pathLength": 1 }) : null;
+  if (glowEl) svg.append(glowEl);
+  const carSrc = team && pics.cars[team];
+  const animate = draw && !reducedMotion();
+  const line = s("path", { d, class: `tr-line${animate && !carSrc ? " draw" : ""}`, "pathLength": 1 });
+  svg.append(line);
+  if (!carSrc) {
+    svg.append(s("circle", { cx: t.p[0], cy: t.p[1], r: 2.4, class: "tr-start" }));
+    return svg;
+  }
+  // a team car instead of the start dot: it drives one lap, drawing the white line behind it, then parks on the line
+  svg.append(s("rect", { x: t.p[0] - 0.6, y: t.p[1] - 3.2, width: 1.2, height: 6.4, class: "tr-startline" }));
+  const car = s("image", { href: carSrc, width: carSize, height: carSize * 0.32, x: -carSize / 2, y: -carSize * 0.26, class: "tr-car", preserveAspectRatio: "xMidYMax meet" });
+  const holder = s("g", {}, car);
+  svg.append(holder);
+  const place = (len, total) => {
+    const p = line.getPointAtLength(len % total);
+    const q = line.getPointAtLength((len + 0.8) % total);
+    const ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+    const flip = Math.abs(ang) > 90 ? " scale(1,-1)" : "";             // keep the wheels underneath
+    holder.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(${ang.toFixed(1)})${flip}`);
+  };
+  requestAnimationFrame(() => {
+    let total;
+    try { total = line.getTotalLength(); } catch { return; }
+    if (!total) return;
+    if (!animate) { place(0, total); return; }
+    for (const el of [line, glowEl]) if (el) { el.style.strokeDasharray = "1"; el.style.strokeDashoffset = "1"; }
+    const dur = 2600, start = performance.now() + 250;
+    const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
+    const step = (now) => {
+      const k = Math.max(0, Math.min(1, (now - start) / dur));
+      const e = ease(k);
+      place(e * total, total);
+      for (const el of [line, glowEl]) if (el) el.style.strokeDashoffset = String(1 - e);
+      if (k < 1 && svg.isConnected) requestAnimationFrame(step);
+      else if (k >= 1) { place(0, total); for (const el of [line, glowEl]) if (el) el.style.strokeDashoffset = "0"; }
+    };
+    place(0, total);
+    requestAnimationFrame(step);
+  });
   return svg;
 }
 
 // ---------- race poster ----------
-export function posterCard(ev, track, { compact = false } = {}) {
+export function posterCard(ev, track, { compact = false, team = null } = {}) {
   const [c1, c2] = posterColors(ev.country);
   const words = ev.name.replace(/Grand Prix$/i, "").trim();
   const race = ev.sessions.find((x) => x.key === "R");
@@ -82,7 +120,7 @@ export function posterCard(ev, track, { compact = false } = {}) {
         h("span", { class: "pill" }, icon("pin", { size: 14 }), `${ev.location}, ${ev.country}`),
         span ? h("span", { class: "pill light" }, span) : null,
         track?.length ? h("span", { class: "pill" }, `${(track.length / 1000).toFixed(2)} km lap`) : null)),
-    h("div", { class: "poster-track" }, trackOutline(track, { label: `${ev.location} track layout` })));
+    h("div", { class: "poster-track" }, trackOutline(track, { label: `${ev.location} track layout`, team })));
 }
 
 // ---------- podium cards ----------

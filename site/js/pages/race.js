@@ -20,7 +20,7 @@ export default async function race(route) {
   let key = route.args[1] && shown.includes(route.args[1]) ? route.args[1] : (done[done.length - 1] || shown[0]);
 
   const track = (await tracks())[String(ev.round)];
-  const poster = posterCard(ev, track);
+  let poster = posterCard(ev, track);
   if (!key) return h("div", { class: "race-page" }, poster, empty("Nothing to show yet: this weekend hasn't started and predictions come closer to the time."));
   const picker = sessionPicker(ev, shown, done, key);
 
@@ -90,6 +90,9 @@ export default async function race(route) {
   }
   const upg = upgradesSection(await load(`events/${ev.round}/upgrades.json`), { title: "New parts at this race", open: 0 });
   if (upg) body.append(upg);
+  // the session's leader (or the predicted favourite) drives the lap on the poster
+  const lead = sess?.results?.find((r) => r.pos === 1)?.code || pred?.drivers?.[0]?.code || pred?.order?.[0];
+  if (lead && driver(lead).team) poster = posterCard(ev, track, { team: driver(lead).team });
   return h("div", { class: "race-page" }, picker, poster, body);
 }
 
