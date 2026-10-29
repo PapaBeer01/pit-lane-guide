@@ -10,6 +10,7 @@ starts a run). Anything missing keeps the site's own helmet and badge drawings.
 | `helmets/` | Helmet pictures, side-on (transparent PNG looks best) | Same as drivers: `VER.png`, `leclerc.png`, `44.png` |
 | `teams/` | Team logos (transparent PNG or SVG look best) | Team: `ferrari.png`, `red-bull-racing.svg`, `haas.png` |
 | `icons/` | Small icon-only team marks, no team name text (e.g. just the Ferrari horse shield, the Mercedes star). Shown beside driver codes in results, charts and lists; square-ish transparent PNGs look best | Team, like the logos: `ferrari.png` |
+| `cars-top/` | Cars seen from directly above, used for the cars that lap the track maps. Nose pointing up or to the right; transparent PNG | Team, like the logos: `mclaren.png`, `red-bull-racing.png` |
 | `tyres/` | Tyre pictures, side-on or flat, one per compound (transparent PNG looks best) | `soft.png`, `medium.png`, `hard.png`, `intermediate.png`, `wet.png` |
 | `cars/` | Side-on car pictures (transparent PNG looks best) | Team, like the logos: `mclaren.png` |
 

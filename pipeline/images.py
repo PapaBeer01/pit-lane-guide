@@ -5,6 +5,7 @@ Put files in the repo's images/ folder (any of .jpg .jpeg .png .webp .svg):
   images/helmets/  named like the driver photos                           (VER.png)
   images/teams/    named by team                                           (ferrari.png, red-bull-racing.svg)
   images/icons/    small icon-only team marks, named like the logos        (ferrari.png)
+  images/cars-top/ cars seen from above, nose up or nose right, named like the logos (mclaren.png)
   images/tyres/    tyre pictures, named by compound                        (soft.png, medium.png, hard.png, intermediate.png, wet.png)
   images/cars/     named by team, like the logos                           (mclaren.png)
 
@@ -31,7 +32,7 @@ SRC = config.ROOT / "images"
 OUT = config.SITE_DIR / "img"
 EXT = {".jpg", ".jpeg", ".png", ".webp", ".svg"}
 # longest side in pixels, and WebP quality: photos stay around 15-40 KB on a phone
-SIZE = {"drivers": (560, 80), "helmets": (420, 82), "teams": (320, 90), "icons": (128, 90), "tyres": (128, 90), "cars": (1000, 78)}
+SIZE = {"drivers": (560, 80), "helmets": (420, 82), "teams": (320, 90), "icons": (128, 90), "tyres": (128, 90), "cars": (1000, 78), "cars-top": (240, 85)}
 
 
 def norm(s: str) -> str:
@@ -114,6 +115,8 @@ def convert(src: Path, dst_dir: Path, name: str, kind: str) -> str:
         bbox = im.getchannel("A").point(lambda a: 255 if a > 24 else 0).getbbox()   # trim near-transparent margins
         if bbox:
             im = im.crop(bbox)
+    if kind == "cars-top" and im.height > im.width:
+        im = im.rotate(-90, expand=True)              # top views: nose up -> nose pointing right, the way the car drives
     im.thumbnail((side, side), Image.LANCZOS)
     out = dst_dir / f"{name}.webp"
     im.save(out, "WEBP", quality=q, method=6)
@@ -128,11 +131,11 @@ def build(src: Path = SRC, out: Path = OUT) -> dict:
         for t in [d.get("team"), *(d.get("teams") or [])]:
             if t:
                 teams[t] = team_keys(t)
-    manifest: dict = {"drivers": {}, "helmets": {}, "teams": {}, "icons": {}, "tyres": {}, "cars": {}}
+    manifest: dict = {"drivers": {}, "helmets": {}, "teams": {}, "icons": {}, "tyres": {}, "cars": {}, "cars-top": {}}
     unmatched = []
     if out.exists():
         shutil.rmtree(out)
-    for kind, cands in (("drivers", drivers), ("helmets", drivers), ("teams", teams), ("icons", teams), ("tyres", TYRES), ("cars", teams)):
+    for kind, cands in (("drivers", drivers), ("helmets", drivers), ("teams", teams), ("icons", teams), ("tyres", TYRES), ("cars", teams), ("cars-top", teams)):
         folder = src / kind
         if not folder.is_dir():
             continue
@@ -162,6 +165,6 @@ def build(src: Path = SRC, out: Path = OUT) -> dict:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     r = build()
-    print(f"Pictures ready: {r['drivers']} drivers, {r['helmets']} helmets, {r['teams']} team logos, {r['icons']} team icons, {r['tyres']} tyres, {r['cars']} cars.")
+    print(f"Pictures ready: {r['drivers']} drivers, {r['helmets']} helmets, {r['teams']} team logos, {r['icons']} team icons, {r['tyres']} tyres, {r['cars']} cars, {r['cars-top']} top-view cars.")
     for u in r["unmatched"]:
         print(f"Couldn't tell who this is, rename it: images/{u}")

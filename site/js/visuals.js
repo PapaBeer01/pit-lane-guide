@@ -62,7 +62,10 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
   const d = pathOf(t.p);
   const glowEl = glow ? s("path", { d, class: "tr-glow", "pathLength": 1 }) : null;
   if (glowEl) svg.append(glowEl);
-  const carSrc = team && pics.cars[team];
+  // lap cars: a top view if uploaded (turns naturally), else the side-on picture
+  const topOf = (tm) => pics["cars-top"]?.[tm];
+  const lapSrc = (tm) => topOf(tm) || pics.cars[tm];
+  const carSrc = team && lapSrc(team);
   const animate = draw && !reducedMotion();
   rotate = rotate && animate;
   const line = s("path", { d, class: `tr-line${animate && !carSrc ? " draw" : ""}`, "pathLength": 1 });
@@ -73,14 +76,17 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
   }
   // a team car instead of the start dot: it drives one lap, drawing the white line behind it, then parks on the line
   svg.append(s("rect", { x: t.p[0] - 0.6, y: t.p[1] - 3.2, width: 1.2, height: 6.4, class: "tr-startline" }));
-  const car = s("image", { href: carSrc, width: carSize, height: carSize * 0.32, x: -carSize / 2, y: -carSize * 0.26, class: "tr-car", preserveAspectRatio: "xMidYMax meet" });
+  const sizeFor = (top) => (top ? { width: carSize * 1.1, height: carSize * 0.55, x: -carSize * 0.55, y: -carSize * 0.275, preserveAspectRatio: "xMidYMid meet" }
+    : { width: carSize, height: carSize * 0.32, x: -carSize / 2, y: -carSize * 0.26, preserveAspectRatio: "xMidYMax meet" });
+  let isTop = !!topOf(team);
+  const car = s("image", { href: carSrc, class: "tr-car", ...sizeFor(isTop) });
   const holder = s("g", {}, car);
   svg.append(holder);
   const place = (len, total) => {
     const p = line.getPointAtLength(len % total);
     const q = line.getPointAtLength((len + 0.8) % total);
     const ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
-    const flip = Math.abs(ang) > 90 ? " scale(1,-1)" : "";             // keep the wheels underneath
+    const flip = !isTop && Math.abs(ang) > 90 ? " scale(1,-1)" : "";   // side views: keep the wheels underneath
     holder.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(${ang.toFixed(1)})${flip}`);
   };
   requestAnimationFrame(() => {
@@ -103,17 +109,19 @@ export function trackOutline(t, { cls = "track-art", glow = true, draw = true, l
     requestAnimationFrame(step);
   });
   // after the first lap, the other teams' cars take turns lapping (paused when off screen or in another tab)
-  const others = rotate ? Object.entries(pics.cars).filter(([tm]) => tm !== team) : [];
+  const others = rotate ? [...new Set([...Object.keys(pics["cars-top"] || {}), ...Object.keys(pics.cars)])].filter((tm) => tm !== team).map((tm) => [tm, lapSrc(tm)]) : [];
   let turn = Math.floor(Math.random() * Math.max(1, others.length));
   let visible = true;
   if (rotate && "IntersectionObserver" in window) new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(svg);
   function nextLap(total) {
     if (!svg.isConnected || !others.length) return;
     if (!visible || document.hidden) { setTimeout(() => nextLap(total), 1000); return; }
-    const [, src] = others[turn++ % others.length];
+    const [tm, src] = others[turn++ % others.length];
     holder.style.opacity = "0";
     setTimeout(() => {
       car.setAttribute("href", src);
+      isTop = !!topOf(tm);
+      for (const [k, v] of Object.entries(sizeFor(isTop))) car.setAttribute(k, v);
       holder.style.opacity = "1";
       const dur = 6000, start = performance.now() + 150;
       const lap = (now) => {
