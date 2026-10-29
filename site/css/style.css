@@ -989,3 +989,6 @@ a:active, button:active, .tab:active, .driver-card:active, .race-row:active { fi
     linear-gradient(118deg, transparent 0 56%, rgba(255,255,255,.35) 56% 57%, transparent 57%),
     linear-gradient(118deg, color-mix(in srgb, var(--deep) 88%, #061614) 0%, color-mix(in srgb, var(--deep) 90%, var(--tc)) 56%, color-mix(in srgb, var(--tc) 82%, var(--deep)) 56%, var(--tc) 100%);
 }
+.pc-art:has(.driver-photo) { height: 260px; margin-bottom: -26px; }
+.pc-art .driver-photo { max-width: 86%; }
+@media (max-width: 639px) { .pc-art:has(.driver-photo) { height: 250px; } }
