@@ -3,6 +3,7 @@
 // "who was quickest where" track map, chunky tyre-strategy bars and the session picker.
 import { icon } from "./icons.js";
 import { driverArt, teamArt } from "./media.js";
+import { picImg, pics } from "./pics.js";
 import { ctx, driver, teamMark, TEAM_DEEP, h, lapTime, load, localDate, reducedMotion, SESSION_SHORT, tyreDot } from "./ui.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -187,6 +188,13 @@ export function quickestMap(t, minis) {
     h("p", { class: "small muted" }, "The lap split into equal parts, coloured by which of the top three was fastest through each one on their best lap."));
 }
 
+// Inside a stint bar: the uploaded tyre picture at the start of the bar (when there's room), then the lap count
+export function stintLabel(c, laps, share) {
+  const pic = pics.tyres[c] && share > 0.11 ? picImg(pics.tyres[c], "", "stint-tyre", null) : null;
+  if (pic) pic.setAttribute("aria-hidden", "true");
+  return [pic, share > 0.055 ? h("span", { class: "stint-n" }, laps) : null];
+}
+
 // ---------- tyre strategy: one thick bar per driver, lap counts inside, tap for details ----------
 export function tyreBars(order, stints, totalLaps) {
   const total = totalLaps || Math.max(1, ...order.flatMap((c) => (stints[c] || []).map((x) => x.to)));
@@ -204,7 +212,7 @@ export function tyreBars(order, stints, totalLaps) {
         return h("span", {
           class: `tb-stint t-${x.c}`,
           style: { left: `${((x.from - 1) / total) * 100}%`, width: `calc(${(laps / total) * 100}% - 3px)`, animationDelay: `${i * 70}ms` },
-        }, laps / total > 0.055 ? laps : "");
+        }, stintLabel(x.c, laps, laps / total));
       })));
     const show = () => {
       if (openRow === row) { close(); return; }

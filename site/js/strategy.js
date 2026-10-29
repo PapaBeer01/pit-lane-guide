@@ -1,5 +1,6 @@
 // Shared pieces for race strategy and safety-car odds (used on This weekend and race pages).
 import { icon } from "./icons.js";
+import { pics } from "./pics.js";
 import { animatedNumber, h, noteList, pct, term, tyreDot } from "./ui.js";
 
 const TYRE_NAME = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Wet" };
@@ -9,7 +10,7 @@ export function planBar(seq, stints, laps) {
   const total = laps || stints.reduce((a, b) => a + b, 0);
   return h("div", { class: "plan-bar", role: "img", "aria-label": seq.map((c, i) => `${TYRE_NAME[c]} for ${stints[i]} laps`).join(", then ") },
     seq.map((c, i) => h("span", { class: `stint t-${c}`, style: { "--w": `${(stints[i] / total) * 100}%`, animationDelay: `${i * 160}ms` } },
-      h("b", {}, c), h("small", {}, `${stints[i]}`))));
+      pics.tyres[c] ? h("img", { src: pics.tyres[c], alt: "", class: "stint-tyre pic in", "aria-hidden": "true" }) : h("b", {}, c), h("small", {}, `${stints[i]}`))));
 }
 
 export function strategySection(st, { actual = null, title = "Race strategy" } = {}) {
