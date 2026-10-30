@@ -86,7 +86,7 @@ export default async function race(route) {
       !sess ? noteList(pred.notes) : null,
       predictionTable(pred, sess)));
     if (pred.strategy) body.append(strategySection(pred.strategy, { actual: sc?.strategy || null, title: sess ? "Strategy: expected vs actual" : "Race strategy" }));
-    if (pred.track) body.append(oddsSection(pred.track, { actual: sess ? (sess.flags || {}) : null }));
+    if (pred.track) body.append(oddsSection(pred.track, { actual: sess ? (sess.flags || {}) : null, odds: pred.odds, sprint: pred.target === "S" }));
   }
   const upg = upgradesSection(await load(`events/${ev.round}/upgrades.json`), { title: "New parts at this race", open: 0 });
   if (upg) body.append(upg);

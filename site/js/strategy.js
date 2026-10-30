@@ -52,7 +52,8 @@ export function strategySection(st, { actual = null, title = "Race strategy" } =
 }
 
 // Safety car / VSC / red flag odds with the track's history, year by year
-export function oddsSection(track, { actual = null } = {}) {
+export function oddsSection(track, { actual = null, odds = null, sprint = false } = {}) {
+  const o = odds || { sc: track.sc_prob, vsc: track.vsc_prob, red: track.red_prob };
   const dial = (label, p, color, ic, happened) => h("div", { class: "odds", style: { "--k": color, "--p": p } },
     h("div", { class: "odds-ring" }, h("span", { class: "ic-wrap" }, icon(ic, { size: 18 })), h("b", {}, animatedNumber(p, "pct"))),
     h("span", { class: "odds-label" }, label),
@@ -66,15 +67,18 @@ export function oddsSection(track, { actual = null } = {}) {
       !y.sc && !y.vsc && !y.red ? h("span", { class: "mk clean", title: "Clean race" }, icon("check", { size: 11 })) : null)));
   return h("section", { class: "section" },
     h("div", { class: "section-head" }, h("h2", {}, icon("alert", { size: 24 }), "Safety car odds"),
-      h("p", { class: "muted" }, track.races
+      h("p", { class: "muted" }, track.season_rate
+        ? (track.races ? `This season's rate across every track, mixed with ${track.races} past races here. ` : "This season's rate across every track (no past races here yet). ")
+        : track.races
         ? `From ${track.races} past races at this track, recent years counting most. `
         : "No past races at this track yet, so these are typical values. ",
+        sprint ? "Lower for the sprint, which is a third as long. " : "",
         "A ", term("sc", "safety car"), " bunches everyone up and makes pit stops cheaper, so it can flip a race.")),
     h("div", { class: "panel", style: { display: "grid", gap: "16px" } },
       h("div", { class: "odds-row" },
-        dial("Safety car", track.sc_prob, "var(--flag)", "alert", actual ? actual.sc : null),
-        dial("Virtual safety car", track.vsc_prob, "var(--amber)", "timer", actual ? actual.vsc : null),
-        dial("Red flag", track.red_prob, "var(--red)", "flag", actual ? actual.red : null)),
+        dial("Safety car", o.sc, "var(--flag)", "alert", actual ? actual.sc : null),
+        dial("Virtual safety car", o.vsc, "var(--amber)", "timer", actual ? actual.vsc : null),
+        dial("Red flag", o.red, "var(--red)", "flag", actual ? actual.red : null)),
       years.length ? h("div", { class: "years" }, years) : null,
       track.first_lap_share ? h("p", { class: "small muted" }, `${pct(track.first_lap_share)} of safety cars here came on the opening laps, when the field is bunched up.`) : null));
 }

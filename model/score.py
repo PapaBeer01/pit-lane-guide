@@ -58,9 +58,10 @@ def score(pred: dict, actual: dict) -> dict | None:
                                "actual": {"stops": act["stops"], "common": act["common"]}}
     if pred.get("track"):
         f = actual.get("flags") or {}
-        out["neutralisation"] = {"sc_prob": pred["track"]["sc_prob"], "sc": f.get("sc", 0),
-                                 "vsc_prob": pred["track"]["vsc_prob"], "vsc": f.get("vsc", 0),
-                                 "red_prob": pred["track"]["red_prob"], "red": f.get("red", 0)}
+        o = pred.get("odds") or {k: pred["track"][f"{k}_prob"] for k in ("sc", "vsc", "red")}   # older predictions
+        out["neutralisation"] = {"sc_prob": o["sc"], "sc": f.get("sc", 0),
+                                 "vsc_prob": o["vsc"], "vsc": f.get("vsc", 0),
+                                 "red_prob": o["red"], "red": f.get("red", 0)}
     out["note"] = explain(out, actual)
     return out
 

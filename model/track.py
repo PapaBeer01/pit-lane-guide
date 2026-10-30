@@ -19,11 +19,36 @@ PRE_ERA_FLAGS = 0.6                # pre-2026 races for SC/VSC/red odds (mostly 
 PRE_ERA_STRATEGY = 0.4             # pre-2026 races for stops and tyre orders (2026 brought new tyres)
 PRIOR = {"vsc": 0.35, "red": 0.12}
 DEFAULT_PIT_LOSS = 22.0
+# The 2026 cars changed how often races are neutralised (far more virtual safety cars than before).
+# Backtested on 2026 Grands Prix (choose settings on rounds 2-11, check on 12-18): this season's
+# grid-wide rate predicted the next race better than each track's own past, so the final odds are
+# SEASON_BLEND of the season-wide rate and the rest from the track (which keeps each circuit's
+# character, e.g. Monaco or Baku). The season rate starts from the 2018-25 average and needs about
+# SEASON_SHRINK races to move away from it.
+SEASON_BLEND = 0.75
+SEASON_SHRINK = 6.0
+LONG_RUN = {"sc": 0.55, "vsc": 0.42, "red": 0.12}     # share of 2018-25 races with each
+SPRINT_SHARE = 1 / 3                                   # sprint distance vs a Grand Prix
+
+
+def season_rates(races: list[dict]) -> dict:
+    """Share of this season's Grands Prix (so far) with a SC / VSC / red flag, pulled towards the
+    long-run average. races: flags dicts of finished 2026 Grands Prix before this one."""
+    n = len(races)
+    return {k: (sum(1 for f in races if (f or {}).get(k, 0) > 0) + SEASON_SHRINK * LONG_RUN[k]) / (n + SEASON_SHRINK)
+            for k in LONG_RUN}
+
+
+def sprint_odds(p: float) -> float:
+    """Chance of at least one over a sprint: same risk per lap, a third of the laps."""
+    return 1 - (1 - min(p, 0.99)) ** SPRINT_SHARE
 
 
 class TrackModel:
-    def __init__(self, ev: dict, history: list[dict], season_year: int, this_season: list[dict] = ()):
-        """this_season: earlier 2026 races at the same track, in history format (they count fully)."""
+    def __init__(self, ev: dict, history: list[dict], season_year: int, this_season: list[dict] = (),
+                 season: dict | None = None):
+        """this_season: earlier 2026 races at the same track, in history format (they count fully).
+        season: season_rates() of this year's earlier Grands Prix; None = track history only."""
         self.key = norm_location(ev["location"])
         traits = config.track_traits(ev["location"])
         races = [r for r in history if r.get("key") == self.key] + list(this_season)
@@ -38,9 +63,10 @@ class TrackModel:
             hit = np.array([1.0 if r["flags"].get(field, 0) > 0 else 0.0 for r in self.past])
             return float((np.sum(w * hit) + prior * PRIOR_RACES) / (np.sum(w) + PRIOR_RACES))
 
-        self.sc_prob = rate("sc", traits["sc"])
-        self.vsc_prob = rate("vsc", PRIOR["vsc"])
-        self.red_prob = rate("red", PRIOR["red"])
+        self.track_only = {"sc": rate("sc", traits["sc"]), "vsc": rate("vsc", PRIOR["vsc"]), "red": rate("red", PRIOR["red"])}
+        mix = (lambda k: SEASON_BLEND * season[k] + (1 - SEASON_BLEND) * self.track_only[k]) if season else self.track_only.get
+        self.sc_prob, self.vsc_prob, self.red_prob = mix("sc"), mix("vsc"), mix("red")
+        self.season = season
         if len(self.past):
             self.sc_expected = float(np.sum(w * np.array([r["flags"].get("sc", 0) for r in self.past])) / np.sum(w))
             sc_laps = [l for r in self.past for l in r["flags"].get("sc_laps", []) if l is not None]
@@ -87,6 +113,8 @@ class TrackModel:
             "key": self.key, "races": len(self.past),
             "sc_prob": round(self.sc_prob, 3), "vsc_prob": round(self.vsc_prob, 3), "red_prob": round(self.red_prob, 3),
             "sc_expected": round(self.sc_expected, 2),
+            "track_only": {k: round(v, 3) for k, v in self.track_only.items()},
+            "season_rate": {k: round(v, 3) for k, v in self.season.items()} if self.season else None,
             "first_lap_share": round(self.first_lap_share, 2) if self.first_lap_share is not None else None,
             "pit_loss": round(self.pit_loss, 1), "pit_loss_known": self.pit_loss_known,
             "stops_dist": self.stops_dist, "common_seqs": self.common_seqs, "years": years,

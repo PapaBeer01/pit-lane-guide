@@ -65,7 +65,7 @@ export default async function home() {
   if (upg) view.append(upg);
   const gp = preds.R;
   if (gp?.strategy && !sessions.R) view.append(strategySection(gp.strategy, { title: "How the race could be won: strategy" }));
-  if (gp?.track && !sessions.R) view.append(oddsSection(gp.track));
+  if (gp?.track && !sessions.R) view.append(oddsSection(gp.track, { odds: gp.odds }));
   view.append(h("div", { class: "split" }, scheduleSection(ev, sessions, forecast), await lastRaceSection()));
   return view;
 }

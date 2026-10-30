@@ -248,3 +248,28 @@ def test_closest_simulation_prefers_the_front_of_the_order(tmp_path):
     v = json.loads((tmp_path / "sims" / "1" / "Q_detail.json").read_text())["vs_real"]
     assert v["best_sim"] == 2 and v["best_exact_from_front"] == 2
     assert v["share"]["winner"] == round(2 / 3, 4) and v["share"]["full"] == 0
+
+
+def test_season_rate_odds_and_sprint_scaling(sample_dir):
+    from model.track import LONG_RUN, season_rates, sprint_odds
+    assert season_rates([]) == pytest.approx(LONG_RUN)           # no races yet: long-run average
+    many = season_rates([{"vsc": 1}] * 30)
+    assert many["vsc"] > 0.85 and many["sc"] < LONG_RUN["sc"]     # follows the season once there's evidence
+    assert sprint_odds(0.5) < 0.5 and sprint_odds(0.0) == 0.0
+    p = load(sample_dir, "predictions", "18", "R.json")
+    for k in ("sc", "vsc", "red"):
+        assert 0 < p["odds"][k] < 1
+    assert p["track"]["season_rate"] and p["track"]["track_only"]
+    sprints = [load(f.parent, f.name) for f in sample_dir.joinpath("predictions").glob("*/S.json")]
+    for s in sprints:                                             # sprint odds are scaled down from the track's
+        assert s["odds"]["sc"] < s["track"]["sc_prob"]
+
+
+def test_tuned_params_load_and_stay_in_range():
+    from model import predict as P
+    from model.tune import GRID
+    params = P._load_params()
+    assert set(params) == set(P.DEFAULT_PARAMS)
+    for k, v in params.items():
+        lo, hi = min(GRID[k]), max(GRID[k])
+        assert lo * P.DEFAULT_PARAMS[k] - 1e-9 <= v <= hi * P.DEFAULT_PARAMS[k] + 1e-9

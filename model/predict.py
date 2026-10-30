@@ -22,10 +22,10 @@ from pipeline import config
 from .features import one_lap_gaps, practice_laps, race_pace_gaps, reference_lap
 from .form import Form
 from .strategy import predict_strategy
-from .track import TrackModel
+from .track import TrackModel, season_rates, sprint_odds
 from .reliability import Reliability
 
-MODEL_VERSION = "1.3"
+MODEL_VERSION = "1.4"
 
 # How noisy each session is as evidence, in % of lap time (smaller = trusted more)
 ONE_LAP_NOISE = {"FP1": 0.50, "FP2": 0.42, "FP3": 0.34, "SQ": 0.18, "Q": 0.15, "S": 0.40, "R": 0.45}
@@ -41,6 +41,30 @@ BAD_SESSION_PENALTY = (0.5, 1.4)
 # pole-sitter left at 0%, same number of favourites right. Not used for races: their extra luck
 # (safety cars, retirements, strategy) already covers surprises, and it didn't help there.
 QUALI_SHOCK = (0.02, 4.0)
+
+# Settings chosen by the backtest tuner (python -m model.tune). Defaults are the hand-set v1.3
+# values; model/params.json, when present, holds the tuned ones.
+DEFAULT_PARAMS = {
+    "exec_sd": EXEC_SD,          # qualifying lap-to-lap noise (% of lap time)
+    "form_base_sd": FORM_BASE_SD,  # how much a car's pace varies track to track
+    "recency": config.RECENCY_DECAY,  # weight per round back for season form
+    "race_spread": 1.0,          # multiplier on the race's random luck (seconds over the race)
+    "race_pace_sd": 1.0,         # multiplier on race-pace uncertainty
+    "front_luck": 1.0,           # random luck for the car starting P1 vs the back of the grid (1 = same)
+}
+
+
+def _load_params() -> dict:
+    import json
+    from pathlib import Path
+    out = dict(DEFAULT_PARAMS)
+    f = Path(__file__).with_name("params.json")
+    if f.exists():
+        out.update({k: v for k, v in json.loads(f.read_text()).get("params", {}).items() if k in out})
+    return out
+
+
+PARAMS = _load_params()
 
 
 def _draw(rng, mu, sd, size, shock=None):
@@ -60,7 +84,7 @@ def _weighted_form(past, current_round, extractor, keys, same_team=None) -> dict
     for rnd, key, sess in past:
         if key not in keys:
             continue
-        w = config.RECENCY_DECAY ** max(0, current_round - rnd - 1)
+        w = PARAMS["recency"] ** max(0, current_round - rnd - 1)
         for code, g in extractor(sess).items():
             if same_team and not same_team(code, rnd):
                 continue
@@ -71,8 +95,9 @@ def _weighted_form(past, current_round, extractor, keys, same_team=None) -> dict
         w = np.array([x[1] for x in xs])
         mu = float(np.sum(g * w) / np.sum(w))
         n_eff = float(np.sum(w) ** 2 / np.sum(w ** 2))
-        spread = float(np.sqrt(np.sum(w * (g - mu) ** 2) / np.sum(w))) if len(g) > 1 else FORM_BASE_SD
-        sd = math.sqrt(FORM_BASE_SD ** 2 + (spread ** 2) / max(n_eff, 1) + 0.05 ** 2)
+        base = PARAMS["form_base_sd"]
+        spread = float(np.sqrt(np.sum(w * (g - mu) ** 2) / np.sum(w))) if len(g) > 1 else base
+        sd = math.sqrt(base ** 2 + (spread ** 2) / max(n_eff, 1) + 0.05 ** 2)
         out[code] = (mu, sd)
     return out
 
@@ -175,7 +200,8 @@ def this_season_at_track(data, ev: dict) -> list[dict]:
 
 
 def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: datetime,
-            history=(), track_history=(), sims: int = config.SIMULATIONS, seed: int = 0) -> dict:
+            history=(), track_history=(), sims: int = config.SIMULATIONS, seed: int = 0,
+            with_strategy: bool = True) -> dict:
     rng = np.random.default_rng(seed or (ev["round"] * 100 + config.PREDICTION_TARGETS.index(target)))
     past, weekend = data.before(ev, target)
     weekend_sessions = [s for _, _, s in weekend]
@@ -186,7 +212,9 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
     same_team = lambda c, r: data.team_at(c, r) == team_of(c)               # noqa: E731
     traits = config.track_traits(ev["location"])
     rain = 0.12 if rain_prob is None else float(rain_prob)
-    track = TrackModel(ev, list(track_history), data.season.get("year", config.SEASON), this_season_at_track(data, ev))
+    season_flags = [(s.get("flags") or {}) for _, k, s in past if k == "R"]
+    track = TrackModel(ev, list(track_history), data.season.get("year", config.SEASON), this_season_at_track(data, ev),
+                       season=season_rates(season_flags))
 
     # ---- one-lap pace (qualifying) ----
     q_prior = _fill_missing(_weighted_form(past, rnd, one_lap_gaps, config.QUALI_SESSIONS, same_team), codes, team_of)
@@ -225,7 +253,7 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
     wet_boost = 1 + 1.8 * rain
 
     if target in config.QUALI_SESSIONS:
-        laps_q, bad_q = _quali_samples(rng, codes, q_post, form, sims, EXEC_SD * wet_boost, with_bad=True)
+        laps_q, bad_q = _quali_samples(rng, codes, q_post, form, sims, PARAMS["exec_sd"] * wet_boost, with_bad=True)
         pos = _rank(laps_q)
         raw = {"pos": pos, "gap": laps_q, "bad": bad_q}
         rows = _summary(pos, codes)
@@ -257,22 +285,26 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
             grid = np.tile(grid, (sims, 1))
             notes.append("Grid taken from the actual qualifying result (late grid penalties may still change it).")
         else:
-            grid = _rank(_quali_samples(rng, codes, q_post, form, sims, EXEC_SD * wet_boost))
+            grid = _rank(_quali_samples(rng, codes, q_post, form, sims, PARAMS["exec_sd"] * wet_boost))
 
         mu = np.array([r_post[c][0] for c in codes])
-        sd = np.array([r_post[c][1] for c in codes])
+        sd = np.array([r_post[c][1] for c in codes]) * PARAMS["race_pace_sd"]
         pace = rng.normal(mu, sd, size=(sims, n))                       # % gap per lap
         # neutralisations from this track's history: a safety car bunches the field up most,
         # a virtual safety car a little, and a red flag lets everyone change tyres and restart close together
-        dist = 0.35 if sprint else 1.0
-        sc_happens = rng.random(sims) < track.sc_prob * dist
-        vsc_happens = rng.random(sims) < track.vsc_prob * dist
-        red_happens = rng.random(sims) < track.red_prob * dist
+        odds = (lambda p: sprint_odds(p)) if sprint else (lambda p: p)            # noqa: E731
+        p_sc, p_vsc, p_red = odds(track.sc_prob), odds(track.vsc_prob), odds(track.red_prob)
+        sc_happens = rng.random(sims) < p_sc
+        vsc_happens = rng.random(sims) < p_vsc
+        red_happens = rng.random(sims) < p_red
         compress = np.where(sc_happens, 0.6, 1.0) * np.where(vsc_happens, 0.9, 1.0) * np.where(red_happens, 0.55, 1.0)
         pace_cost = pace / 100 * lap_ref * laps * compress[:, None]     # seconds over the race
         slot_cost = 0.3 + 3.2 * traits["overtake"] ** 2                 # seconds per grid slot
-        spread = (5 + 6 * track.sc_prob + 4 * track.red_prob) * math.sqrt(laps / 57) * wet_boost
-        noise = rng.normal(0, spread, size=(sims, n)) + np.where(red_happens, 1.0, 0.0)[:, None] * rng.normal(0, 4, size=(sims, n))
+        spread = (5 + 6 * track.sc_prob + 4 * track.red_prob) * math.sqrt(laps / 57) * wet_boost * PARAMS["race_spread"]
+        # cars at the front run in clean air and are less exposed to first-lap chaos and traffic,
+        # so their luck can be smaller than the midfield's (front_luck, tuned on backtests)
+        luck = PARAMS["front_luck"] + (1 - PARAMS["front_luck"]) * (grid - 1) / max(n - 1, 1)
+        noise = rng.normal(0, 1, size=(sims, n)) * spread * luck + np.where(red_happens, 1.0, 0.0)[:, None] * rng.normal(0, 4, size=(sims, n))
         total = pace_cost + slot_cost * (grid - 1) + noise
 
         # retirements
@@ -315,11 +347,13 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
         elif ot <= 0.35:
             notes.append(f"{ev['location']} is relatively easy to overtake at, so fast cars can recover from a poor grid slot.")
         src = f"from {track.to_json()['races']} past races here" if track.past else "a typical value (no past races here yet)"
-        notes.append(f"Safety car chance about {round(track.sc_prob * 100)}%, virtual safety car {round(track.vsc_prob * 100)}%, "
-                     f"red flag {round(track.red_prob * 100)}% ({src}). Any of these can shuffle the order.")
+        notes.append(f"Safety car chance about {round(p_sc * 100)}%, virtual safety car {round(p_vsc * 100)}%, "
+                     f"red flag {round(p_red * 100)}% (this season's rate across all tracks, blended with {src}"
+                     f"{'; scaled down for the shorter sprint' if sprint else ''}). Any of these can shuffle the order.")
         kind = "race"
         extra["track"] = track.to_json()
-        if not sprint:
+        extra["odds"] = {"sc": round(p_sc, 3), "vsc": round(p_vsc, 3), "red": round(p_red, 3)}   # for this session
+        if not sprint and with_strategy:
             season_races = [s_ for _, k, s_ in past if k == "R"]
             extra["strategy"] = predict_strategy(weekend_sessions, season_races, track, laps, traits["overtake"])
 
@@ -335,7 +369,7 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
     if kind == "race":
         inputs.update({"laps": laps, "overtake": traits["overtake"], "slot_cost_s": round(slot_cost, 3),
                        "spread_s": round(spread, 3), "grid_from": "actual qualifying" if quali_done else "simulated qualifying",
-                       "sc_prob": round(track.sc_prob, 3), "vsc_prob": round(track.vsc_prob, 3), "red_prob": round(track.red_prob, 3)})
+                       "sc_prob": round(p_sc, 3), "vsc_prob": round(p_vsc, 3), "red_prob": round(p_red, 3)})
         for j, c in enumerate(codes):
             inputs["drivers"][c]["retire_chance"] = round(float(p_dnf[j]), 4)
             inputs["drivers"][c]["lost_practice"] = c in issues
@@ -349,5 +383,5 @@ def predict(data, ev: dict, target: str, *, rain_prob: float | None, now: dateti
         "frozen": False, "backfilled": False, "sample": data.sample,
         "rain_prob": round(rain, 2) if rain_prob is not None else None,
         "drivers": rows, "notes": notes, **extra,
-        "model": {"version": MODEL_VERSION, "sims": sims},
+        "model": {"version": MODEL_VERSION, "sims": sims, "params": {k: round(v, 4) for k, v in PARAMS.items()}},
     }
