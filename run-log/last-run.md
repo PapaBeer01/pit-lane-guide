@@ -11,4 +11,4 @@
 ## Problems
 
 None.
-- upgrades_found=0
+- upgrades_found=1
