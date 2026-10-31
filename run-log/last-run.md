@@ -2,7 +2,7 @@
 
 - WARP: success
 - Update step: success
-- published=2
+- published=0
 - backlog=0
 - history_loaded=0
 - history_left=0
