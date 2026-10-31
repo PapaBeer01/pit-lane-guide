@@ -1,1 +1,1 @@
-{"source":"Open-Meteo","fetched":"2026-10-31T01:02","sessions":{"FP3":{"rain_prob":0.0,"rain_mm":0.0,"temp":22.2,"wind":2.5},"Q":{"rain_prob":0.0,"rain_mm":0.0,"temp":27.0,"wind":7.9},"R":{"rain_prob":0.0,"rain_mm":0.0,"temp":25.9,"wind":8.0}}}
+{"source":"Open-Meteo","fetched":"2026-10-31T07:04","sessions":{"FP3":{"rain_prob":0.0,"rain_mm":0.0,"temp":22.1,"wind":3.5},"Q":{"rain_prob":0.01,"rain_mm":0.0,"temp":26.9,"wind":8.2},"R":{"rain_prob":0.02,"rain_mm":0.0,"temp":25.4,"wind":9.6}}}
