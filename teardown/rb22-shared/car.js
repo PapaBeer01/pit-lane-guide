@@ -6,6 +6,7 @@
 // buildCar() → {root, update(s, ops), anchor(name), parts}. update(s) poses everything from the lap state s
 // (kin.js stateAt); ops: {explode 0..1, solo: system key or null, wheelScreen: canvas}.
 import * as THREE from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {CAR, R_WHEEL} from './kin.js';
 
 const V3 = THREE.Vector3;
@@ -34,7 +35,7 @@ const M = {
   rad: () => new THREE.MeshStandardMaterial({color: '#b9c0c8', roughness: 0.5, metalness: 0.6, envMapIntensity: 0.5}),
   copper: () => new THREE.MeshStandardMaterial({color: '#b46a3c', roughness: 0.45, metalness: 0.75, envMapIntensity: 0.5}),
   batt: () => new THREE.MeshStandardMaterial({color: '#e7a10f', roughness: 0.55, metalness: 0.1}),
-  fuel: () => new THREE.MeshStandardMaterial({color: '#c7c2b4', roughness: 0.8, metalness: 0}),
+  fuel: () => new THREE.MeshStandardMaterial({color: '#c4904c', roughness: 0.62, metalness: 0}),
   disc: () => new THREE.MeshStandardMaterial({color: '#3b3533', roughness: 0.7, metalness: 0.2}),
   caliper: () => new THREE.MeshStandardMaterial({color: '#5b6068', roughness: 0.5, metalness: 0.6}),
   rubber: () => new THREE.MeshStandardMaterial({color: '#2b2d31', roughness: 0.8}),
@@ -210,8 +211,9 @@ export function buildCar(real = null, detail = {}) {
   add(root, fin, 'chassis', 'Engine cover fin', [0, 1.15, 0]);
   anchors.airbox = () => inlet.getWorldPosition(new V3());
   // fuel cell inside the tub behind the driver (≈ 100 kg of sustainable fuel)
-  const fuel = mesh(new THREE.BoxGeometry(0.36, 0.34, 0.5), M.fuel());
-  add(root, at(fuel, 1.3, 0.43, 0), 'chassis', 'Fuel cell', [0, 0.45, 0]);
+  // (the cutaway videos show it as one big tan bag, seat back to engine, nearly as tall as the driver's shoulders)
+  const fuel = mesh(new RoundedBoxGeometry(0.66, 0.5, 0.54, 3, 0.06), M.fuel());
+  add(root, at(fuel, 1.36, 0.45, 0), 'chassis', 'Fuel cell', [0, 0.45, 0]);
   anchors.fuel = () => fuel.getWorldPosition(new V3());
   // mirrors on the sidepod shoulders
   for (const s of [1, -1]) {
@@ -236,13 +238,14 @@ export function buildCar(real = null, detail = {}) {
     mouth.rotation.y = Math.PI / 2;
     add(root, at(mouth, 2.056, 0.44, s * 0.5), 'chassis', 'Sidepod inlet', [0, 0.1, s * 0.75]);
     // radiator: a finned block tilted inside the pod
+    // radiator: a long finned slab down the pod beside the fuel cell, leaning outward
     const rad = new THREE.Group();
-    rad.add(mesh(box(0.05, 0.3, 0.2), M.rad()));
-    for (let k = -4; k <= 4; k++) rad.add(at(mesh(box(0.056, 0.006, 0.2), M.dark()), 0, k * 0.032, 0));
-    rad.rotation.z = -0.5;
-    add(root, at(rad, 1.6, 0.4, s * 0.52), 'cooling', 'Radiator', [0, 0.35, s * 0.55]);
-    const ic = mesh(box(0.25, 0.12, 0.12), M.rad());
-    add(root, at(ic, 1.15, 0.33, s * 0.46), 'cooling', 'Charge-air cooler', [0, 0.3, s * 0.5]);
+    rad.add(mesh(box(0.62, 0.3, 0.05), M.rad()));
+    for (let k = -9; k <= 9; k++) rad.add(at(mesh(box(0.006, 0.3, 0.058), M.dark()), k * 0.032, 0, 0));
+    rad.rotation.x = s * 0.42;
+    add(root, at(rad, 1.42, 0.4, s * 0.47), 'cooling', 'Radiator', [0, 0.35, s * 0.55]);
+    const ic = mesh(box(0.26, 0.12, 0.08), M.rad());
+    add(root, at(ic, 0.98, 0.26, s * 0.35), 'cooling', 'Charge-air cooler', [0, 0.3, s * 0.5]);
     if (s === 1) anchors.radiator = () => rad.getWorldPosition(new V3());
     // side impact structure poking through the pod's top (the RB22's signature)
     const sis = mesh(cyl(0.028, 0.028, 0.36, 12), M.carbon());
@@ -725,19 +728,36 @@ export function buildCar(real = null, detail = {}) {
   let rwing = null;
   // The car model's own nose/front wing and rear wing are trimmed away (in the shader, in car coordinates) where the
   // detailed CAD wings take over: nose ahead of x = 3.66 m, rear wing behind x = -0.30 m and above 0.66 m.
-  const trim = {inv: {value: new THREE.Matrix4()}, nose: {value: 99}, rearX: {value: -99}, rearY: {value: 99}};
+  const trim = {inv: {value: new THREE.Matrix4()}, nose: {value: 99}, rearX: {value: -99}, rearY: {value: 99}, cut: {value: 9}, peel: {value: 0}};
   const trimMat = (m) => {
     if (m.userData.trimmed) return m;
     m.userData.trimmed = true;
     m.onBeforeCompile = (sh) => {
-      Object.assign(sh.uniforms, {uCarInv: trim.inv, uNose: trim.nose, uRearX: trim.rearX, uRearY: trim.rearY});
+      Object.assign(sh.uniforms, {uCarInv: trim.inv, uNose: trim.nose, uRearX: trim.rearX, uRearY: trim.rearY, uCut: trim.cut, uPeel: trim.peel});
       sh.vertexShader = 'uniform mat4 uCarInv;\nvarying vec3 vCar;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCar = (uCarInv * modelMatrix * vec4(transformed, 1.0)).xyz;');
-      sh.fragmentShader = 'uniform float uNose, uRearX, uRearY;\nvarying vec3 vCar;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n  if (vCar.x > uNose || (vCar.x < uRearX && vCar.y > uRearY)) discard;');
+      sh.fragmentShader = COVER_GLSL + sh.fragmentShader
+        .replace('void main() {', 'void main() {\n  if (vCar.x > uNose || (vCar.x < uRearX && vCar.y > uRearY)) discard;\n  if (uPeel > 0.0 && inCovers(vCar) && vCar.x > uCut) discard;')
+        .replace('#include <dithering_fragment>', CUT_EDGE_GLSL + '#include <dithering_fragment>');
     };
     m.customProgramCacheKey = () => 'cartrim';
     m.needsUpdate = true;
     return m;
   };
+  // Covers off cuts the bodywork away with a section line that sweeps from the cockpit to the gearbox: the engine
+  // cover and airbox behind the seat, and the sidepods from their mouths back. The inside of the cut skin shows dark,
+  // and the moving edge glows while it travels.
+  const COVER_GLSL = `uniform float uNose, uRearX, uRearY, uCut, uPeel;
+varying vec3 vCar;
+bool inCovers(vec3 p) {
+  if (p.y < 0.12 || p.x < -0.62) return false;
+  return p.x < 1.74 || (p.x < 2.06 && abs(p.z) > 0.24 && p.y < 0.68);
+}
+`;
+  const CUT_EDGE_GLSL = `if (uPeel > 0.0) {
+    if (!gl_FrontFacing) gl_FragColor.rgb *= 0.22;
+    if (uPeel < 0.999 && inCovers(vCar) && vCar.x > uCut - 0.02) gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 0.45, 0.1), 0.9);
+  }
+`;
   const trimmable = [];
   if (realParts) {
     const wheelMesh = new Set();
@@ -748,6 +768,10 @@ export function buildCar(real = null, detail = {}) {
     m.userData.trim = true;
     for (const mat of Array.isArray(m.material) ? m.material : [m.material]) trimMat(mat);
   });
+  if (realParts) {
+    trimAll();
+    for (const m of trimmable) for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.side = THREE.DoubleSide;
+  }
   if (detail.frontwing) {
     const f = detail.frontwing;
     f.rotation.y = Math.PI;
@@ -960,16 +984,24 @@ export function buildCar(real = null, detail = {}) {
     // garage: the real car's covers lifted off, everything inside left where it sits
     const gk = ops.garage ?? 0;
     const lift = Math.max(k, gk * gk * (3 - 2 * gk));
-    const realSolid = R && lift < 0.02 && (!solo || solo === 'chassis');
+    const realSolid = R && k < 0.02 && (!solo || solo === 'chassis');
+    // the peel: the cut runs from x = 2.06 (sidepod mouths) to -0.65 (behind the gearbox)
+    const peel = solo ? 0 : Math.min(1, gk) * (1 - Math.min(1, k * 4));
+    const pe = peel * peel * (3 - 2 * peel);
+    trim.peel.value = peel;
+    trim.cut.value = 2.06 - pe * 2.71;
     const drawn = !R || lift > 0.02 || (solo && solo !== 'chassis' && !(solo === 'wheel' && realParts.steer));
     const COVERS = /^(Engine cover|Airbox inlet|Engine cover fin|Sidepod|Sidepod inlet)$/;
     // over the real car only these drawn parts appear (no real model of them yet); bodywork, wheels, floor and the
     // drawn chassis never do. The moving wing flaps show when aero is isolated.
     const KEEP = /^(Fuel cell|Radiator|Charge-air cooler|Gearbox)$/;
+    // the cut takes the real car's side-impact tubes with the sidepods, so the drawn ones stand in once it has passed
+    const SIS = /^Side impact structure$/;
     const keepOverReal = (o) => {
       const part = o.userData.part || '';
       if (o.userData.sys === 'pu' && !o.userData.replaced) return true;
       if (KEEP.test(part)) return true;
+      if (SIS.test(part)) return gk > 0.6 && k < 0.5 && !solo;
       if (/^(Front wing|Rear wing)$/.test(part)) return solo === 'aero';
       if (part === 'Floor (detailed)') return solo === 'aero' || k > 0.5;
       if (/suspension/.test(part)) return solo === 'susp' || (gk > 0.5 && k < 0.5);
@@ -1000,13 +1032,14 @@ export function buildCar(real = null, detail = {}) {
     if (R) {
       // the real car is the base: covers off turns it to glass where it stands; exploded lifts the glass body up
       realRoot.position.y = 0.032 + 1.45 * k;
-      const op = realSolid ? 1 : solo === 'wheel' ? 0 : solo ? 0.16 : Math.max(0.16, 1 - lift * 1.6);
+      const op = realSolid ? 1 : solo === 'wheel' ? 0 : solo ? 0.16 : Math.max(0.16, 1 - k * 1.6);
       for (const m of realParts.meshes) {
         const keepSteer = solo === 'wheel' && m.userData.inSteer && lift <= 0.02;
         m.visible = (op > 0.01 || keepSteer) && !m.userData.hideReal;
         if (keepSteer || op >= 0.999) {
           m.material = m.userData.base;
-          m.castShadow = true;
+          // a peeled body would still shade the parts it no longer covers
+          m.castShadow = peel < 0.02;
         } else {
           m.material = Array.isArray(m.userData.base) ? m.userData.base.map((b) => glass(b, op)) : glass(m.userData.base, op);
           m.castShadow = false;
@@ -1021,7 +1054,7 @@ export function buildCar(real = null, detail = {}) {
         realParts.steer.quaternion.copy(qSteer);
       }
       if (pk) pk.spinG.rotation.z = -(s.wheelDeg * Math.PI) / 180;
-      if (fwing || rwing) {
+      {
         root.updateWorldMatrix(true, false);
         trim.inv.value.copy(root.matrixWorld).invert();
       }

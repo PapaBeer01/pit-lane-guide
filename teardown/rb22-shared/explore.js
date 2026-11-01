@@ -28,6 +28,7 @@ const SPOTS = {
     ['pushrod', 'Push-rod suspension', 'Each wheel hangs on two wishbones. A push-rod carries the load up to springs and dampers on top of the chassis.', {photo: ['front-end', 28, 55]}],
     ['drum', 'Brakes', 'Carbon discs glow at around 1,000 °C under the big silver ducts. At the rear, the electric motor does much of the slowing too.', {photo: ['rear-corner', 36, 58]}],
     ['sis', 'Side-impact tubes', 'Crash structures either side of the cockpit that protect the driver in a side hit.', {photo: ['front-end', 72, 58]}],
+    ['fuel', 'Fuel tank', 'A tough rubber bag between the driver\u2019s back and the engine, holding around 100 kg of sustainable fuel. No refuelling during races.', {}],
     ['radiator', 'Radiators', 'Hot water and oil pass through these; air from the sidepod inlets carries the heat away.', {}],
     ['ice', 'Engine', 'Behind the driver: the 1.6-litre V6 turbo. Every 2026 team uses the same size of engine.', {photo: ['engine-bay', 40, 55]}],
   ],
@@ -235,7 +236,7 @@ export async function runExplore() {
     camSeg.querySelectorAll('button').forEach((n) => n.setAttribute('aria-pressed', String(n === b)));
   });
   const onTrack = () => driving && mode === 'car' && !solo;
-  window.EXPLORE = {st, cam, mount, get track() { return track; }, seek: (t) => (lapT = t)};
+  window.EXPLORE = {st, cam, mount, controls, get track() { return track; }, seek: (t) => (lapT = t), view: (p, t) => { focus = null; cam.position.set(...p); controls.target.set(...t); }};
   let wasOnTrack = false;
   const camDir = new THREE.Vector3(1, 0, 0);
   const enterTrack = (on) => {
@@ -372,7 +373,8 @@ export async function runExplore() {
     if (driving) lapT = (lapT + dt) % LAP_TIME;
     const s = stateAt(lapT);
     ex += ((mode === 'exploded' ? 1 : 0) - ex) * (1 - Math.exp(-dt / 0.4));
-    ga += ((mode === 'garage' ? 1 : 0) - ga) * (1 - Math.exp(-dt / 0.4));
+    // covers off: a steady 1.6 s sweep of the cut (back on: half that)
+    ga = mode === 'garage' ? Math.min(1, ga + dt / 1.6) : Math.max(0, ga - dt / 0.8);
     if (focus) {
       const k = 1 - Math.exp(-dt / 0.35);
       controls.target.lerp(focus.t, k);
