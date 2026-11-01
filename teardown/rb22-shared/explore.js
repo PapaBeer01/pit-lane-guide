@@ -288,6 +288,8 @@ export async function runExplore() {
     drive.querySelector('i').textContent = driving ? '❚❚' : '▶';
     drive.querySelector('span').textContent = driving ? 'Stop' : 'Drive a lap';
     hud.classList.toggle('on', driving);
+    // the HUD takes the bottom edge while driving (the credits are on the page below, too)
+    credit.style.display = driving ? 'none' : '';
   });
 
   // ------------------------------------------------------------ dots on the car
