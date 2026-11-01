@@ -2,7 +2,7 @@
 
 - WARP: success
 - Update step: success
-- published=1
+- published=0
 - backlog=0
 - history_loaded=0
 - history_left=0
@@ -10,5 +10,5 @@
 
 ## Problems
 
-None.
+- Round 19 Q: duplicate positions in results
 - upgrades_found=0
