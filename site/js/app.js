@@ -13,6 +13,7 @@ const routes = {
   standings: () => import("./pages/standings.js"),
   learn: () => import("./pages/learn.js"),
   accuracy: () => import("./pages/accuracy.js"),
+  teardown: () => import("./pages/teardown.js"),
   data: () => import("./pages/data.js"),          // Data room: not in the menus
 };
 // The menu: one button, one grouped drop-down. Learn topics link straight to their explainer
@@ -43,6 +44,7 @@ function menuGroups() {
       ["accuracy", "How accurate they are", "target", "Every prediction, scored"],
     ]],
     ["Learn F1", [
+      ["teardown", "RB22 teardown", "wrench", "Take this year's Red Bull apart in 3D"],
       ["learn", "New to F1? Start here", "book", "All the explainers on one page"],
       ...LEARN_TOPICS.map(([t, ic]) => [`learn/${slug(t)}`, t, ic]),
     ]],

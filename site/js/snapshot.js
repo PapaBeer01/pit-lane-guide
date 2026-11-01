@@ -10,9 +10,8 @@ const PAD = 28;
 // Shown on saved images: the address the picture was made on (Vercel, GitHub Pages, or a custom domain later).
 const SITE = (location.host + location.pathname.replace(/\/[^/]*$/, "")) || "thepitlane.vercel.app";
 const FONTS = [
-  ["Atkinson Hyperlegible", 400, "atkinson-hyperlegible-latin-400-normal.woff2"],
-  ["Atkinson Hyperlegible", 700, "atkinson-hyperlegible-latin-700-normal.woff2"],
-  ["Big Shoulders Display", 800, "big-shoulders-display-latin-800-normal.woff2"],
+  ["Bricolage Grotesque", "200 800;font-stretch:100%", "bricolage-grotesque-latin-wdth-wght.woff2"],
+  ["Bricolage Display", "200 800;font-stretch:75%", "bricolage-grotesque-latin-wdth-wght.woff2"],
 ];
 const STYLE_PROPS = ["fill", "fill-opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap",
   "stroke-linejoin", "stroke-opacity", "opacity", "font-family", "font-size", "font-weight", "display", "visibility"];
@@ -97,18 +96,18 @@ function font(weight, size, family) { return `${weight} ${size}px "${family}", s
  */
 export async function makeImage({ title, subtitle, headline, legend = [], blocks }) {
   await Promise.all([
-    document.fonts.load(font(800, 44, "Big Shoulders Display")),
-    document.fonts.load(font(700, 16, "Atkinson Hyperlegible")),
-    document.fonts.load(font(400, 15, "Atkinson Hyperlegible")),
+    document.fonts.load(font(800, 44, "Bricolage Display")),
+    document.fonts.load(font(700, 16, "Bricolage Grotesque")),
+    document.fonts.load(font(400, 15, "Bricolage Grotesque")),
   ]);
   const inner = CARD_W - PAD * 2;
   const rendered = await Promise.all(blocks.map((b) => b.render(inner)));
 
   // measure first (canvas height depends on wrapped text), then draw
   const measure = document.createElement("canvas").getContext("2d");
-  measure.font = font(700, 17, "Atkinson Hyperlegible");
+  measure.font = font(700, 17, "Bricolage Grotesque");
   const headLines = headline ? wrapText(measure, headline, inner) : [];
-  measure.font = font(400, 15, "Atkinson Hyperlegible");
+  measure.font = font(400, 15, "Bricolage Grotesque");
   const subLines = subtitle ? wrapText(measure, subtitle, inner) : [];
   const noteLines = blocks.map((b) => (b.note ? wrapText(measure, b.note, inner) : []));
 
@@ -130,11 +129,11 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
   ctx.textBaseline = "alphabetic";
   // title, each part in its own colour (driver codes in team colours)
   let titleSize = 44;                                   // shrink a long title to fit on one line
-  ctx.font = font(800, titleSize, "Big Shoulders Display");
+  ctx.font = font(800, titleSize, "Bricolage Display");
   const titleW = title.reduce((w, p) => w + ctx.measureText(p.text).width, 0);
   if (titleW > CARD_W - PAD * 2) {
     titleSize = Math.max(26, Math.floor(titleSize * (CARD_W - PAD * 2) / titleW));
-    ctx.font = font(800, titleSize, "Big Shoulders Display");
+    ctx.font = font(800, titleSize, "Bricolage Display");
   }
   let x = PAD;
   y += 40;
@@ -144,18 +143,18 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
     x += ctx.measureText(part.text).width;
   }
   y += 6;
-  ctx.font = font(400, 15, "Atkinson Hyperlegible");
+  ctx.font = font(400, 15, "Bricolage Grotesque");
   ctx.fillStyle = tok("--muted");
   for (const l of subLines) { y += 21; ctx.fillText(l, PAD, y); }
   if (headLines.length) {
     y += 10;
-    ctx.font = font(700, 17, "Atkinson Hyperlegible");
+    ctx.font = font(700, 17, "Bricolage Grotesque");
     ctx.fillStyle = tok("--ink");
     for (const l of headLines) { y += 24; ctx.fillText(l, PAD, y); }
   }
   if (legend.length) {
     y += 30;
-    ctx.font = font(700, 14, "Atkinson Hyperlegible");
+    ctx.font = font(700, 14, "Bricolage Grotesque");
     x = PAD;
     for (const item of legend) {
       ctx.strokeStyle = item.color;
@@ -174,11 +173,11 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
     const b = blocks[i];
     if (b.label) {
       y += 18 + 26;
-      ctx.font = font(800, 24, "Big Shoulders Display");
+      ctx.font = font(800, 24, "Bricolage Display");
       ctx.fillStyle = tok("--ink");
       ctx.fillText(b.label, PAD, y);
     } else y += 6;
-    ctx.font = font(400, 14, "Atkinson Hyperlegible");
+    ctx.font = font(400, 14, "Bricolage Grotesque");
     ctx.fillStyle = tok("--muted");
     for (const l of noteLines[i]) { y += 20; ctx.fillText(l, PAD, y); }
     y += 8;
@@ -191,10 +190,10 @@ export async function makeImage({ title, subtitle, headline, legend = [], blocks
   ctx.fillStyle = tok("--line-strong");
   ctx.fillRect(PAD, y, inner, 1);
   y += 30;
-  ctx.font = font(800, 22, "Big Shoulders Display");
+  ctx.font = font(800, 22, "Bricolage Display");
   ctx.fillStyle = tok("--ink");
   ctx.fillText("The Pit Lane", PAD, y);
-  ctx.font = font(400, 13, "Atkinson Hyperlegible");
+  ctx.font = font(400, 13, "Bricolage Grotesque");
   ctx.fillStyle = tok("--muted");
   ctx.textAlign = "right";
   ctx.fillText(SITE, CARD_W - PAD, y);

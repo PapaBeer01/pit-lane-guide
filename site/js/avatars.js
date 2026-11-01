@@ -54,7 +54,7 @@ export function helmet(code, { size = 48, cls = "" } = {}) {
     <path d="M49 25 L72 25 C73 27 73 28.5 72.6 30 L50 30 Z" fill="#fff" opacity=".22"/>
     <path d="M16 20 C24 13 34 11 42 11" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".35"/>
     <rect x="18" y="49" width="56" height="5" rx="2" fill="${shade(base, -0.3)}"/>
-    ${num ? `<text x="27" y="40" font-family="Big Shoulders Display, sans-serif" font-weight="800" font-size="13" fill="${ink}" text-anchor="middle">${num}</text>` : ""}
+    ${num ? `<text x="27" y="40" font-family="Bricolage Display, sans-serif" font-weight="800" font-size="13" fill="${ink}" text-anchor="middle">${num}</text>` : ""}
   </svg>`;
   const span = document.createElement("span");
   span.className = `helmet ${cls}`.trim();
@@ -102,7 +102,7 @@ export function teamBadge(team, { size = 28 } = {}) {
     <path d="M16 1 L30 6 V18 C30 27 23 33 16 35 C9 33 2 27 2 18 V6 Z" fill="${c}"/>
     <path d="M16 1 L30 6 V18 C30 27 23 33 16 35 Z" fill="#000" opacity=".14"/>
     <path d="M16 4 L27 8 V18 C27 25 22 30 16 32" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1"/>
-    <text x="16" y="22" text-anchor="middle" font-family="Big Shoulders Display, sans-serif" font-weight="800" font-size="${initials(team).length > 3 ? 8.5 : initials(team).length > 2 ? 10 : 12}" fill="${ink}">${initials(team)}</text>
+    <text x="16" y="22" text-anchor="middle" font-family="Bricolage Display, sans-serif" font-weight="800" font-size="${initials(team).length > 3 ? 8.5 : initials(team).length > 2 ? 10 : 12}" fill="${ink}">${initials(team)}</text>
   </svg>`;
   return span;
 }
