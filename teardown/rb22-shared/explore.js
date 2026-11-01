@@ -10,7 +10,7 @@ import {drawScreen} from './console.js';
 import {LAP_TIME, stateAt} from './kin.js';
 import {buildTrack, poseOnTrack} from './track.js';
 import CIRCUIT from './circuit.json';
-import {createStage, loadDetail, loadReal} from './stage.js';
+import {createStage, loadDetail, loadGearbox, loadReal} from './stage.js';
 
 // ------------------------------------------------------------ what each dot explains (general to all 2026 cars)
 const SPOTS = {
@@ -192,7 +192,7 @@ export async function runExplore() {
   const hud = el('div', {class: 'xhud', 'aria-live': 'off'});
   const sheet = el('div', {class: 'sheet', role: 'dialog', 'aria-live': 'polite'});
   const hint = el('div', {class: 'hint'}, 'Drag to turn · pinch to zoom · tap a dot');
-  const credit = el('a', {class: 'credit', href: 'https://skfb.ly/pOvxI', target: '_blank', rel: 'noopener'}, 'Car: “2026 Redbull RB22” by Dave Love (CC BY 4.0) · engine and steering wheel: Peter Kiss Design');
+  const credit = el('a', {class: 'credit', href: 'https://skfb.ly/pOvxI', target: '_blank', rel: 'noopener'}, '3D models: car, Dave Love (CC BY) · engine and wheel, Peter Kiss Design · rear wing, Abu Saif (CC BY) · gearbox, Indeterminate Design (CC BY-NC) · details on the page');
   app.append(bar, hud, sheet, hint, credit);
   setTimeout(() => (hint.style.opacity = '0'), 6000);
 
@@ -431,5 +431,6 @@ export async function runExplore() {
   setMode('car');
   await warmComposer(st.renderer, st.composer, st.scene, st.camera);
   load.remove();
+  loadGearbox().then((g) => g && st.car.addGearbox(g));
   requestAnimationFrame(frame);
 }

@@ -7,7 +7,7 @@ import {warmComposer} from 'teardown-kit/warm.js';
 import {BUILD, CAMS, createConsole, drawScreen, SYS} from './console.js';
 import {blend, camAt, camName, DURATION, explodeAt, garageAt, LAP_START, makeConsoleFrame, makeCursor, SCRIPT, sysAt, VIEW_FN} from './film.js';
 import {LAP_D, LAP_TIME, stateAt, timeAtDist} from './kin.js';
-import {createStage, loadDetail, loadReal} from './stage.js';
+import {createStage, loadDetail, loadGearbox, loadReal} from './stage.js';
 
 const W = 1600;
 const H = 900;
@@ -370,6 +370,7 @@ export async function runLive() {
   };
   warmComposer(st.renderer, st.composer, st.scene, st.camera).then(() => {
     load.remove();
+    loadGearbox().then((g) => g && st.car.addGearbox(g));
     requestAnimationFrame(frame);
   });
   window.LIVE = {st, startTour, takeOver};

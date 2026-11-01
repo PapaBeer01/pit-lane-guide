@@ -123,6 +123,8 @@ function tube(a, b, r = 0.012) {
 // which way the CAD flaps turn to flatten (checked against side renders)
 export let FLAP_DIR = 1;
 export const setFlapDir = (d) => (FLAP_DIR = d);
+export let RW_DIR = 1;
+export const setRwDir = (d) => (RW_DIR = d);
 
 export function buildCar(real = null, detail = {}) {
   const root = new THREE.Group();          // posed by the ride (heave, pitch, roll)
@@ -636,7 +638,10 @@ export function buildCar(real = null, detail = {}) {
       const g = m.clone();
       g.transparent = true;
       g.depthWrite = false;
-      if (m.clippingPlanes) g.clippingPlanes = m.clippingPlanes;
+      if (m.userData.trimmed) {
+        g.userData.trimmed = false;
+        trimMat(g);
+      }
       glassOf.set(m, g);
     }
     const g = glassOf.get(m);
@@ -717,8 +722,32 @@ export function buildCar(real = null, detail = {}) {
   // Its two flaps per side hinge along their own leading edges (hinge_axis in the model) for straight / corner mode.
   // The car model's own nose and wing ahead of the front wheels are clipped away so the two don't overlap.
   let fwing = null;
-  const noseClip = new THREE.Plane(new V3(-1, 0, 0), 3.66);
-  const noseClipW = new THREE.Plane();
+  let rwing = null;
+  // The car model's own nose/front wing and rear wing are trimmed away (in the shader, in car coordinates) where the
+  // detailed CAD wings take over: nose ahead of x = 3.66 m, rear wing behind x = -0.30 m and above 0.66 m.
+  const trim = {inv: {value: new THREE.Matrix4()}, nose: {value: 99}, rearX: {value: -99}, rearY: {value: 99}};
+  const trimMat = (m) => {
+    if (m.userData.trimmed) return m;
+    m.userData.trimmed = true;
+    m.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, {uCarInv: trim.inv, uNose: trim.nose, uRearX: trim.rearX, uRearY: trim.rearY});
+      sh.vertexShader = 'uniform mat4 uCarInv;\nvarying vec3 vCar;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCar = (uCarInv * modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = 'uniform float uNose, uRearX, uRearY;\nvarying vec3 vCar;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n  if (vCar.x > uNose || (vCar.x < uRearX && vCar.y > uRearY)) discard;');
+    };
+    m.customProgramCacheKey = () => 'cartrim';
+    m.needsUpdate = true;
+    return m;
+  };
+  const trimmable = [];
+  if (realParts) {
+    const wheelMesh = new Set();
+    realParts.wheels.forEach((w) => w.traverse((o) => o.isMesh && wheelMesh.add(o)));
+    for (const m of realParts.meshes) if (!wheelMesh.has(m) && !m.userData.inSteer) trimmable.push(m);
+  }
+  const trimAll = () => trimmable.forEach((m) => {
+    m.userData.trim = true;
+    for (const mat of Array.isArray(m.material) ? m.material : [m.material]) trimMat(mat);
+  });
   if (detail.frontwing) {
     const f = detail.frontwing;
     f.rotation.y = Math.PI;
@@ -738,15 +767,63 @@ export function buildCar(real = null, detail = {}) {
     fwing = {g, flaps};
     anchors.frontwing = () => new THREE.Box3().setFromObject(g).getCenter(new V3());
     for (const p of parts) if (p.name === 'Front wing') p.obj.traverse((o) => (o.userData.replaced = true));
-    if (realParts) {
-      const wheelMesh = new Set();
-      realParts.wheels.forEach((w) => w.traverse((o) => o.isMesh && wheelMesh.add(o)));
-      for (const m of realParts.meshes) {
-        if (wheelMesh.has(m) || m.userData.inSteer) continue;
-        for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.clippingPlanes = [noseClipW];
-        m.userData.clip = true;
+    trim.nose.value = 3.66;
+    trimAll();
+  }
+
+  // the rear wing (CC BY 4.0, Abu Saif, Sketchfab "2025 F1 Car Rear Wing"; beam wing removed for 2026): fitted to the
+  // size and place of the car model's own rear wing, which is then trimmed; its top flap opens in straight mode
+  if (detail.rearwing && realParts) {
+    // where the model's own rear wing is, in car coordinates
+    real.updateMatrixWorld(true);
+    root.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
+    const bb = new THREE.Box3();
+    const v = new V3();
+    for (const m of trimmable) {
+      const pos = m.geometry.attributes.position;
+      const step = Math.max(1, Math.floor(pos.count / 40000));
+      for (let i = 0; i < pos.count; i += step) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv);
+        if (v.x < -0.3 && v.y > 0.66) bb.expandByPoint(v);
       }
     }
+    const r = detail.rearwing;
+    const g = new THREE.Group();
+    r.rotation.y = Math.PI / 2;
+    g.add(r);
+    g.updateMatrixWorld(true);
+    let rb = new THREE.Box3().setFromObject(g);
+    const width = bb.isEmpty() ? 1.0 : bb.max.z - bb.min.z;
+    g.scale.setScalar(width / (rb.max.z - rb.min.z));
+    g.updateMatrixWorld(true);
+    rb = new THREE.Box3().setFromObject(g);
+    const tx = bb.isEmpty() ? -0.5 : (bb.min.x + bb.max.x) / 2;
+    const ty = bb.isEmpty() ? 1.0 : bb.max.y;
+    // the CAD's main plane and flap sit at its top: line the tops up and centre front-to-back on the old wing
+    const flapNode = r.getObjectByName('rw_flap');
+    const fb = new THREE.Box3().setFromObject(flapNode);
+    g.position.set(tx - (fb.min.x + fb.max.x) / 2, ty - rb.max.y, -(rb.min.z + rb.max.z) / 2);
+    g.traverse((o) => {
+      if (!o.isMesh) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        m.envMapIntensity = 0.7;
+        // the source has no textures: its carbon is a pale base colour, so make it carbon-dark like the front wing
+        if (/carbon|plastic/i.test(m.name || '')) {
+          m.color.set('#1a1b1f');
+          m.roughness = 0.35;
+          m.metalness = 0.15;
+        }
+      }
+    });
+    add(root, g, 'aero', 'Rear wing (detailed)', [-0.75, 0.35, 0]);
+    g.traverse((o) => o.isMesh && (o.userData.frontwing = true));
+    rwing = {g, flap: flapNode, base: flapNode.quaternion.clone()};
+    anchors.rearwing = () => new THREE.Box3().setFromObject(g).getCenter(new V3());
+    for (const p of parts) if (p.name === 'Rear wing') p.obj.traverse((o) => (o.userData.replaced = true));
+    trim.rearX.value = -0.3;
+    trim.rearY.value = 0.66;
+    trimAll();
   }
 
   // the floor from CAD (CATIA STEP): x runs back from the front axle, so turn it round onto ours
@@ -853,6 +930,7 @@ export function buildCar(real = null, detail = {}) {
     const e = Math.min(1, Math.abs(s.kw) / 350);
     mgukMat.emissive.copy(s.kw >= 0 ? warm : cool);
     mgukMat.emissiveIntensity = 0.85 * e;
+    if (rwing) rwing.flap.quaternion.copy(rwing.base).multiply(new THREE.Quaternion().setFromAxisAngle(new V3(1, 0, 0), RW_DIR * 0.42 * s.flap));
     if (fwing) for (const fl of fwing.flaps) fl.o.quaternion.copy(fl.base).premultiply(new THREE.Quaternion().setFromAxisAngle(fl.axis, FLAP_DIR * fl.sign * fl.k * s.flap));
     if (eng) {
       for (const m of eng.motorMats) {
@@ -943,9 +1021,9 @@ export function buildCar(real = null, detail = {}) {
         realParts.steer.quaternion.copy(qSteer);
       }
       if (pk) pk.spinG.rotation.z = -(s.wheelDeg * Math.PI) / 180;
-      if (fwing) {
+      if (fwing || rwing) {
         root.updateWorldMatrix(true, false);
-        noseClipW.copy(noseClip).applyMatrix4(root.matrixWorld);
+        trim.inv.value.copy(root.matrixWorld).invert();
       }
       if (realParts.lcd && realParts.lcd.material.map !== screenTex) {
         const m = realParts.lcd.material.clone();
@@ -958,7 +1036,26 @@ export function buildCar(real = null, detail = {}) {
       }
     }
   };
+  // the seamless-shift gear cluster (CC BY-NC 4.0, "F1 Hybrid Era Seamless Gearbox Model" by Indeterminate Design,
+  // Printables): loaded after the car, in the background. Its shafts are turned to run along the car, with the
+  // bevel drive at the back, and it takes the drawn gearbox's place.
+  const addGearbox = (g) => {
+    const holder = new THREE.Group();
+    holder.add(g);
+    g.rotation.z = -Math.PI / 2;
+    g.traverse((o) => {
+      if (o.isMesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.envMapIntensity = 0.8;
+    });
+    holder.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(holder);
+    const c = bb.getCenter(new V3());
+    g.position.sub(c);
+    holder.position.set(0.12, 0.31, 0);
+    add(root, holder, 'pu', 'Gearbox', [-0.45, 0.45, 0]);
+    for (const p of parts) if (p.name === 'Gearbox' && p.obj !== holder) p.obj.traverse((o) => (o.userData.replaced = true));
+    anchors.gearbox = () => new THREE.Box3().setFromObject(holder).getCenter(new V3());
+  };
   const anchor = (name) => (anchors[name] ? anchors[name]() : null);
   void ice;
-  return {root, parts, update, anchor, wheels, real: !!realParts, BUTTONS: Object.keys(BTN)};
+  return {root, parts, update, anchor, wheels, addGearbox, real: !!realParts, BUTTONS: Object.keys(BTN)};
 }

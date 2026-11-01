@@ -16,6 +16,8 @@ import ENGINE from './engine.glb';
 import WHEEL from './wheel.glb';
 import FLOOR from './floor.glb';
 import FRONTWING from './frontwing.glb';
+import REARWING from './rearwing.glb';
+import GEARBOX from './gearbox.glb';
 
 // The real RB22: "2026 Redbull RB22" by Dave Love (Sketchfab), CC BY 4.0. Wheels and steering wheel split out so
 // they turn (MODEL-CREDIT.md). A page that can't load it still shows the code-built car.
@@ -52,8 +54,19 @@ export async function loadDetail(onProgress = null) {
     console.warn('detail model unavailable', u, e);
     return null;
   });
-  const [engine, wheel, floor, frontwing] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR), one(FRONTWING)]);
-  return {engine, wheel, floor, frontwing};
+  const [engine, wheel, floor, frontwing, rearwing] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR), one(FRONTWING), one(REARWING)]);
+  return {engine, wheel, floor, frontwing, rearwing};
+}
+
+// the gear cluster comes later (2 MB, only seen with the engine out)
+export async function loadGearbox() {
+  try {
+    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(String(GEARBOX).replace(/^url:/, ''));
+    return g.scene;
+  } catch (e) {
+    console.warn('gearbox model unavailable', e);
+    return null;
+  }
 }
 
 export function createStage({canvas, lo = false, real = null, detail = {}}) {

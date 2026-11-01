@@ -5,7 +5,7 @@
 import {runSim} from 'teardown-kit/runtime.js';
 import {createConsole, drawScreen, CAMS} from './console.js';
 import {stateAt} from './kin.js';
-import {createStage, loadDetail, loadReal} from './stage.js';
+import {createStage, loadDetail, loadGearbox, loadReal} from './stage.js';
 
 export const SCRIPT = [
   {t: 0, cam: 'open'},
@@ -165,6 +165,8 @@ export function makeFilm() {
   return async ({canvas, capture}) => {
     const [real, detail] = await Promise.all([loadReal(), loadDetail()]);
     const st = createStage({canvas, real, detail});
+    const gb = await loadGearbox();
+    if (gb) st.car.addGearbox(gb);
     const resize = () => st.resize(1600, 900, capture ? devicePixelRatio || 1 : Math.min(devicePixelRatio || 1, 2));
     resize();
     const ui = createConsole(document.getElementById('app'));
