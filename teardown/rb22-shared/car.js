@@ -120,6 +120,10 @@ function tube(a, b, r = 0.012) {
   return g;
 }
 
+// which way the CAD flaps turn to flatten (checked against side renders)
+export let FLAP_DIR = 1;
+export const setFlapDir = (d) => (FLAP_DIR = d);
+
 export function buildCar(real = null, detail = {}) {
   const root = new THREE.Group();          // posed by the ride (heave, pitch, roll)
   const parts = [];                         // {mesh or group, sys, name, explode: V3}
@@ -632,6 +636,7 @@ export function buildCar(real = null, detail = {}) {
       const g = m.clone();
       g.transparent = true;
       g.depthWrite = false;
+      if (m.clippingPlanes) g.clippingPlanes = m.clippingPlanes;
       glassOf.set(m, g);
     }
     const g = glassOf.get(m);
@@ -708,6 +713,42 @@ export function buildCar(real = null, detail = {}) {
     anchors.ce = at('electric_invertor');
     for (const p of parts) if (/^(V6 engine|Turbocharger|Exhaust|MGU-K|Energy store|Control electronics)$/.test(p.name)) p.obj.traverse((o) => (o.userData.replaced = true));
   }
+  // the front wing and nose from CAD (CATIA STEP): x runs forward from the nose bulkhead (at our front axle line).
+  // Its two flaps per side hinge along their own leading edges (hinge_axis in the model) for straight / corner mode.
+  // The car model's own nose and wing ahead of the front wheels are clipped away so the two don't overlap.
+  let fwing = null;
+  const noseClip = new THREE.Plane(new V3(-1, 0, 0), 3.66);
+  const noseClipW = new THREE.Plane();
+  if (detail.frontwing) {
+    const f = detail.frontwing;
+    f.rotation.y = Math.PI;
+    f.position.x = WB;
+    const flaps = [];
+    f.traverse((o) => {
+      if (o.userData?.hinge_axis) flaps.push({o, base: o.quaternion.clone(), axis: new V3(...o.userData.hinge_axis).normalize(), k: /flap1/.test(o.name) ? 0.2 : 0.3, sign: /L$/.test(o.name) ? 1 : -1});
+      if (o.isMesh) {
+        o.material.side = THREE.DoubleSide;
+        o.material.envMapIntensity = 0.7;
+      }
+    });
+    const g = new THREE.Group();
+    g.add(f);
+    add(root, g, 'aero', 'Front wing (detailed)', [0.8, -0.05, 0]);
+    g.traverse((o) => o.isMesh && (o.userData.frontwing = true));
+    fwing = {g, flaps};
+    anchors.frontwing = () => new THREE.Box3().setFromObject(g).getCenter(new V3());
+    for (const p of parts) if (p.name === 'Front wing') p.obj.traverse((o) => (o.userData.replaced = true));
+    if (realParts) {
+      const wheelMesh = new Set();
+      realParts.wheels.forEach((w) => w.traverse((o) => o.isMesh && wheelMesh.add(o)));
+      for (const m of realParts.meshes) {
+        if (wheelMesh.has(m) || m.userData.inSteer) continue;
+        for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.clippingPlanes = [noseClipW];
+        m.userData.clip = true;
+      }
+    }
+  }
+
   // the floor from CAD (CATIA STEP): x runs back from the front axle, so turn it round onto ours
   if (detail.floor) {
     const f = detail.floor;
@@ -812,6 +853,7 @@ export function buildCar(real = null, detail = {}) {
     const e = Math.min(1, Math.abs(s.kw) / 350);
     mgukMat.emissive.copy(s.kw >= 0 ? warm : cool);
     mgukMat.emissiveIntensity = 0.85 * e;
+    if (fwing) for (const fl of fwing.flaps) fl.o.quaternion.copy(fl.base).premultiply(new THREE.Quaternion().setFromAxisAngle(fl.axis, FLAP_DIR * fl.sign * fl.k * s.flap));
     if (eng) {
       for (const m of eng.motorMats) {
         m.emissive = m.emissive || new THREE.Color();
@@ -868,6 +910,10 @@ export function buildCar(real = null, detail = {}) {
       o.visible = drawn && vis;
       if (R) o.visible = (lift > 0.02 || !!solo) && keepOverReal(o) && (!solo || on);
       if (o.userData.replaced) o.visible = false;
+      if (o.userData.frontwing && R) {
+        o.visible = !solo || solo === 'aero';
+        o.material = o.userData.base;
+      }
       if (o.userData.always) {
         o.visible = !solo || solo === 'wheel';
         o.material = o.userData.base;
@@ -897,6 +943,10 @@ export function buildCar(real = null, detail = {}) {
         realParts.steer.quaternion.copy(qSteer);
       }
       if (pk) pk.spinG.rotation.z = -(s.wheelDeg * Math.PI) / 180;
+      if (fwing) {
+        root.updateWorldMatrix(true, false);
+        noseClipW.copy(noseClip).applyMatrix4(root.matrixWorld);
+      }
       if (realParts.lcd && realParts.lcd.material.map !== screenTex) {
         const m = realParts.lcd.material.clone();
         m.map = screenTex;

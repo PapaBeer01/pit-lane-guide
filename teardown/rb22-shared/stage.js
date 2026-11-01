@@ -15,6 +15,7 @@ import MODEL from './rb22.glb';
 import ENGINE from './engine.glb';
 import WHEEL from './wheel.glb';
 import FLOOR from './floor.glb';
+import FRONTWING from './frontwing.glb';
 
 // The real RB22: "2026 Redbull RB22" by Dave Love (Sketchfab), CC BY 4.0. Wheels and steering wheel split out so
 // they turn (MODEL-CREDIT.md). A page that can't load it still shows the code-built car.
@@ -51,8 +52,8 @@ export async function loadDetail(onProgress = null) {
     console.warn('detail model unavailable', u, e);
     return null;
   });
-  const [engine, wheel, floor] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR)]);
-  return {engine, wheel, floor};
+  const [engine, wheel, floor, frontwing] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR), one(FRONTWING)]);
+  return {engine, wheel, floor, frontwing};
 }
 
 export function createStage({canvas, lo = false, real = null, detail = {}}) {
@@ -60,6 +61,7 @@ export function createStage({canvas, lo = false, real = null, detail = {}}) {
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
+  renderer.localClippingEnabled = true;   // trims the car model's own nose where the CAD front wing takes over
   renderer.shadowMap.type = lo ? THREE.BasicShadowMap : THREE.VSMShadowMap;
   const scene = new THREE.Scene();
   {
