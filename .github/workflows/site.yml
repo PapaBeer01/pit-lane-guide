@@ -4,7 +4,12 @@ on:
   schedule:
     - cron: "*/20 * * * 5,6,0,1"   # Friday to Monday (UTC): every 20 minutes, for race weekends
     - cron: "17 */6 * * 2,3,4"     # Tuesday to Thursday: every 6 hours (forecasts, late corrections)
-  workflow_dispatch: {}             # "Run workflow" button for a manual update
+  workflow_dispatch:                # "Run workflow" button for a manual update
+    inputs:
+      quiet:
+        description: "Publish only if the data changed (used by the session watcher)"
+        type: boolean
+        default: false
   push:
     branches: [main]                # code changes are published straight away
 
@@ -29,6 +34,7 @@ jobs:
     outputs:
       problems: ${{ steps.update.outputs.problems }}
       more: ${{ steps.update.outputs.more }}
+      changed: ${{ steps.save.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
 
@@ -143,6 +149,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run site.yml --ref main --repo "$GITHUB_REPOSITORY"
 
+      # A session ends within the next few hours: make sure the session watcher is running, so its
+      # results go up minutes after the flag instead of whenever GitHub's schedule next fires.
+      - name: Start the session watcher if a session is coming up
+        if: github.event_name != 'push'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          plan=$(python -m pipeline.watch --plan); echo "$plan"
+          case "$plan" in
+            done*) echo "Nothing to watch." ;;
+            *) if gh run list --workflow watch.yml --limit 5 --json status -q '.[].status' | grep -qE 'queued|in_progress|waiting|pending'; then
+                 echo "Watcher already running."
+               else gh workflow run watch.yml --ref main --repo "$GITHUB_REPOSITORY"; fi ;;
+          esac
+
       # Only when something changed (code, data, or a manual run): the free plan allows 500 publishes a month.
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -151,7 +173,7 @@ jobs:
       # Vercel Hobby: up to 100 deployments a day and 100 MB of files per upload (site/ is ~50 MB in Oct 2026).
       # Only changed files are uploaded. The project "thepitlane" is created on the first run.
       - name: Publish The Pit Lane on Vercel
-        if: always() && env.HAS_VERCEL == 'true' && (github.event_name != 'schedule' || steps.save.outputs.changed == 'true')
+        if: always() && env.HAS_VERCEL == 'true' && (steps.save.outputs.changed == 'true' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.quiet))
         continue-on-error: true
         working-directory: site
         env:
@@ -167,6 +189,8 @@ jobs:
 
   deploy:
     needs: build
+    # the watcher starts many quiet runs while waiting for results: only publish when something changed
+    if: needs.build.outputs.changed == 'true' || github.event_name != 'workflow_dispatch' || !inputs.quiet
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -178,7 +202,7 @@ jobs:
   # Runs last so good data is always published first. Failing here makes GitHub email you.
   report:
     needs: [build, deploy]
-    if: needs.build.outputs.problems != ''
+    if: always() && needs.build.result != 'cancelled' && needs.build.outputs.problems != ''
     runs-on: ubuntu-latest
     steps:
       - run: |

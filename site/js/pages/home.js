@@ -3,7 +3,7 @@ import { carArt } from "../media.js";
 import { icon } from "../icons.js";
 import { oddsSection, strategySection } from "../strategy.js";
 import { upgradesSection } from "../upgrades.js";
-import { animatedNumber, ctx, driver, driverTag, teamMark, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
+import { animatedNumber, ctx, driver, driverTag, teamMark, empty, h, lastCompleted, liveCountdown, load, localTime, nextEvent, noteList, pct, probBar, rangeBar, reducedMotion, section, sessionState, SESSION_LABEL, term, tzName, useSessionTeams } from "../ui.js";
 
 export const title = () => "This weekend";
 
@@ -42,7 +42,6 @@ export default async function home() {
     gridKind = "predicted";
   }
 
-  const first = ev.sessions.find((s) => !s.done);
   const grid = gridRows ? startingGrid(gridRows, gridKind, raceKey) : null;
 
   const hero = h("section", { class: "hero", "aria-labelledby": "ev-title" },
@@ -53,7 +52,7 @@ export default async function home() {
       h("h1", { id: "ev-title" }, ev.name),
       h("div", { class: "hero-meta" },
         h("span", {}, icon("pin", { size: 18 }), `${ev.location}, ${ev.country}`),
-        first ? h("span", {}, icon("timer", { size: 18 }), `${SESSION_LABEL[first.key]} in`, liveCountdown(first.start)) : null)),
+        ...sessionStatus(ev))),
     grid ? startLights(grid.el, grid.reveal, gridRows[0]?.code) : null,
     h("div", { class: "hero-body" },
       grid ? grid.el : null,
@@ -68,6 +67,21 @@ export default async function home() {
   if (gp?.track && !sessions.R) view.append(oddsSection(gp.track, { odds: gp.odds }));
   view.append(h("div", { class: "split" }, scheduleSection(ev, sessions, forecast), await lastRaceSection()));
   return view;
+}
+
+// What's happening this weekend right now: a session on track, one just finished with its results
+// on the way, and the countdown to the next one. Results normally follow within minutes of the flag.
+function sessionStatus(ev, now = Date.now()) {
+  const out = [];
+  for (const s of ev.sessions) {
+    const st = sessionState(s, now), name = SESSION_LABEL[s.key];
+    if (st === "live") out.push(h("span", { class: "status-live" }, h("span", { class: "live-dot" }), `${name} is on now`));
+    else if (st === "loading") out.push(h("span", { class: "status-loading", role: "status" }, h("span", { class: "spin", "aria-hidden": "true" }), `${name} finished: results loading`));
+    else if (st === "late") out.push(h("span", { class: "status-late" }, icon("alert", { size: 18 }), `${name} results are delayed`));
+  }
+  const next = ev.sessions.find((s) => sessionState(s, now) === "upcoming");
+  if (next) out.push(h("span", {}, icon("timer", { size: 18 }), `${SESSION_LABEL[next.key]} in`, liveCountdown(next.start)));
+  return out;
 }
 
 // F1 start sequence: five red lights come on one by one while a car (in the pole favourite's
@@ -212,17 +226,22 @@ function predictionsSection(ev, targets, preds, sessions) {
 }
 
 function scheduleSection(ev, sessions, forecast) {
-  const next = ev.sessions.find((s) => !s.done);
+  const now = Date.now();
+  const next = ev.sessions.find((s) => sessionState(s, now) === "upcoming");
   const iconFor = { FP1: "steer", FP2: "steer", FP3: "steer", SQ: "bolt", S: "bolt", Q: "timer", R: "chequered" };
   const rows = ev.sessions.map((s) => {
     const fc = forecast?.sessions?.[s.key];
-    const state = sessions[s.key] ? "done" : s === next ? "next" : "";
+    const st = sessions[s.key] ? "done" : sessionState(s, now);
+    const state = st === "done" ? "done" : s === next ? "next" : ["live", "loading", "late"].includes(st) ? st : "";
     return h("div", { class: `sched-row ${state}` },
       h("span", { class: "badge" }, icon(state === "done" ? "check" : iconFor[s.key], { size: 18 })),
       h("div", {},
         h("div", { style: { fontWeight: 700 } }, SESSION_LABEL[s.key]),
         h("div", { class: "state" },
           sessions[s.key] ? h("a", { href: `#/race/${ev.round}/${s.key}` }, "See results")
+            : st === "live" ? [h("span", { class: "live-dot" }), "On now"]
+            : st === "loading" ? "Finished: results loading"
+            : st === "late" ? "Results delayed"
             : fc ? [icon(fc.rain_prob >= 0.3 ? "rain" : "sun", { size: 14 }), `${pct(fc.rain_prob)} rain, ${Math.round(fc.temp)}°C`]
               : "Forecast nearer the time")),
       h("div", { class: "when" }, localTime(s.start)));

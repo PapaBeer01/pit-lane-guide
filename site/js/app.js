@@ -1,6 +1,6 @@
 import { icon } from "./icons.js";
 import { loadMedia, loaderCar } from "./media.js";
-import { clearSessionTeams, ctx, h, load, localTime, reducedMotion } from "./ui.js";
+import { awaitingResults, clearDataCache, clearSessionTeams, ctx, h, load, localTime, nextEvent, reducedMotion } from "./ui.js";
 
 const routes = {
   "": () => import("./pages/home.js"),
@@ -15,14 +15,41 @@ const routes = {
   accuracy: () => import("./pages/accuracy.js"),
   data: () => import("./pages/data.js"),          // Data room: not in the menus
 };
-const NAV = [
-  ["", "This weekend", "flag"],
-  ["races", "Races", "calendar"],
-  ["compare", "Compare", "compare"],
-  ["form", "Form", "pulse"],
-  ["standings", "Standings", "trophy"],
+// The menu: one button, one grouped drop-down. Learn topics link straight to their explainer
+// (#/learn/<topic>); their titles match the TOPICS list in pages/learn.js.
+export const LEARN_TOPICS = [
+  ["How a race weekend works", "calendar"], ["Qualifying: the knockout", "timer"], ["Tyres and why they matter", "tyre"],
+  ["Pit stops, the undercut and the overcut", "wrench"], ["Safety cars, virtual safety cars and red flags", "alert"],
+  ["How points work", "trophy"], ["Grid penalties", "down"], ["What changed in 2026", "bolt"],
+  ["Reading the charts on this site", "compare"],
 ];
-const navFor = { race: "races", drivers: "standings", driver: "standings" };
+export const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function menuGroups() {
+  const ev = nextEvent();
+  return [
+    ["This weekend", [
+      ["", "This weekend", "flag", "Countdown, predictions, schedule"],
+      ev ? [`race/${ev.round}`, `Race centre`, "chequered", ev.name] : null,
+    ]],
+    ["Season", [
+      ["races", "Races", "calendar", "Every round, results and reports"],
+      ["standings", "Standings", "trophy", "Drivers' and teams' points"],
+      ["drivers", "Drivers", "helmet", "Profiles and season records"],
+      ["compare", "Compare", "compare", "Any two drivers, head to head"],
+      ["form", "Form guide", "pulse", "Who's running cleanly, who isn't"],
+    ]],
+    ["Our predictions", [
+      [`learn/${slug("How our predictions work")}`, "How they work", "gauge", "The model in plain words"],
+      ["accuracy", "How accurate they are", "target", "Every prediction, scored"],
+    ]],
+    ["Learn F1", [
+      ["learn", "New to F1? Start here", "book", "All the explainers on one page"],
+      ...LEARN_TOPICS.map(([t, ic]) => [`learn/${slug(t)}`, t, ic]),
+    ]],
+  ].map(([g, items]) => [g, items.filter(Boolean)]);
+}
+// which menu entry a page belongs to
+const navFor = { race: "races", driver: "drivers" };
 
 function parse() {
   const raw = location.hash.replace(/^#\/?/, "");
@@ -31,10 +58,46 @@ function parse() {
   return { name: parts[0] || "", args: parts.slice(1), query: new URLSearchParams(query) };
 }
 
+let menu;
+function buildMenu() {
+  const btn = h("button", { class: "menu-btn", type: "button", "aria-expanded": "false", "aria-controls": "site-menu", "aria-haspopup": "true" },
+    icon("menu", { size: 20 }), h("span", { class: "menu-current" }, "Menu"), h("span", { class: "chev" }, icon("chevron", { size: 16 })));
+  const panel = h("div", { class: "menu-panel", id: "site-menu", hidden: true, role: "dialog", "aria-label": "Site menu" });
+  const fill = () => panel.replaceChildren(...menuGroups().map(([g, items]) =>
+    h("div", { class: `menu-group${g === "Learn F1" ? " learn" : ""}` },
+      h("h2", {}, g),
+      h("ul", {}, items.map(([r, label, ic, sub]) => h("li", {},
+        h("a", { href: `#/${r}`, "data-route": r }, icon(ic, { size: 18 }),
+          h("span", {}, h("b", {}, label), sub ? h("small", {}, sub) : null))))))));
+  const open = (yes) => {
+    if (yes) fill();
+    panel.hidden = !yes;
+    btn.setAttribute("aria-expanded", String(yes));
+    document.documentElement.classList.toggle("menu-open", yes);
+    if (yes) (panel.querySelector('[aria-current="page"]') || panel.querySelector("a"))?.focus({ preventScroll: true });
+    if (yes) mark();
+  };
+  btn.addEventListener("click", () => open(panel.hidden));
+  panel.addEventListener("click", (e) => { if (e.target.closest("a")) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) { open(false); btn.focus(); } });
+  document.addEventListener("click", (e) => { if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) open(false); });
+  const mark = () => {
+    const raw = location.hash.replace(/^#\/?/, "").split("?")[0];
+    const r = parse(), base = r.name in navFor ? navFor[r.name] : r.name;
+    let current = null;
+    panel.querySelectorAll("a").forEach((a) => {
+      const hit = a.dataset.route === raw || (!panel.querySelector(`a[data-route="${CSS.escape(raw)}"]`) && a.dataset.route === base);
+      if (hit && !current) { a.setAttribute("aria-current", "page"); current = a; } else a.removeAttribute("aria-current");
+    });
+    btn.querySelector(".menu-current").textContent = current ? current.querySelector("b").textContent : "Menu";
+  };
+  menu = { open, mark, fill };
+  return h("div", { class: "menu" }, btn, panel);
+}
+
 function buildChrome() {
   // the logo stays the chequered flag from index.html
-  document.getElementById("nav").replaceChildren(...NAV.map(([r, label, ic]) =>
-    h("a", { href: `#/${r}`, "data-route": r }, icon(ic, { size: 20 }), label)));
+  document.getElementById("nav").replaceChildren(buildMenu());
   const themeBtn = h("button", { class: "icon-btn", type: "button", "aria-label": "Switch light or dark mode" });
   const paint = () => themeBtn.replaceChildren(icon(document.documentElement.dataset.theme === "light" ? "moon" : "sun", { size: 18 }));
   themeBtn.addEventListener("click", () => {
@@ -45,9 +108,7 @@ function buildChrome() {
     window.dispatchEvent(new Event("themechange"));
   });
   paint();
-  document.getElementById("actions").replaceChildren(
-    h("a", { class: "icon-btn", href: "#/learn", "aria-label": "Learn F1: explanations for new fans", title: "Learn F1" }, icon("help", { size: 18 })),
-    themeBtn);
+  document.getElementById("actions").replaceChildren(themeBtn);
 }
 
 async function render() {
@@ -55,10 +116,8 @@ async function render() {
   clearSessionTeams();
   const route = parse();
   const loader = routes[route.name] || routes[""];
-  const navName = route.name in navFor ? navFor[route.name] : route.name;
-  document.querySelectorAll(".nav a").forEach((a) => {
-    if (a.dataset.route === navName) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
-  });
+  menu?.fill();
+  menu?.mark();
   // show a skeleton if the page takes more than a moment (slow mobile data)
   // on a slow connection, a car runs on the spot over a moving track until the page arrives
   const slow = setTimeout(() => app.replaceChildren(h("div", { class: "pit-loader", role: "status" },
@@ -123,7 +182,35 @@ async function start() {
   ctx.drivers = Object.fromEntries(season.drivers.map((d) => [d.code, d]));
   document.getElementById("sample-strip").hidden = !season.sample;
   document.getElementById("updated").textContent = `Data last changed ${localTime(season.updated)}.`;
-  window.addEventListener("hashchange", () => { render(); window.scrollTo({ top: 0 }); });
+  window.addEventListener("hashchange", () => {
+    // explainer links scroll to their topic, so don't jump back to the top for those
+    if (!location.hash.startsWith("#/learn/")) window.scrollTo({ top: 0 });
+    render();
+  });
   render();
+  watchForResults();
+}
+
+// While a session is on or its results are on the way, check for new data every minute and
+// redraw the page when it arrives, so nobody has to keep refreshing after the chequered flag.
+function watchForResults() {
+  if (window.__DATA__) return;
+  const check = async () => {
+    if (document.hidden || !awaitingResults()) return;
+    const fresh = await fetch("data/season.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (!fresh || fresh.updated === ctx.season.updated) return;
+    clearDataCache();
+    ctx.season = fresh;
+    ctx.drivers = Object.fromEntries(fresh.drivers.map((d) => [d.code, d]));
+    document.getElementById("updated").textContent = `Data last changed ${localTime(fresh.updated)}.`;
+    const y = window.scrollY;
+    await render();
+    window.scrollTo({ top: y });
+    const t = h("div", { class: "toast", role: "status" }, icon("check", { size: 16 }), "New results are in");
+    document.body.append(t);
+    setTimeout(() => t.remove(), 4000);
+  };
+  setInterval(check, 60e3);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
 }
 start();

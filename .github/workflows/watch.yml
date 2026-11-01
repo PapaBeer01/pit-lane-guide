@@ -1,0 +1,42 @@
+name: Watch sessions for results
+
+# Gets results on the site minutes after each session ends. GitHub's schedules are best-effort
+# (often an hour or more late on busy weekends), so this job doesn't rely on them for timing:
+# once started it stays running, waits for the next session to finish, and starts an update
+# run every few minutes until that session's results are published. Logic: pipeline/watch.py.
+#
+# How it gets started (any one of these is enough):
+#   - this schedule, every 30 minutes Friday to Monday (UTC)
+#   - every data update run, when a session is due within a few hours
+#   - a watcher that runs out of time hands over to a fresh one
+on:
+  schedule:
+    - cron: "11,41 * * * 5,6,0,1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write                    # to start update runs
+
+# One watcher at a time; extra starts wait their turn and then exit at once if there's nothing to do
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Wait for sessions to end and fetch their results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -m pipeline.watch

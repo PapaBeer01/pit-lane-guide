@@ -29,7 +29,12 @@ SESSION_NAMES = {
 }
 # Typical session length in minutes, used to decide when data should be ready
 SESSION_MINUTES = {"FP1": 60, "FP2": 60, "FP3": 60, "SQ": 45, "S": 60, "Q": 60, "R": 120}
-READY_AFTER_MINUTES = 30                 # wait this long after a session ends before loading
+# Wait this long after a session's scheduled end before the first try. F1's archive is usually ready
+# within minutes; a try that comes too early just finds nothing and the session watcher tries again.
+READY_AFTER_MINUTES = 5
+WATCH_LEAD_HOURS = 5                     # the session watcher starts watching a session this long ahead
+WATCH_GIVE_UP_HOURS = 4                  # ...and stops chasing it this long after its scheduled end
+WATCH_RETRY_MINUTES = 5                  # gap between update runs while results are awaited
 MAX_RUN_MINUTES = 35                     # stop starting new downloads after this; the next run continues
 SESSION_SCHEMA = 2                       # bump when session files gain fields: older files are re-loaded
 EVENT_OVER_HOURS = 3                     # a weekend counts as over this long after its last session starts

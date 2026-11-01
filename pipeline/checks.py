@@ -40,4 +40,9 @@ def check_session(payload: dict, expected_drivers: int | None) -> list[str]:
             problems.append(f"{label}: no driver classified P1 (session may still be provisional)")
         if len(positions) != len(set(positions)):
             problems.append(f"{label}: duplicate positions in results")
+    if key in config.RACE_SESSIONS:
+        # The session watcher tries a race minutes after its scheduled end. One that overran (red flag,
+        # long safety car) can still be running then: never publish it before someone has taken the flag.
+        if not any((r.get("status") or "") == "Finished" for r in res):
+            problems.append(f"{label}: nobody has finished yet (race may still be running)")
     return problems

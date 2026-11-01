@@ -100,3 +100,28 @@ def test_checks_catch_impossible_laps():
     p = payload()
     p["laps"]["AAA"]["t"][1] = 12.0
     assert any("impossible" in x for x in check_session(p, 4))
+
+
+def test_watcher_waits_for_session_end_then_updates():
+    from datetime import datetime, timezone
+    from pipeline.watch import next_step
+    season = {"events": [{"round": 19, "sessions": [
+        {"key": "Q", "start": "2026-10-31T21:00:00Z", "done": True},
+        {"key": "R", "start": "2026-11-01T20:00:00Z", "done": False}]}]}
+    at = lambda s: datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
+    assert next_step(season, at("2026-11-01T12:00"))[0] == "done"           # more than 5 h ahead
+    act, until, label = next_step(season, at("2026-11-01T16:00"))
+    assert act == "wait" and label == "Round 19 R" and until == at("2026-11-01T22:05")
+    assert next_step(season, at("2026-11-01T22:10"))[0] == "update"
+    assert next_step(season, at("2026-11-02T02:30"))[0] == "done"           # gave up 4 h after the end
+    season["events"][0]["sessions"][1]["done"] = True
+    assert next_step(season, at("2026-11-01T22:10"))[0] == "done"           # results are in
+
+
+def test_race_not_published_before_anyone_finishes():
+    from pipeline.checks import check_session
+    res = [{"code": c, "pos": i + 1, "status": "Lapped" if i else "Running"} for i, c in enumerate(["AAA", "BBB"])]
+    payload = {"key": "R", "round": 1, "results": res, "laps": {"AAA": {"t": [90.0]}, "BBB": {"t": [91.0]}}}
+    assert any("nobody has finished" in p for p in check_session(payload, 2))
+    res[0]["status"] = "Finished"
+    assert not any("nobody has finished" in p for p in check_session(payload, 2))

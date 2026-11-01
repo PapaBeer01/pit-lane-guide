@@ -25,6 +25,7 @@ export function h(tag, attrs = {}, ...kids) {
 }
 
 const cache = new Map();
+export const clearDataCache = () => cache.clear();
 export async function load(path) {
   if (window.__DATA__ && path in window.__DATA__) return window.__DATA__[path];
   if (window.__DATA__) return null;
@@ -118,13 +119,35 @@ export const SESSION_LABEL = { FP1: "Practice 1", FP2: "Practice 2", FP3: "Pract
 export const SESSION_SHORT = { FP1: "FP1", FP2: "FP2", FP3: "FP3", SQ: "Sprint Quali", S: "Sprint", Q: "Quali", R: "Race" };
 
 export function eventDone(ev) { return ev.sessions.every((s) => s.done); }
+
+// Scheduled length of each session in minutes (same as pipeline/config.py SESSION_MINUTES)
+export const SESSION_MINUTES = { FP1: 60, FP2: 60, FP3: 60, SQ: 45, S: 60, Q: 60, R: 120 };
+const RESULTS_GIVE_UP_H = 4;   // after this long past the end, stop saying results are on the way
+// Where a session is right now, by the clock and the data:
+//   "done": results are on the site; "upcoming": not started; "live": inside its scheduled time;
+//   "loading": scheduled time is over, results not published yet (usually a few minutes);
+//   "late": over for hours and still no results (something went wrong upstream).
+export function sessionState(s, now = Date.now()) {
+  if (s.done) return "done";
+  const start = Date.parse(s.start);
+  if (Number.isNaN(start) || now < start) return "upcoming";
+  const end = start + (SESSION_MINUTES[s.key] || 60) * 6e4;
+  if (now < end) return "live";
+  return now < end + RESULTS_GIVE_UP_H * 3600e3 ? "loading" : "late";
+}
+// True while any session is live or waiting for results: the site then checks for new data often
+export const awaitingResults = (now = Date.now()) =>
+  (ctx.season?.events || []).some((e) => e.sessions.some((s) => ["live", "loading"].includes(sessionState(s, now))));
+
 // The weekend happening now or next, by the calendar: a weekend counts as over 3 hours after its
-// last session starts. (Not "first weekend with missing data": an old round still loading isn't next.)
+// last session starts, or later while that session's results are still on their way.
+// (Not "first weekend with missing data": an old round still loading isn't next.)
 export function nextEvent(now = Date.now()) {
   const evs = ctx.season?.events || [];
   const over = (e) => {
     const starts = e.sessions.map((s) => Date.parse(s.start)).filter((t) => !Number.isNaN(t));
-    return starts.length && now > Math.max(...starts) + 3 * 3600e3;
+    if (!starts.length || now <= Math.max(...starts) + 3 * 3600e3) return false;
+    return !e.sessions.some((s) => ["live", "loading"].includes(sessionState(s, now)));
   };
   return evs.find((e) => !over(e)) || evs[evs.length - 1];
 }
@@ -226,7 +249,7 @@ export function liveCountdown(iso) {
   const el = h("span", { class: "countdown", role: "timer" });
   const tick = () => {
     const ms = new Date(iso) - Date.now();
-    if (ms <= 0) { el.replaceChildren(h("span", { class: "live-dot" }), " Under way"); return false; }
+    if (ms <= 0) { el.replaceChildren(h("span", { class: "live-dot" }), " On now"); return false; }
     const d = Math.floor(ms / 864e5), hr = Math.floor((ms % 864e5) / 36e5), m = Math.floor((ms % 36e5) / 6e4), sec = Math.floor((ms % 6e4) / 1e3);
     const units = d > 0 ? [[d, "d"], [hr, "h"], [m, "m"]] : [[hr, "h"], [m, "m"], [sec, "s"]];
     el.replaceChildren(...units.map(([v, u]) => h("span", { class: "cd-unit" }, String(v).padStart(2, "0"), h("small", {}, u))));

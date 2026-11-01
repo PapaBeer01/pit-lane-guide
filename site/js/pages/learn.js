@@ -61,13 +61,19 @@ const TOPICS = [
   ]],
 ];
 
-export default async function learn() {
+const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");   // same as app.js
+
+// #/learn opens the first topic; #/learn/<topic> opens that one and scrolls to it
+export default async function learn(route = {}) {
+  const want = route.args?.[0];
+  const hit = want && TOPICS.some(([t]) => slug(t) === want);
+  const items = TOPICS.map(([t, body], i) => h("details", { class: "explain", id: `topic-${slug(t)}`, open: (hit ? slug(t) === want : i === 0) ? true : null },
+    h("summary", {}, h("span", { class: "lead" }, icon(ICONS[t] || "help", { size: 20 })), t, h("span", { class: "chev" }, icon("chevron", { size: 18 }))),
+    h("div", { class: "body" }, body())));
+  if (hit) setTimeout(() => document.getElementById(`topic-${want}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 60);
   return h("div", { style: { display: "grid", gap: "20px" } },
     h("div", { style: { display: "grid", gap: "8px" } },
       h("h1", {}, "New to F1? Start here"),
       h("p", { class: "muted" }, "Short explanations of everything you'll see on this site. Open any topic.")),
-    h("div", { style: { display: "grid", gap: "8px" } },
-      TOPICS.map(([t, body], i) => h("details", { class: "explain", open: i === 0 ? true : null },
-        h("summary", {}, h("span", { class: "lead" }, icon(ICONS[t] || "help", { size: 20 })), t, h("span", { class: "chev" }, icon("chevron", { size: 18 }))),
-        h("div", { class: "body" }, body())))));
+    h("div", { style: { display: "grid", gap: "8px" } }, items));
 }
