@@ -120,7 +120,7 @@ function tube(a, b, r = 0.012) {
   return g;
 }
 
-export function buildCar(real = null) {
+export function buildCar(real = null, detail = {}) {
   const root = new THREE.Group();          // posed by the ride (heave, pitch, roll)
   const parts = [];                         // {mesh or group, sys, name, explode: V3}
   const anchors = {};
@@ -640,6 +640,126 @@ export function buildCar(real = null) {
   };
   const qSteer = new THREE.Quaternion();
 
+  // ============================================================ detailed parts (real 3D models when loaded)
+  // Power unit and steering wheel: 3D models by Peter Kiss Design (CGTrader). The engine replaces the drawn V6, turbo,
+  // exhaust, MGU-K, battery and electronics; its systems pull apart in the exploded view. The wheel replaces both the
+  // drawn one and the car model's own, and carries the live screen.
+  let eng = null;
+  let pk = null;
+  if (detail.engine) {
+    const e = detail.engine;
+    const sys = {};
+    e.traverse((o) => {
+      if (/^sys_/.test(o.name)) sys[o.name.slice(4)] = o;
+      if (o.isMesh) {
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+          if (/stickers/i.test(m.name) && m.map) {
+            m.alphaTest = 0.5;
+            m.transparent = false;
+          }
+          m.envMapIntensity = 0.7;
+        }
+      }
+    });
+    const holder = new THREE.Group();
+    holder.add(e);
+    holder.updateMatrixWorld(true);
+    const ctr = (o) => new THREE.Box3().setFromObject(o).getCenter(new V3());
+    // battery forward (+x), exhaust to the rear
+    const dir = ctr(sys.electric_battery).sub(ctr(sys.exhaust_turbo));
+    holder.rotation.y = Math.atan2(dir.z, dir.x);
+    holder.updateMatrixWorld(true);
+    let bb = new THREE.Box3().setFromObject(holder);
+    const sc = 1.7 / (bb.max.x - bb.min.x);
+    holder.scale.setScalar(sc);
+    holder.updateMatrixWorld(true);
+    bb = new THREE.Box3().setFromObject(holder);
+    holder.position.set(1.55 - bb.max.x, 0.07 - bb.min.y, -(bb.min.z + bb.max.z) / 2);
+    add(root, holder, 'pu', 'Power unit', [0, 0.12, 0]);
+    holder.updateMatrixWorld(true);
+    // each system's own pull-apart, in car directions (metres), converted into its parent's space
+    const SPREAD = {carbon_outside_parts: [0, 0.6, 0], covers: [0, 0.95, 0], exhaust_turbo: [-0.55, 0.25, 0], shape_parts_turbo: [-0.55, 0.25, 0],
+      electric_motor: [0.1, -0.05, 0.6], electric_invertor: [0.1, -0.05, -0.6], electric_battery: [0.65, -0.1, 0], engine_block: [0, 0, 0]};
+    const moves = [];
+    for (const [k, o] of Object.entries(sys)) {
+      const w = new V3(...(SPREAD[k] || [0, 0, 0]));
+      const inv = new THREE.Matrix4().copy(o.parent.matrixWorld).invert();
+      const a = new V3(0, 0, 0).applyMatrix4(inv);
+      const b = w.clone().applyMatrix4(inv);
+      moves.push({o, home: o.position.clone(), d: b.sub(a)});
+    }
+    const motorMats = [];
+    sys.electric_motor?.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = (Array.isArray(o.material) ? o.material : [o.material]).map((m) => {
+        const c = m.clone();
+        motorMats.push(c);
+        return c;
+      });
+      if (o.material.length === 1) o.material = o.material[0];
+      o.userData.base = o.material;
+    });
+    eng = {holder, sys, moves, motorMats};
+    const at = (k) => () => sys[k] && new THREE.Box3().setFromObject(sys[k]).getCenter(new V3());
+    anchors.ice = at('engine_block');
+    anchors.turbo = at('exhaust_turbo');
+    anchors.mguk = at('electric_motor');
+    anchors.battery = at('electric_battery');
+    anchors.ce = at('electric_invertor');
+    for (const p of parts) if (/^(V6 engine|Turbocharger|Exhaust|MGU-K|Energy store|Control electronics)$/.test(p.name)) p.obj.traverse((o) => (o.userData.replaced = true));
+  }
+  // the floor from CAD (CATIA STEP): x runs back from the front axle, so turn it round onto ours
+  if (detail.floor) {
+    const f = detail.floor;
+    f.rotation.y = Math.PI;
+    f.position.x = WB;
+    f.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material.side = THREE.DoubleSide;
+      o.material.envMapIntensity = 0.6;
+    });
+    const fg = new THREE.Group();
+    fg.add(f);
+    add(root, fg, 'aero', 'Floor (detailed)', [0, -0.55, 0]);
+    anchors.floor = () => new THREE.Box3().setFromObject(fg).getCenter(new V3());
+    for (const p of parts) if (/^(Floor|Plank|Diffuser)$/.test(p.name)) p.obj.traverse((o) => (o.userData.replaced = true));
+  }
+  if (detail.wheel && realParts?.steer) {
+    const w = detail.wheel;
+    real.updateMatrixWorld(true);
+    const pos = realParts.steer.getWorldPosition(new V3()).sub(root.position);
+    const ax = realParts.axis.clone().transformDirection(realParts.steer.parent.matrixWorld);
+    if (ax.x < 0) ax.negate();             // the column points forward, into the dash
+    const yA = new V3(0, 1, 0).addScaledVector(ax, -ax.y).normalize();
+    const xA = new V3().crossVectors(yA, ax);
+    const pivot = new THREE.Group();
+    pivot.position.copy(pos);
+    pivot.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xA, yA, ax));
+    const spinG = new THREE.Group();
+    const c = new THREE.Box3().setFromObject(w).getCenter(new V3());
+    w.position.sub(c);
+    spinG.add(w);
+    spinG.scale.setScalar(0.88);
+    pivot.add(spinG);
+    w.traverse((o) => {
+      if (!o.isMesh) return;
+      if (o.name === 'live_screen' || /live_screen/.test(o.material?.name || '')) o.material = new THREE.MeshBasicMaterial({map: screenTex, toneMapped: false});
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (/stickers/i.test(m.name || '') && m.map) {
+          m.alphaTest = 0.4;
+          m.transparent = false;
+        }
+      }
+    });
+    add(root, pivot, 'wheel', 'Steering wheel (detailed)', [0.35, 0.75, 0]);
+    pivot.traverse((o) => o.isMesh && (o.userData.always = true));
+    sw.traverse((o) => (o.userData.replaced = true));
+    for (const m of realParts.meshes) if (m.userData.inSteer) m.userData.hideReal = true;
+    pk = {pivot, spinG};
+    anchors.realSteering = () => pivot.getWorldPosition(new V3());
+    anchors.steering = anchors.realSteering;
+  }
+
   // ============================================================ posing
   const tmp = new V3();
   // ghost material per original material, made once
@@ -692,6 +812,14 @@ export function buildCar(real = null) {
     const e = Math.min(1, Math.abs(s.kw) / 350);
     mgukMat.emissive.copy(s.kw >= 0 ? warm : cool);
     mgukMat.emissiveIntensity = 0.85 * e;
+    if (eng) {
+      for (const m of eng.motorMats) {
+        m.emissive = m.emissive || new THREE.Color();
+        m.emissive.copy(s.kw >= 0 ? warm : cool);
+        m.emissiveIntensity = 0.55 * e;
+      }
+      for (const mv of eng.moves) mv.o.position.copy(mv.home).addScaledVector(mv.d, k);
+    }
     // steering wheel: turns with the lap, buttons light with what the car is doing
     swBody.rotation.z = -s.wheelDeg * Math.PI / 180;
     lights.straight.material.emissiveIntensity = s.flap > 0.5 ? 0.9 : 0;
@@ -715,6 +843,18 @@ export function buildCar(real = null) {
     const realSolid = R && lift < 0.02 && (!solo || solo === 'chassis');
     const drawn = !R || lift > 0.02 || (solo && solo !== 'chassis' && !(solo === 'wheel' && realParts.steer));
     const COVERS = /^(Engine cover|Airbox inlet|Engine cover fin|Sidepod|Sidepod inlet)$/;
+    // over the real car only these drawn parts appear (no real model of them yet); bodywork, wheels, floor and the
+    // drawn chassis never do. The moving wing flaps show when aero is isolated.
+    const KEEP = /^(Fuel cell|Radiator|Charge-air cooler|Gearbox)$/;
+    const keepOverReal = (o) => {
+      const part = o.userData.part || '';
+      if (o.userData.sys === 'pu' && !o.userData.replaced) return true;
+      if (KEEP.test(part)) return true;
+      if (/^(Front wing|Rear wing)$/.test(part)) return solo === 'aero';
+      if (part === 'Floor (detailed)') return solo === 'aero' || k > 0.5;
+      if (/suspension/.test(part)) return solo === 'susp' || (gk > 0.5 && k < 0.5);
+      return false;
+    };
     root.traverse((o) => {
       if (!o.isMesh || !o.userData.base || o.userData.real) return;
       const on = !solo || o.userData.sys === solo;
@@ -726,13 +866,20 @@ export function buildCar(real = null) {
       if (R && lift <= 0.02 && solo) vis = on;
       if (gk > 0.5 && k < 0.5 && COVERS.test(o.userData.part || '')) vis = false;
       o.visible = drawn && vis;
+      if (R) o.visible = (lift > 0.02 || !!solo) && keepOverReal(o) && (!solo || on);
+      if (o.userData.replaced) o.visible = false;
+      if (o.userData.always) {
+        o.visible = !solo || solo === 'wheel';
+        o.material = o.userData.base;
+      }
     });
     if (R) {
-      realRoot.position.y = 0.032 + 1.4 * lift;
-      const op = realSolid ? 1 : lift > 0.02 ? Math.max(0, 1 - lift * 1.25) : solo === 'wheel' ? 0 : 0.14;
+      // the real car is the base: covers off turns it to glass where it stands; exploded lifts the glass body up
+      realRoot.position.y = 0.032 + 1.45 * k;
+      const op = realSolid ? 1 : solo === 'wheel' ? 0 : solo ? 0.16 : Math.max(0.16, 1 - lift * 1.6);
       for (const m of realParts.meshes) {
         const keepSteer = solo === 'wheel' && m.userData.inSteer && lift <= 0.02;
-        m.visible = op > 0.01 || keepSteer;
+        m.visible = (op > 0.01 || keepSteer) && !m.userData.hideReal;
         if (keepSteer || op >= 0.999) {
           m.material = m.userData.base;
           m.castShadow = true;
@@ -749,6 +896,7 @@ export function buildCar(real = null) {
         qSteer.setFromAxisAngle(realParts.axis, (s.wheelDeg * Math.PI) / 180);
         realParts.steer.quaternion.copy(qSteer);
       }
+      if (pk) pk.spinG.rotation.z = -(s.wheelDeg * Math.PI) / 180;
       if (realParts.lcd && realParts.lcd.material.map !== screenTex) {
         const m = realParts.lcd.material.clone();
         m.map = screenTex;

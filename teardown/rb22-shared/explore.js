@@ -8,26 +8,28 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {warmComposer} from 'teardown-kit/warm.js';
 import {drawScreen} from './console.js';
 import {LAP_TIME, stateAt} from './kin.js';
-import {createStage, loadReal} from './stage.js';
+import {buildTrack, poseOnTrack} from './track.js';
+import CIRCUIT from './circuit.json';
+import {createStage, loadDetail, loadReal} from './stage.js';
 
 // ------------------------------------------------------------ what each dot explains (general to all 2026 cars)
 const SPOTS = {
   car: [
     ['frontwing', 'Front wing', 'The first part to meet the air: it decides how air flows round the rest of the car. In 2026 its two top flaps flatten on the straights and close again for corners.', {focus: 1}],
     ['rearwing', 'Rear wing', 'Pushes the rear tyres into the track. Its flaps open on straights to cut drag. This "straight mode" replaced DRS in 2026, and every driver can use it in marked zones.', {focus: 1}],
-    ['halo', 'Halo', 'The titanium hoop over the driver’s head, compulsory since 2018. It can take the weight of a double-decker bus.', {}],
-    ['airbox', 'Airbox', 'The opening above the driver’s head that feeds air to the engine.', {}],
+    ['halo', 'Halo', 'The titanium hoop over the driver’s head, compulsory since 2018. It can take the weight of a double-decker bus.', {photo: ['front-end', 50, 30]}],
+    ['airbox', 'Airbox', 'The opening above the driver’s head that feeds air to the engine.', {photo: ['engine-bay', 55, 30]}],
     ['radiator', 'Sidepods', 'They hold the radiators that cool the engine, battery and electronics. Their shape is where the teams’ cars look most different.', {}],
     ['floor', 'Floor', 'Much of the grip comes from air rushing under the car. 2026 floors are flatter, so cars make less downforce and can follow each other more closely.', {}],
     ['wheelF', 'Tyres', 'Pirelli tyres on 18-inch wheels, about 70 cm tall and a little narrower in 2026. Soft, medium and hard for the dry; intermediate and wet for rain.', {}],
-    ['realSteering', 'Steering wheel', 'Around 25 buttons and dials. Tap below to go through every one.', {wheel: 1}],
+    ['realSteering', 'Steering wheel', 'Around 25 buttons and dials. Tap below to go through every one.', {wheel: 1, photo: ['steering-wheel', 50, 45]}],
   ],
   garage: [
-    ['pushrod', 'Push-rod suspension', 'Each wheel hangs on two wishbones. A push-rod carries the load up to springs and dampers on top of the chassis.', {}],
-    ['drum', 'Brakes', 'Carbon discs glow at around 1,000 °C under the big silver ducts. At the rear, the electric motor does much of the slowing too.', {}],
-    ['sis', 'Side-impact tubes', 'Crash structures either side of the cockpit that protect the driver in a side hit.', {}],
+    ['pushrod', 'Push-rod suspension', 'Each wheel hangs on two wishbones. A push-rod carries the load up to springs and dampers on top of the chassis.', {photo: ['front-end', 28, 55]}],
+    ['drum', 'Brakes', 'Carbon discs glow at around 1,000 °C under the big silver ducts. At the rear, the electric motor does much of the slowing too.', {photo: ['rear-corner', 36, 58]}],
+    ['sis', 'Side-impact tubes', 'Crash structures either side of the cockpit that protect the driver in a side hit.', {photo: ['front-end', 72, 58]}],
     ['radiator', 'Radiators', 'Hot water and oil pass through these; air from the sidepod inlets carries the heat away.', {}],
-    ['ice', 'Engine', 'Behind the driver: the 1.6-litre V6 turbo. Every 2026 team uses the same size of engine.', {}],
+    ['ice', 'Engine', 'Behind the driver: the 1.6-litre V6 turbo. Every 2026 team uses the same size of engine.', {photo: ['engine-bay', 40, 55]}],
   ],
   exploded: [
     ['ice', 'V6 engine', '1.6 litres, six cylinders in two banks, a turbo, up to 15,000 rpm and about 400 kW, running on 100% sustainable fuel.', {solo: 'pu'}],
@@ -36,7 +38,8 @@ const SPOTS = {
     ['turbo', 'Turbocharger', 'Exhaust gas spins a turbine that squeezes more air into the engine. The extra generator on the turbo (MGU-H) was dropped for 2026.', {solo: 'pu'}],
     ['gearbox', 'Gearbox', 'Eight forward gears and one reverse; changes take a few thousandths of a second.', {}],
     ['fuel', 'Fuel tank', 'A tough rubber bag behind the driver holding around 100 kg of fuel. No refuelling during races.', {}],
-    ['floor', 'Floor', 'The biggest single aerodynamic part, with a wooden plank under it that limits how low the car can run.', {}],
+    ['floor', 'Floor', 'Built from a real CAD model: about 3.4 m long and 1.4 m wide. Much of the grip comes from air rushing under it; 2026 floors are flatter, so cars make less downforce and can follow more closely.', {}],
+    ['ce', 'Inverter and electronics', 'Turns the battery\u2019s direct current into the alternating current the MGU-K runs on, and manages the whole hybrid system.', {solo: 'pu'}],
   ],
 };
 // the steering wheel guide: positions in % of the photo (a real F1 wheel; layouts differ by team)
@@ -88,6 +91,7 @@ html,body{margin:0;height:100%;background:#ecedef;overflow:hidden;font-family:"B
 .sheet.on{display:block;animation:up .22s cubic-bezier(.22,1,.36,1)}
 @keyframes up{from{opacity:0;transform:translateY(8px)}}
 .sheet h2{color:#16181b;margin:0 0 6px;font:800 22px/1.1 "Bricolage Display",inherit}
+.sheet .ph{margin:0 0 10px;position:relative}.sheet .ph img{width:100%;height:130px;object-fit:cover;border-radius:10px;display:block}.sheet .ph figcaption{position:absolute;left:8px;bottom:8px;background:rgba(22,24,27,.75);color:#fff;font-size:11px;padding:3px 7px;border-radius:6px}
 .sheet p{margin:0 0 12px;color:var(--ink2);font-size:15px;line-height:1.45}
 .sheet .xrow{display:flex;gap:8px;flex-wrap:wrap}
 .btn{border:1px solid var(--line);background:#f4f5f6;color:var(--ink);font:600 14px/1 inherit;font-family:inherit;padding:10px 12px;border-radius:10px;cursor:pointer}
@@ -130,19 +134,26 @@ export async function runExplore() {
   document.title = 'Inside a 2026 F1 car | The Pit Lane';
   const app = document.getElementById('app');
 
-  // ------------------------------------------------------------ loading the car (~3.7 MB)
-  const load = el('div', {class: 'load'}, '<div><b>Wheeling the car into the garage</b><div class="t"><i></i></div><span>Loading the 3D car: 0 of 3.7 MB</span></div>');
+  // ------------------------------------------------------------ loading the car (~6.8 MB: car, engine, steering wheel)
+  const TOTAL = 6.8e6;
+  const load = el('div', {class: 'load'}, '<div><b>Wheeling the car into the garage</b><div class="t"><i></i></div><span>Loading the 3D car: 0 of 6.8 MB</span></div>');
   document.body.appendChild(load);
-  const real = await loadReal((k, bytes) => {
-    load.querySelector('i').style.width = `${Math.round((k || bytes / 3.7e6) * 100)}%`;
-    load.querySelector('span').textContent = `Loading the 3D car: ${(bytes / 1e6).toFixed(1)} of 3.7 MB`;
-  });
+  const got = {car: 0, parts: 0};
+  const show = () => {
+    const b = got.car + got.parts;
+    load.querySelector('i').style.width = `${Math.min(100, Math.round((b / TOTAL) * 100))}%`;
+    load.querySelector('span').textContent = `Loading the 3D car: ${(b / 1e6).toFixed(1)} of 6.8 MB`;
+  };
+  const [real, detail] = await Promise.all([
+    loadReal((k, bytes) => { got.car = bytes; show(); }),
+    loadDetail((bytes) => { got.parts = Math.max(got.parts, bytes); show(); }),
+  ]);
   load.querySelector('span').textContent = 'Warming up';
 
   const canvas = el('canvas', {id: 'gl', 'aria-label': '3D model of a 2026 F1 car: drag to turn, pinch to zoom'});
   app.appendChild(canvas);
   const light = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
-  const st = createStage({canvas, lo: light, real});
+  const st = createStage({canvas, lo: light, real, detail});
   if (light) st.setQuality({samples: 0, ao: false, shadow: 1024});
   const cam = st.camera;
   cam.fov = 32;
@@ -174,11 +185,14 @@ export async function runExplore() {
   for (const [k, t] of MODES) seg.appendChild(el('button', {type: 'button', 'data-k': k, 'aria-pressed': k === 'car'}, t));
   const drive = el('button', {class: 'chip', type: 'button', 'aria-pressed': 'false'}, '<i>▶</i><span>Drive a lap</span>');
   const wheelBtn = el('button', {class: 'chip', type: 'button'}, '<i>◎</i><span>Steering wheel</span>');
-  bar.append(seg, drive, wheelBtn);
+  // on track: chase, onboard or helicopter camera
+  const camSeg = el('div', {class: 'seg', role: 'group', 'aria-label': 'Camera', style: 'display:none'});
+  for (const [k, t] of [['chase', 'Chase'], ['onboard', 'Onboard'], ['heli', 'Helicopter']]) camSeg.appendChild(el('button', {type: 'button', 'data-k': k, 'aria-pressed': k === 'chase'}, t));
+  bar.append(seg, drive, wheelBtn, camSeg);
   const hud = el('div', {class: 'xhud', 'aria-live': 'off'});
   const sheet = el('div', {class: 'sheet', role: 'dialog', 'aria-live': 'polite'});
   const hint = el('div', {class: 'hint'}, 'Drag to turn · pinch to zoom · tap a dot');
-  const credit = el('a', {class: 'credit', href: 'https://skfb.ly/pOvxI', target: '_blank', rel: 'noopener'}, 'Model: “2026 Redbull RB22” by Dave Love, CC BY 4.0');
+  const credit = el('a', {class: 'credit', href: 'https://skfb.ly/pOvxI', target: '_blank', rel: 'noopener'}, 'Car: “2026 Redbull RB22” by Dave Love (CC BY 4.0) · engine and steering wheel: Peter Kiss Design');
   app.append(bar, hud, sheet, hint, credit);
   setTimeout(() => (hint.style.opacity = '0'), 6000);
 
@@ -199,13 +213,75 @@ export async function runExplore() {
     seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
     closeSheet();
     const up = app.clientWidth < app.clientHeight;
-    focus = {t: new THREE.Vector3(1.75, k === 'exploded' ? 0.7 : 0.4, 0), d: (k === 'exploded' ? 11 : 8) * (up ? 1.2 : 1)};
+    focus = {t: new THREE.Vector3(1.75, k === 'exploded' ? 0.55 : 0.4, 0), d: (k === 'exploded' ? 8.5 : 8) * (up ? 1.2 : 1)};
   };
   seg.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (b) setMode(b.dataset.k);
   });
+  // ------------------------------------------------------------ the circuit (built once, the first time it's needed)
+  let track = null;
+  let trackCam = 'chase';
+  const studio = {bg: st.scene.background, far: cam.far};
+  const mount = new THREE.Group();
+  st.scene.add(mount);
+  st.scene.remove(st.car.root);
+  mount.add(st.car.root);
+  const shade = st.scene.children.find((o) => o.material?.isShadowMaterial);
+  camSeg.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    trackCam = b.dataset.k;
+    camSeg.querySelectorAll('button').forEach((n) => n.setAttribute('aria-pressed', String(n === b)));
+  });
+  const onTrack = () => driving && mode === 'car' && !solo;
+  window.EXPLORE = {st, cam, mount, get track() { return track; }, seek: (t) => (lapT = t)};
+  let wasOnTrack = false;
+  const camDir = new THREE.Vector3(1, 0, 0);
+  const enterTrack = (on) => {
+    if (on && !track) {
+      track = buildTrack(CIRCUIT.corners || []);
+      st.scene.add(track.group);
+    }
+    if (on) camDir.copy(poseOnTrack(track.cl, stateAt(lapT).dist).t);
+    if (track) track.group.visible = on;
+    if (shade) shade.visible = !on;
+    if (on && !studio.sky) {
+      const c = document.createElement('canvas');
+      c.width = 4;
+      c.height = 256;
+      const g = c.getContext('2d');
+      const gr = g.createLinearGradient(0, 0, 0, 256);
+      gr.addColorStop(0, '#7fa6cf');
+      gr.addColorStop(0.6, '#c3d5e6');
+      gr.addColorStop(1, '#dfe6ec');
+      g.fillStyle = gr;
+      g.fillRect(0, 0, 4, 256);
+      studio.sky = new THREE.CanvasTexture(c);
+      studio.sky.colorSpace = THREE.SRGBColorSpace;
+    }
+    st.scene.background = on ? studio.sky : studio.bg;
+    st.scene.fog = on ? new THREE.Fog('#dfe6ec', 150, 1100) : null;
+    cam.far = on ? 1500 : studio.far;
+    cam.near = on ? 0.3 : 0.05;
+    cam.updateProjectionMatrix();
+    controls.enabled = !on;
+    camSeg.style.display = on ? '' : 'none';
+    pins.forEach((p) => (p.el.style.display = on ? 'none' : ''));
+    Object.assign(st.sun.shadow.camera, on ? {left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 120} : {left: -4.2, right: 4.2, top: 4.2, bottom: -4.2, near: 1, far: 20});
+    st.sun.shadow.camera.updateProjectionMatrix();
+    if (!on) {
+      mount.position.set(0, 0, 0);
+      mount.rotation.set(0, 0, 0);
+      st.sun.position.set(-2.5, 7, 3.5);
+      st.sun.target.position.set(1.7, 0, 0);
+      controls.target.set(1.75, 0.4, 0);
+      cam.position.set(1.75 + 6.2, 2.6, 5.6);
+    }
+    wasOnTrack = on;
+  };
   drive.addEventListener('click', () => {
+    if (!driving && mode === 'car') closeSheet();
     driving = !driving;
     drive.setAttribute('aria-pressed', String(driving));
     drive.querySelector('i').textContent = driving ? '❚❚' : '▶';
@@ -243,7 +319,8 @@ export async function runExplore() {
     if (p.opts.solo && solo !== p.opts.solo) acts.push(`<button class="btn" data-a="solo">Show only the power unit</button>`);
     if (p.opts.drive && !driving) acts.push('<button class="btn" data-a="drive">Watch it work on a lap</button>');
     if (p.opts.focus) acts.push('<button class="btn" data-a="drive">Watch the flaps move</button>');
-    sheet.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>${p.title}</h2><p>${p.text}</p><div class="xrow">${acts.join('')}</div>`;
+    const ph = p.opts.photo ? `<figure class="ph"><img src="photos/${p.opts.photo[0]}.webp" alt="${p.title} on a real 2026 car" style="object-position:${p.opts.photo[1]}% ${p.opts.photo[2]}%"><figcaption>On the real car</figcaption></figure>` : '';
+    sheet.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>${p.title}</h2>${ph}<p>${p.text}</p><div class="xrow">${acts.join('')}</div>`;
     sheet.classList.add('on');
     sheet.querySelector('.x').onclick = closeSheet;
     sheet.querySelectorAll('[data-a]').forEach((b) => (b.onclick = () => {
@@ -305,11 +382,32 @@ export async function runExplore() {
       cam.position.copy(controls.target).add(dir);
       if (controls.target.distanceTo(focus.t) < 0.01 && Math.abs(dist - focus.d) < 0.02) focus = null;
     }
-    controls.update();
+    const tr = onTrack();
+    if (tr !== wasOnTrack) enterTrack(tr);
+    if (tr) {
+      const pose = poseOnTrack(track.cl, s.dist);
+      // the car's origin is its rear axle: put the middle of the car on the line
+      mount.position.copy(pose.p).addScaledVector(pose.t, -1.7);
+      mount.rotation.y = pose.yaw;
+      const up = new THREE.Vector3(0, 1, 0);
+      // the camera rides with the car; only its direction is smoothed, so it swings gently through corners
+      camDir.lerp(pose.t, trackCam === 'onboard' ? 1 : 1 - Math.exp(-dt / 0.35)).normalize();
+      let back = 9.5;
+      let high = 3.2;
+      let ahead = 7;
+      if (trackCam === 'onboard') [back, high, ahead] = [0.3, 1.3, 30];   // the T-cam on top of the airbox
+      if (trackCam === 'heli') [back, high, ahead] = [26, 32, 10];
+      cam.position.copy(pose.p).addScaledVector(camDir, -back).addScaledVector(up, high);
+      controls.target.copy(pose.p).addScaledVector(camDir, ahead).addScaledVector(up, trackCam === 'onboard' ? 0.5 : 0.6);
+      cam.lookAt(controls.target);
+      st.sun.position.copy(pose.p).add(new THREE.Vector3(-25, 60, 35));
+      st.sun.target.position.copy(pose.p);
+      st.sun.target.updateMatrixWorld();
+    } else controls.update();
     st.draw(s, {explode: ex, garage: ga, solo, drawScreen, still: !driving});
     if (pinsFor !== mode && Math.abs((mode === 'exploded' ? 1 : 0) - ex) < 0.05) buildPins();
     // dots follow their parts; hidden behind the camera
-    for (const p of pins) {
+    for (const p of tr ? [] : pins) {
       const at = st.car.anchor(p.anchor);
       if (!at) {
         p.el.style.opacity = '0';

@@ -12,6 +12,9 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {buildCar} from './car.js';
 import MODEL from './rb22.glb';
+import ENGINE from './engine.glb';
+import WHEEL from './wheel.glb';
+import FLOOR from './floor.glb';
 
 // The real RB22: "2026 Redbull RB22" by Dave Love (Sketchfab), CC BY 4.0. Wheels and steering wheel split out so
 // they turn (MODEL-CREDIT.md). A page that can't load it still shows the code-built car.
@@ -41,7 +44,18 @@ export async function loadReal(onProgress = null) {
 const V3 = THREE.Vector3;
 export const BG = {top: '#f3f3f4', mid: '#e9eaec', low: '#e1e2e5'};
 
-export function createStage({canvas, lo = false, real = null}) {
+// The detailed power unit and steering wheel (Peter Kiss Design, CGTrader). Missing files: drawn parts stay.
+export async function loadDetail(onProgress = null) {
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  const one = (u) => loader.loadAsync(String(u).replace(/^url:/, ''), (e) => onProgress?.(e.loaded)).then((g) => g.scene).catch((e) => {
+    console.warn('detail model unavailable', u, e);
+    return null;
+  });
+  const [engine, wheel, floor] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR)]);
+  return {engine, wheel, floor};
+}
+
+export function createStage({canvas, lo = false, real = null, detail = {}}) {
   const renderer = new THREE.WebGLRenderer({canvas, antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance'});
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -135,7 +149,7 @@ export function createStage({canvas, lo = false, real = null}) {
   shade.receiveShadow = true;
   scene.add(shade);
 
-  const car = buildCar(real);
+  const car = buildCar(real, detail);
   scene.add(car.root);
 
   const size = {w: 1600, h: 900};

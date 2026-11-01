@@ -7,7 +7,7 @@ import {warmComposer} from 'teardown-kit/warm.js';
 import {BUILD, CAMS, createConsole, drawScreen, SYS} from './console.js';
 import {blend, camAt, camName, DURATION, explodeAt, garageAt, LAP_START, makeConsoleFrame, makeCursor, SCRIPT, sysAt, VIEW_FN} from './film.js';
 import {LAP_D, LAP_TIME, stateAt, timeAtDist} from './kin.js';
-import {createStage, loadReal} from './stage.js';
+import {createStage, loadDetail, loadReal} from './stage.js';
 
 const W = 1600;
 const H = 900;
@@ -51,16 +51,22 @@ export async function runLive() {
   // the car is a ~3.7 MB download: show how far along it is
   const load = document.createElement('div');
   load.style.cssText = 'position:fixed;inset:0;display:grid;place-items:center;z-index:95;background:#ecedef;font:600 14px Bricolage Grotesque,Inter,sans-serif;color:#16181b';
-  load.innerHTML = '<div style="width:min(320px,80vw);display:grid;gap:10px;text-align:center"><b style="font-size:20px">Bringing the RB22 into the garage</b><div style="height:6px;background:#d9dbdf;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:0;background:#d6182b;transition:width .2s"></i></div><span style="color:#5d636c;font-weight:500">Loading the car: 0 MB of 3.7 MB</span></div>';
+  load.innerHTML = '<div style="width:min(320px,80vw);display:grid;gap:10px;text-align:center"><b style="font-size:20px">Wheeling the car into the garage</b><div style="height:6px;background:#d9dbdf;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:0;background:#d6182b;transition:width .2s"></i></div><span style="color:#5d636c;font-weight:500">Loading the car: 0 MB of 3.7 MB</span></div>';
   document.body.appendChild(load);
   const bar = load.querySelector('i');
   const txt = load.querySelector('span');
-  const real = await loadReal((k, bytes) => {
-    bar.style.width = `${Math.round((k || bytes / 3.7e6) * 100)}%`;
-    txt.textContent = `Loading the car: ${(bytes / 1e6).toFixed(1)} MB of 3.7 MB`;
-  });
+  const got = {car: 0, parts: 0};
+  const show = () => {
+    const b = got.car + got.parts;
+    bar.style.width = `${Math.min(100, Math.round((b / 6.8e6) * 100))}%`;
+    txt.textContent = `Loading the car: ${(b / 1e6).toFixed(1)} MB of 6.8 MB`;
+  };
+  const [real, detail] = await Promise.all([
+    loadReal((k, bytes) => { got.car = bytes; show(); }),
+    loadDetail((bytes) => { got.parts = Math.max(got.parts, bytes); show(); }),
+  ]);
   txt.textContent = 'Warming up the engine';
-  const st = createStage({canvas, lo: light, real});
+  const st = createStage({canvas, lo: light, real, detail});
   const ui = createConsole(app);
   const tourCursor = makeCursor(ui);
   const frameConsole = makeConsoleFrame(ui, st);

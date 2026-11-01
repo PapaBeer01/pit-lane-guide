@@ -5,7 +5,7 @@
 import {runSim} from 'teardown-kit/runtime.js';
 import {createConsole, drawScreen, CAMS} from './console.js';
 import {stateAt} from './kin.js';
-import {createStage, loadReal} from './stage.js';
+import {createStage, loadDetail, loadReal} from './stage.js';
 
 export const SCRIPT = [
   {t: 0, cam: 'open'},
@@ -132,7 +132,7 @@ export function makeCursor(ui) {
 // ------------------------------------------------------------ callouts: which parts are named in which view
 const CALLS = {
   hero: [['frontwing', 'Front wing', '2 ACTIVE FLAPS', [1050, 640]], ['halo', 'Halo', 'TITANIUM', [880, 170]], ['rearwing', 'Rear wing', '3 ACTIVE ELEMENTS', [470, 170]], ['pushrod', 'Push-rod suspension', 'FRONT AND REAR', [1130, 470]]],
-  exploded: [['ice', 'V6 engine', '1.6 L · 15,000 RPM', [760, 120]], ['mguk', 'MGU-K', '350 kW', [1130, 300]], ['battery', 'Energy store', '4 MJ WINDOW', [1120, 610]], ['turbo', 'Turbocharger', 'NO MGU-H', [440, 150]], ['floor', 'Floor', 'FLATTER IN 2026', [600, 735]], ['gearbox', 'Gearbox', '8 SPEEDS', [380, 330]]],
+  exploded: [['ice', 'V6 engine', '1.6 L · 15,000 RPM', [760, 120]], ['mguk', 'MGU-K', '350 kW', [1130, 300]], ['battery', 'Energy store', '4 MJ WINDOW', [1120, 610]], ['turbo', 'Turbocharger', 'NO MGU-H', [440, 150]], ['gearbox', 'Gearbox', '8 SPEEDS', [380, 330]], ['ce', 'Inverter', 'DC TO AC FOR THE MOTOR', [470, 640]]],
   front: [['frontwing', 'Active flaps', 'OPEN ON STRAIGHTS', [1040, 210]], ['wheelF', 'Front tyre', '280 MM WIDE', [1010, 640]]],
   rear: [['rearwing', 'Rear wing', 'ELEMENTS FLATTEN', [1010, 200]], ['diffuser', 'Diffuser', '', [1010, 640]]],
   pu: [['ice', 'V6 · 90° banks', '≈ 400 kW (EST.)', [1000, 170]], ['mguk', 'MGU-K', 'DEPLOYS / HARVESTS', [1020, 560]], ['battery', 'Energy store', 'UNDER THE FUEL CELL', [460, 640]], ['turbo', 'Turbocharger', 'COMPRESSOR + TURBINE', [430, 230]], ['ce', 'Control electronics', '', [470, 470]]],
@@ -163,7 +163,8 @@ export function makeConsoleFrame(ui, st) {
 
 export function makeFilm() {
   return async ({canvas, capture}) => {
-    const st = createStage({canvas, real: await loadReal()});
+    const [real, detail] = await Promise.all([loadReal(), loadDetail()]);
+    const st = createStage({canvas, real, detail});
     const resize = () => st.resize(1600, 900, capture ? devicePixelRatio || 1 : Math.min(devicePixelRatio || 1, 2));
     resize();
     const ui = createConsole(document.getElementById('app'));

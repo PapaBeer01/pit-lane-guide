@@ -32,10 +32,10 @@ export default async function teardown() {
     h("header", { class: "td-hero" },
       h("span", { class: "chip" }, icon("wrench", { size: 14 }), "Learn F1"),
       h("h1", {}, "Inside a 2026 F1 car"),
-      h("p", { class: "lede" }, "Spin it, zoom in, take the covers off or blow it apart, and tap the dots to see what every part does. Press “Drive a lap” to watch it work through a real qualifying lap: wheels, steering, moving wings and the electric motor."),
+      h("p", { class: "lede" }, "Spin it, zoom in, take the covers off or blow it apart, and tap the dots to see what every part does. Press “Drive a lap” to put it on a 3D Mexico City circuit and follow a real qualifying lap from the chase, onboard or helicopter camera."),
       h("p", { class: "muted small" }, "Every 2026 car follows the same rules, so this works as a guide to all of them. Our example car is Red Bull's RB22, because a detailed 3D model of it is available to share.")),
     stage,
-    h("p", { class: "muted small td-note" }, "The car is a 4 MB download, so give it a moment on mobile data. Prefer numbers? The ", h("a", { href: "teardown/rb22.html" }, "full data view"), " has live power, battery and speed panels for the same lap (best on a computer or a phone turned sideways)."),
+    h("p", { class: "muted small td-note" }, "The car and its engine are a 7 MB download, so give it a moment on mobile data. Prefer numbers? The ", h("a", { href: "teardown/rb22.html" }, "full data view"), " has live power, battery and speed panels for the same lap (best on a computer or a phone turned sideways)."),
     section(["What's inside", "layers"], "The main systems of every 2026 car, in plain words.",
       h("div", { class: "td-grid" }, SYSTEMS.map(([ic, t, body, facts]) => h("article", { class: "panel td-card" },
         h("h3", {}, icon(ic, { size: 20 }), t), h("p", {}, body),
@@ -47,5 +47,5 @@ export default async function teardown() {
     section(["The steering wheel", "steer"], "Around 25 buttons and dials. Tap “Steering wheel” in the 3D view to go through them one by one on a real F1 wheel.",
       h("figure", { class: "td-photo" },
         h("img", { src: "teardown/photos/steering-wheel.webp", alt: "A Formula 1 steering wheel: screen, shift lights, buttons and rotary dials", width: 1400, height: 1399, loading: "lazy", decoding: "async", style: { maxWidth: "520px", margin: "0 auto" } }))),
-    h("p", { class: "muted small" }, "3D car: ", h("a", { href: "https://skfb.ly/pOvxI", target: "_blank", rel: "noopener" }, "“2026 Redbull RB22” by Dave Love"), " on Sketchfab, licensed CC BY 4.0 (wheels and steering wheel separated so they turn; compressed for the web). The parts inside are drawn to the 2026 rules, simplified. Lap: Max Verstappen's 2026 Mexico City qualifying lap from F1 timing data. Sources: FIA 2026 technical regulations as reported by Formula1.com and Motor Sport; Red Bull Racing's RB22 page; PlanetF1 and The Race launch analysis."));
+    h("p", { class: "muted small" }, "3D car: ", h("a", { href: "https://skfb.ly/pOvxI", target: "_blank", rel: "noopener" }, "“2026 Redbull RB22” by Dave Love"), " on Sketchfab, licensed CC BY 4.0 (wheels separated so they turn; compressed for the web). Power unit and steering wheel 3D models by ", h("a", { href: "https://www.cgtrader.com/designers/peterkissdesign", target: "_blank", rel: "noopener" }, "Peter Kiss Design"), " (CGTrader), simplified for phones. Radiators, fuel tank, gearbox and suspension are drawn to the 2026 rules, simplified. Lap: Max Verstappen's 2026 Mexico City qualifying lap from F1 timing data. Sources: FIA 2026 technical regulations as reported by Formula1.com and Motor Sport; Red Bull Racing's RB22 page; PlanetF1 and The Race launch analysis."));
 }
