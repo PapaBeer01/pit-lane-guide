@@ -1,0 +1,36 @@
+// Dev tool: renders a glTF from ?m=<file> in four views (window.SHOTS) for checking models headless.
+import * as THREE from 'three';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+const q = new URLSearchParams(location.search);
+const r = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+r.setSize(900, 600);
+r.outputColorSpace = THREE.SRGBColorSpace;
+r.toneMapping = THREE.NeutralToneMapping;
+document.body.appendChild(r.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#e8e9eb');
+scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+const sun = new THREE.DirectionalLight('#fff', 1.5);
+sun.position.set(3, 6, 4);
+scene.add(sun);
+const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(q.get('m'));
+const obj = g.scene;
+if (window.PREP) window.PREP(obj, THREE);
+scene.add(obj);
+const box = new THREE.Box3().setFromObject(obj);
+const c = box.getCenter(new THREE.Vector3());
+const R = box.getSize(new THREE.Vector3()).length() * 0.62;
+const cam = new THREE.PerspectiveCamera(35, 1.5, 0.01, 100);
+const shot = (dir) => {
+  cam.position.copy(c).addScaledVector(dir.normalize(), R / Math.tan((17.5 * Math.PI) / 180) * 0.62);
+  cam.lookAt(c);
+  r.render(scene, cam);
+  return r.domElement.toDataURL('image/png');
+};
+const names = [];
+obj.traverse((o) => o.isMesh && names.push(`${o.name}|${(Array.isArray(o.material) ? o.material[0] : o.material).name}`));
+window.INFO = {size: box.getSize(new THREE.Vector3()).toArray(), min: box.min.toArray(), names};
+window.SHOTS = {a: shot(new THREE.Vector3(1, 0.6, 1)), side: shot(new THREE.Vector3(1, 0.05, 0)), top: shot(new THREE.Vector3(0.01, 1, 0)), front: shot(new THREE.Vector3(0, 0.1, 1))};
+window.DONE = true;
