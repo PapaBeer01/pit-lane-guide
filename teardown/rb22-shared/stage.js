@@ -7,6 +7,7 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {Pass} from 'three/addons/postprocessing/Pass.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {buildCar} from './car.js';
@@ -86,7 +87,12 @@ export function createStage({canvas, lo = false, real = null}) {
   if (lo) gtao.enabled = false;
   composer.addPass(new OutputPass());
 
-  if (!lo) {
+  if (lo) {
+    const pm = new THREE.PMREMGenerator(renderer);
+    scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.8;
+    pm.dispose();
+  } else {
     const env = new THREE.Scene();
     env.background = new THREE.Color('#d9dadd');
     const sb = (w, h, pos, k) => {
@@ -153,6 +159,12 @@ export function createStage({canvas, lo = false, real = null}) {
     camera.updateMatrixWorld();
     composer.render();
   };
+  // the explorer moves the camera itself (OrbitControls): pose the car and draw
+  const draw = (s, ops = {}) => {
+    car.update(s, ops);
+    camera.updateMatrixWorld();
+    composer.render();
+  };
   const pv = new V3();
   const project = (v) => {
     if (!v) return null;
@@ -174,5 +186,5 @@ export function createStage({canvas, lo = false, real = null}) {
       sun.shadow.map = null;
     }
   };
-  return {renderer, scene, camera, car, composer, gtao, sun, resize, frame, project, size, setQuality};
+  return {renderer, scene, camera, car, composer, gtao, sun, resize, frame, draw, project, size, setQuality};
 }

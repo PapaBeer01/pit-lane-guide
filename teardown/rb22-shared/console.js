@@ -13,7 +13,7 @@ const SYS_LABEL = {all: 'WHOLE CAR', aero: 'AERO', pu: 'POWER UNIT', chassis: 'C
 // what each system is, in a few honest lines (sources: 2026 FIA rules, Red Bull's RB22 page, launch analysis)
 export const CARDS = {
   garage: ['In the garage', 'Covers off, the way the mechanics see it between sessions: wheels off, bodywork lifted, everything inside still bolted in place.', ['Push-rods run up to rockers on top of the chassis', 'Big silver drums duct air to the brakes', 'Side-impact tubes with red caps beside the cockpit']],
-  all: ['The RB22', 'Red Bull’s 2026 car: the first with its own engine, built with Ford. Narrower, shorter and about 30 kg lighter than 2025 cars, with wings that move.', ['3,400 mm wheelbase · 1,900 mm wide', '768 kg minimum with driver', 'Push-rod suspension front and rear']],
+  all: ['A 2026 F1 car', 'Every 2026 car is built to the same new rules: narrower, shorter and about 30 kg lighter than 2025, with wings that move and half its power electric. Our example is Red Bull’s RB22.', ['3,400 mm wheelbase · 1,900 mm wide', '768 kg minimum with driver', 'Push-rod suspension front and rear']],
   aero: ['Active aerodynamics', 'Both wings have flaps that flatten on the straights (straight mode) and close for corners. No DRS: every driver can use it, in marked zones.', ['Front wing: 2 moving flaps', 'Rear wing: 3 moving elements', 'Flatter floor: much less ground effect']],
   pu: ['Red Bull Ford DM01', 'A 1.6 L V6 turbo plus an electric motor-generator that now makes almost half the power. No MGU-H any more.', ['ICE ≈ 400 kW · MGU-K 350 kW', '15,000 rpm limit · 90° V · 24 valves', 'Up to 8.5 MJ harvested a lap']],
   chassis: ['Survival cell & bodywork', 'The carbon tub protects the driver and holds the fuel. The RB22’s sidepods are tightly wrapped, with the side-impact tube showing through.', ['Halo: titanium, takes ~12 t', 'Fuel cell behind the driver', 'Large airbox above the head']],
@@ -76,8 +76,8 @@ export function createConsole(app) {
 
   // ------------------------------------------------------------ title, speed, gear
   add(`<div style="position:absolute;left:35px;top:33px;width:43px;height:3px;background:${C.red}"></div>`);
-  add(`<div style="position:absolute;left:35px;top:42px;font-size:30px;font-weight:800;letter-spacing:0;font-family:'Bricolage Display',Inter,sans-serif">RB22 <span style="color:${C.red}">·</span> Teardown</div>`);
-  add(`<div class="cp" style="position:absolute;left:35px;top:81px;font-weight:500;font-size:9.2px;letter-spacing:1.5px">RED BULL FORD DM01 &nbsp;•&nbsp; 1.6 L V6 TURBO + 350 kW MGU-K &nbsp;•&nbsp; 2026 RULES</div>`);
+  add(`<div style="position:absolute;left:35px;top:42px;font-size:30px;font-weight:800;letter-spacing:0;font-family:'Bricolage Display',Inter,sans-serif">2026 F1 car <span style="color:${C.red}">·</span> Teardown</div>`);
+  add(`<div class="cp" style="position:absolute;left:35px;top:81px;font-weight:500;font-size:9.2px;letter-spacing:1.5px">OUR EXAMPLE: RED BULL RB22 &nbsp;•&nbsp; 1.6 L V6 TURBO + 350 kW MGU-K &nbsp;•&nbsp; 2026 RULES</div>`);
   const kmh = add(`<div style="position:absolute;left:33px;top:100px;font-size:62px;font-weight:800;letter-spacing:-1px;font-family:'Bricolage Display',Inter,sans-serif;color:${C.red};line-height:1"></div>`);
   add(`<div class="cp" style="position:absolute;left:36px;top:160px;font-weight:500">KM/H</div>`);
   const gear = add(`<div style="position:absolute;left:190px;top:100px;width:56px;height:56px;border:1.5px solid ${C.ink};display:grid;place-items:center;font-size:34px;font-weight:800"></div>`);

@@ -44,7 +44,7 @@ function menuGroups() {
       ["accuracy", "How accurate they are", "target", "Every prediction, scored"],
     ]],
     ["Learn F1", [
-      ["teardown", "RB22 teardown", "wrench", "Take this year's Red Bull apart in 3D"],
+      ["teardown", "Inside a 2026 F1 car", "wrench", "Spin it, take it apart, tap any part"],
       ["learn", "New to F1? Start here", "book", "All the explainers on one page"],
       ...LEARN_TOPICS.map(([t, ic]) => [`learn/${slug(t)}`, t, ic]),
     ]],

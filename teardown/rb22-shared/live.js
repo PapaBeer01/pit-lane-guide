@@ -42,7 +42,7 @@ export async function runLive() {
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.appendChild(style);
-  document.title = 'RB22 Teardown | The Pit Lane';
+  document.title = 'Inside a 2026 F1 car: full data view | The Pit Lane';
   const app = document.getElementById('app');
   const canvas = document.createElement('canvas');
   canvas.id = 'gl';
