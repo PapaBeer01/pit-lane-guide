@@ -54,8 +54,20 @@ export async function loadDetail(onProgress = null) {
     console.warn('detail model unavailable', u, e);
     return null;
   });
-  const [engine, wheel, floor, frontwing, rearwing] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR), one(FRONTWING), one(REARWING)]);
-  return {engine, wheel, floor, frontwing, rearwing};
+  // the car model's own wing livery, baked onto the CAD wings (teardown/convert/bake-wingskin.js); sits next to the page
+  const skin = /noskin/.test(location.search) ? Promise.resolve(null) : fetch('wingskin.bin').then((r) => (r.ok ? r.arrayBuffer() : null)).then((b) => b && readSkin(b)).catch(() => null);
+  const [engine, wheel, floor, frontwing, rearwing, wingskin] = await Promise.all([one(ENGINE), one(WHEEL), one(FLOOR), one(FRONTWING), one(REARWING), skin]);
+  return {engine, wheel, floor, frontwing, rearwing, wingskin};
+}
+
+// u32 header length, JSON header [{id, kind, n, off, ...}], float32 data: paint is [x y z u v] per vertex (n vertices);
+// a decal is n triangle numbers of its host mesh plus, in the header, its uv map (u = map[0..2]·p + map[3], v = map[4..6]·p + map[7]),
+// its offset off the surface (nrm) and its uv bounds in the decal sheet (b)
+function readSkin(buf) {
+  const len = new DataView(buf).getUint32(0, true);
+  const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, len)));
+  const data = new Float32Array(buf, 4 + len);
+  return header.map((h) => ({...h, data: data.subarray(h.off, h.off + (h.kind === 'decal' ? h.n : h.n * 5))}));
 }
 
 // the gear cluster comes later (2 MB, only seen with the engine out)

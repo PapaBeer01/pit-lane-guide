@@ -236,7 +236,7 @@ export async function runExplore() {
     camSeg.querySelectorAll('button').forEach((n) => n.setAttribute('aria-pressed', String(n === b)));
   });
   const onTrack = () => driving && mode === 'car' && !solo;
-  window.EXPLORE = {st, cam, mount, controls, get track() { return track; }, seek: (t) => (lapT = t), view: (p, t) => { focus = null; cam.position.set(...p); controls.target.set(...t); }};
+  window.EXPLORE = {st, cam, mount, controls, Raycaster: THREE.Raycaster, get track() { return track; }, seek: (t) => (lapT = t), view: (p, t) => { focus = null; cam.position.set(...p); controls.target.set(...t); }};
   let wasOnTrack = false;
   const camDir = new THREE.Vector3(1, 0, 0);
   const enterTrack = (on) => {

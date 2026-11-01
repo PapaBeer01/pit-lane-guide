@@ -6,7 +6,6 @@
 // buildCar() → {root, update(s, ops), anchor(name), parts}. update(s) poses everything from the lap state s
 // (kin.js stateAt); ops: {explode 0..1, solo: system key or null, wheelScreen: canvas}.
 import * as THREE from 'three';
-import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {CAR, R_WHEEL} from './kin.js';
 
 const V3 = THREE.Vector3;
@@ -212,9 +211,20 @@ export function buildCar(real = null, detail = {}) {
   anchors.airbox = () => inlet.getWorldPosition(new V3());
   // fuel cell inside the tub behind the driver (≈ 100 kg of sustainable fuel)
   // (the cutaway videos show it as one big tan bag, seat back to engine, nearly as tall as the driver's shoulders)
-  const fuel = mesh(new RoundedBoxGeometry(0.66, 0.5, 0.54, 3, 0.06), M.fuel());
-  add(root, at(fuel, 1.36, 0.45, 0), 'chassis', 'Fuel cell', [0, 0.45, 0]);
-  anchors.fuel = () => fuel.getWorldPosition(new V3());
+  // Its cross-section follows the inside of the engine cover (measured off the car model): full width low down,
+  // tapering into the narrow spine under the airbox, from the seat back (x 1.70) to the engine (x 1.04).
+  const fuelShape = new THREE.Shape();
+  const FS = [[0.29, 0.21], [0.30, 0.45], [0.27, 0.60], [0.19, 0.72], [0.11, 0.84], [0.07, 0.93]];
+  fuelShape.moveTo(-FS[0][0], FS[0][1]);
+  for (const [z, y] of FS) fuelShape.lineTo(z, y);
+  fuelShape.quadraticCurveTo(0, 1.0, -FS[FS.length - 1][0], FS[FS.length - 1][1]);
+  for (const [z, y] of FS.slice().reverse()) fuelShape.lineTo(-z, y);
+  const fuelGeo = new THREE.ExtrudeGeometry(fuelShape, {depth: 0.6, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.025, bevelSegments: 3, curveSegments: 8});
+  fuelGeo.rotateY(Math.PI / 2);
+  fuelGeo.computeVertexNormals();
+  const fuel = mesh(fuelGeo, M.fuel());
+  add(root, at(fuel, 1.07, 0, 0), 'chassis', 'Fuel cell', [0, 0.45, 0]);
+  anchors.fuel = () => fuel.localToWorld(new V3(0.3, 0.6, 0.3));
   // mirrors on the sidepod shoulders
   for (const s of [1, -1]) {
     const mir = new THREE.Group();
@@ -772,6 +782,89 @@ bool inCovers(vec3 p) {
     trimAll();
     for (const m of trimmable) for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.side = THREE.DoubleSide;
   }
+  // the RB22 model's own wing livery (its paint and sponsor decals, CC BY 4.0), baked onto the CAD wings: each piece
+  // is a thin skin parented to the CAD surface it was snapped to, so it moves with the flaps
+  const skinMats = {};
+  if (realParts) for (const m of realParts.meshes) {
+    const b = Array.isArray(m.userData.base) ? m.userData.base[0] : m.userData.base;
+    if (/redbull_decals/.test(b?.name)) skinMats.decal = b;
+    if (/redbull_paint/.test(b?.name)) skinMats.paint = b;
+  }
+  const skinMat = (kind) => {
+    const src = skinMats[kind];
+    const m = new THREE.MeshStandardMaterial({map: src.map, color: src.color, roughness: src.roughness, metalness: src.metalness,
+      alphaTest: kind === 'decal' ? 0.5 : 0, side: THREE.DoubleSide, polygonOffset: kind === 'paint', polygonOffsetFactor: -1, polygonOffsetUnits: -1, envMapIntensity: 0.7});
+    m.name = 'wingskin_' + kind;
+    return m;
+  };
+  // a logo: the host's own triangles under it, with uvs from a planar projection; anything outside the logo's patch of
+  // the decal sheet is cut away in the shader
+  const decalOn = (host, e) => {
+    const hp = host.geometry.attributes.position;
+    const hi = host.geometry.index;
+    const p = new Float32Array(e.n * 9);
+    const uv = new Float32Array(e.n * 6);
+    const [a0, a1, a2, a3, b0, b1, b2, b3] = e.map;
+    let k = 0;
+    for (const t of e.data) for (let c = 0; c < 3; c++) {
+      const i = hi ? hi.getX(t * 3 + c) : t * 3 + c;
+      const x = hp.getX(i), y = hp.getY(i), z = hp.getZ(i);
+      p[k * 3] = x + e.nrm[0];
+      p[k * 3 + 1] = y + e.nrm[1];
+      p[k * 3 + 2] = z + e.nrm[2];
+      uv[k * 2] = a0 * x + a1 * y + a2 * z + a3;
+      uv[k * 2 + 1] = b0 * x + b1 * y + b2 * z + b3;
+      k++;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.computeVertexNormals();
+    const m = skinMat('decal');
+    const bounds = {value: new THREE.Vector4(...e.b)};
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uBounds = bounds;
+      sh.fragmentShader = 'uniform vec4 uBounds;\n' + sh.fragmentShader.replace('#include <map_fragment>',
+        'if (vMapUv.x < uBounds.x || vMapUv.y < uBounds.y || vMapUv.x > uBounds.z || vMapUv.y > uBounds.w) discard;\n#include <map_fragment>');
+    };
+    m.customProgramCacheKey = () => 'wingdecal';
+    const sk = new THREE.Mesh(geo, m);
+    sk.name = 'livery';
+    sk.renderOrder = 2;
+    return sk;
+  };
+  const applySkin = (tag, g) => {
+    if (!detail.wingskin || !skinMats.paint) return;
+    const byId = new Map();
+    let i = 0;
+    g.traverse((o) => {
+      if (o.isMesh) byId.set(`${tag}:${i}`, o);
+      i++;
+    });
+    const mats = {};
+    for (const e of detail.wingskin) {
+      const host = byId.get(e.id);
+      if (!host || !skinMats[e.kind]) continue;
+      if (e.kind === 'decal') {
+        host.add(decalOn(host, e));
+        continue;
+      }
+      const p = new Float32Array(e.n * 3);
+      const uv = new Float32Array(e.n * 2);
+      for (let k = 0; k < e.n; k++) {
+        p.set(e.data.subarray(k * 5, k * 5 + 3), k * 3);
+        uv.set(e.data.subarray(k * 5 + 3, k * 5 + 5), k * 2);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      geo.computeVertexNormals();
+      const sk = new THREE.Mesh(geo, mats[e.kind] ||= skinMat(e.kind));
+      sk.name = 'livery';
+      sk.renderOrder = e.kind === 'decal' ? 2 : 1;
+      host.add(sk);
+    }
+  };
   if (detail.frontwing) {
     const f = detail.frontwing;
     f.rotation.y = Math.PI;
@@ -786,6 +879,7 @@ bool inCovers(vec3 p) {
     });
     const g = new THREE.Group();
     g.add(f);
+    applySkin('fw', g);
     add(root, g, 'aero', 'Front wing (detailed)', [0.8, -0.05, 0]);
     g.traverse((o) => o.isMesh && (o.userData.frontwing = true));
     fwing = {g, flaps};
@@ -840,6 +934,7 @@ bool inCovers(vec3 p) {
         }
       }
     });
+    applySkin('rw', g);
     add(root, g, 'aero', 'Rear wing (detailed)', [-0.75, 0.35, 0]);
     g.traverse((o) => o.isMesh && (o.userData.frontwing = true));
     rwing = {g, flap: flapNode, base: flapNode.quaternion.clone()};
@@ -1090,5 +1185,5 @@ bool inCovers(vec3 p) {
   };
   const anchor = (name) => (anchors[name] ? anchors[name]() : null);
   void ice;
-  return {root, parts, update, anchor, wheels, addGearbox, real: !!realParts, BUTTONS: Object.keys(BTN)};
+  return {root, parts, update, anchor, wheels, addGearbox, real: !!realParts, BUTTONS: Object.keys(BTN), wings: () => ({fwing, rwing})};
 }
