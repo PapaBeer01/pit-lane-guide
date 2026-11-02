@@ -54,6 +54,8 @@ def network() -> str:
 def latest_race(year: int) -> tuple[str, str]:
     """(label, api_path) of the latest finished race, from FastF1's schedule."""
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
     sched = fastf1.get_event_schedule(year, include_testing=False)
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     done = sched[sched["Session5DateUtc"] < now]

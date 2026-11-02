@@ -68,6 +68,8 @@ def fetch_future_circuits(events: list[dict], year: int, *, max_tracks: int = 3)
     if not missing:
         return 0
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
     from .export import export_circuit
     from .track_history import norm_location
     done = 0

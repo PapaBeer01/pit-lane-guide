@@ -97,6 +97,8 @@ def fetch_track_history(deadline: float, max_races: int | None = None, priority=
     reached, or after two races in a row come back empty (those don't count as failed tries).
     """
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
 
     max_races = config.MAX_HISTORY_RACES_PER_RUN if max_races is None else max_races
     rank = {k: i for i, k in enumerate(priority)}

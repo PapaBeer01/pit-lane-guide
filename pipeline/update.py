@@ -42,6 +42,8 @@ def _parse(iso: str) -> datetime:
 
 def build_schedule(year: int) -> list[dict]:
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
 
     schedule = fastf1.get_event_schedule(year, include_testing=False)
     coords = {}
@@ -103,6 +105,8 @@ def needs_refresh(existing: dict | None, sess: dict, now: datetime) -> bool:
 
 def export_session(year: int, ev: dict, sess: dict, expected: int | None, now: datetime) -> tuple[dict | None, list[str]]:
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
 
     key = sess["key"]
     s = fastf1.get_session(year, ev["round"], sess["ff_name"])
@@ -200,6 +204,8 @@ def check_access(year: int, ev: dict, sess: dict) -> tuple[bool, str]:
     tries a mirror, so ~90 sessions quickly use up its 500 calls/h. One request settles it.
     """
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
     from fastf1 import _api
     from fastf1.req import Cache
     s = fastf1.get_session(year, ev["round"], sess["ff_name"])
@@ -226,6 +232,8 @@ def _is_rate_limit(e: Exception) -> bool:
 
 def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
     import fastf1
+    from .ff_compat import apply as _ff_compat
+    _ff_compat()
 
     now = now or datetime.now(timezone.utc)
     started = time.monotonic()
