@@ -344,6 +344,10 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
                 published += 1
                 expected = max(expected or 0, len(payload["results"]))
                 log.info("Published %s", label)
+            else:
+                log.info("Not published yet: %s", "; ".join(errs))   # visible in the run log before it's 'late'
+            if payload:
+                pass
             elif late or existing is not None:
                 # Not ready yet is normal for a while after the session; only report if it's been hours
                 problems.extend(errs)
