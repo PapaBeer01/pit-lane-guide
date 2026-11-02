@@ -309,3 +309,53 @@ def clean_float(o):
     if isinstance(o, list):
         return [clean_float(v) for v in o]
     return o
+
+
+def fill_race_status(results: pd.DataFrame, laps: pd.DataFrame | None,
+                     session_status: pd.DataFrame | None) -> pd.DataFrame:
+    """Provisional Finished/Lapped/Retired from F1's own timing data.
+
+    FastF1 takes a driver's status only from Ergast, which posts results hours
+    after a race. Until then every status is blank, and the "has anyone
+    finished?" check would hold the race back. Once F1's session status says
+    the race is over, this works out each driver's status from the laps:
+
+    * ran the leader's full distance -> "Finished"
+    * still running when the leader took the flag, but fewer laps -> "Lapped"
+    * stopped before that -> "Retired"
+
+    It only fills blank statuses. The 12-hour refresh replaces them with
+    Ergast's official ones.
+    """
+    if results is None or not len(results) or laps is None or not len(laps):
+        return results
+    if "Status" in results and results["Status"].fillna("").astype(str).str.strip().ne("").any():
+        return results                      # official statuses are in
+    if session_status is None or not len(session_status) or "Status" not in session_status:
+        return results
+    if not session_status["Status"].astype(str).isin(["Finished", "Finalised", "Ends"]).any():
+        return results                      # race still running: leave blank so the check holds it
+    if not {"Driver", "LapNumber", "Time"}.issubset(laps.columns):
+        return results
+
+    per = laps.dropna(subset=["LapNumber"]).groupby("Driver").agg(n=("LapNumber", "max"), end=("Time", "max"))
+    if not len(per):
+        return results
+    full = per["n"].max()
+    leaders = per[per["n"] == full]["end"].dropna()
+    flag = leaders.min() if len(leaders) else None
+
+    out = results.copy()
+    status = []
+    for _, r in out.iterrows():
+        row = per.loc[r["Abbreviation"]] if r["Abbreviation"] in per.index else None
+        if row is None or pd.isna(row["n"]):
+            status.append("Did not start" if pd.isna(r.get("Position")) else "Retired")
+        elif row["n"] >= full:
+            status.append("Finished")
+        elif flag is not None and pd.notna(row["end"]) and row["end"] >= flag:
+            status.append("Lapped")
+        else:
+            status.append("Retired")
+    out["Status"] = status
+    return out

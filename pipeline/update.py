@@ -18,7 +18,7 @@ import pandas as pd
 
 from . import config
 from .checks import check_session
-from .export import _sec, drivers_from_results, export_circuit, export_telemetry, session_payload
+from .export import _sec, drivers_from_results, fill_race_status, export_circuit, export_telemetry, session_payload
 from .store import read_json, write_json
 
 log = logging.getLogger("pipeline")
@@ -112,8 +112,11 @@ def export_session(year: int, ev: dict, sess: dict, expected: int | None, now: d
     s = fastf1.get_session(year, ev["round"], sess["ff_name"])
     s.load(laps=True, telemetry=key in config.TELEMETRY_SESSIONS, weather=True, messages=True)
     total_laps = getattr(s, "total_laps", None)
+    results = s.results
+    if key in config.RACE_SESSIONS:
+        results = fill_race_status(results, s.laps, getattr(s, "session_status", None))
     payload = session_payload(
-        round_no=ev["round"], key=key, start=sess["start"], results=s.results, laps=s.laps,
+        round_no=ev["round"], key=key, start=sess["start"], results=results, laps=s.laps,
         weather=s.weather_data, track_status=s.track_status, messages=s.race_control_messages,
         total_laps=int(total_laps) if total_laps else None,
     )
