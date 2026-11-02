@@ -33,3 +33,22 @@ def test_left_blank_while_race_is_running():
 def test_official_statuses_are_kept():
     res = _results("+1 Lap")
     assert fill_race_status(res, _laps(), OVER) is res
+
+
+def test_quali_tie_settled_by_knockout_order():
+    from pipeline.export import settle_quali_ties
+    rows = [{"code": "HAD", "pos": 7, "class": "7.0", "q": [77.4, 77.0, 76.9]},
+            {"code": "LIN", "pos": 8, "class": "8.0", "q": [78.2, 77.1, 77.117]},
+            {"code": "LAW", "pos": 8, "class": "8.0", "q": [78.1, 77.2, 77.029]},
+            {"code": "GAS", "pos": 10, "class": "10.0", "q": [78.2, 77.3, 77.153]}]
+    settle_quali_ties(rows)
+    assert {r["code"]: r["pos"] for r in rows} == {"HAD": 7, "LAW": 8, "LIN": 9, "GAS": 10}
+    assert next(r for r in rows if r["code"] == "LIN")["class"] == "9"
+
+
+def test_quali_tie_left_alone_when_next_slot_is_taken():
+    from pipeline.export import settle_quali_ties
+    rows = [{"code": "A", "pos": 8, "q": [1, 1, 77.0]}, {"code": "B", "pos": 8, "q": [1, 1, 77.1]},
+            {"code": "C", "pos": 9, "q": [1, 1, 77.2]}]
+    settle_quali_ties(rows)
+    assert [r["pos"] for r in rows] == [8, 8, 9]

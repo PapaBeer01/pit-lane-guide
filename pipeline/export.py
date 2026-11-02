@@ -129,8 +129,43 @@ def export_results(results: pd.DataFrame, key: str, laps: pd.DataFrame | None = 
         for i, row in enumerate(rows, 1):
             row["pos"] = i if row["best"] is not None else None
     else:
+        if key in config.QUALI_SESSIONS:
+            settle_quali_ties(rows)
         rows.sort(key=lambda x: (x["pos"] is None, x["pos"] or 0))
     return rows
+
+
+def _knockout_key(row: dict):
+    """Official qualifying order: furthest segment reached, then that segment's time."""
+    q = row.get("q") or []
+    for seg in (2, 1, 0):
+        if len(q) > seg and q[seg] is not None:
+            return (-seg, q[seg])
+    return (1, float("inf"))
+
+
+def settle_quali_ties(rows: list[dict]) -> None:
+    """Two drivers on the same qualifying position (a glitch in F1's re-issued data, as in Mexico City 2026
+    where Lawson and Lindblad both came back as P8): order the pair by the knockout rules and give the
+    slower one the next position, but only if that position is free. Otherwise leave it for the
+    duplicate-positions check to hold back."""
+    by_pos: dict[int, list[dict]] = {}
+    for r in rows:
+        if r["pos"] is not None:
+            by_pos.setdefault(r["pos"], []).append(r)
+    taken = set(by_pos)
+    for pos, group in sorted(by_pos.items()):
+        if len(group) < 2:
+            continue
+        group.sort(key=_knockout_key)
+        need = list(range(pos + 1, pos + len(group)))
+        if any(p in taken for p in need) or any(_knockout_key(g)[0] == 1 for g in group):
+            continue
+        for row, p in zip(group[1:], need):
+            row["pos"] = p
+            if row.get("class") and row["class"].replace(".0", "") == str(pos):
+                row["class"] = str(p)
+            taken.add(p)
 
 
 def export_laps(laps: pd.DataFrame) -> tuple[dict, dict, dict]:
