@@ -42,8 +42,10 @@ def check_session(payload: dict, expected_drivers: int | None) -> list[str]:
             seen: dict = {}
             for r in res:
                 if r["pos"] is not None:
-                    seen.setdefault(r["pos"], []).append(f"{r.get('code')} ({r.get('status') or r.get('class') or '-'})")
-            dupes = "; ".join(f"P{p}: {', '.join(c)}" for p, c in sorted(seen.items()) if len(c) > 1)
+                    seen.setdefault(r["pos"], []).append(
+                        f"{r.get('code')} ({r.get('status') or r.get('class') or '-'}, q={r.get('q')}, best={r.get('best')})")
+            dupes = "; ".join(f"P{p}: {', '.join(c)}; P{p + 1} {'taken' if p + 1 in seen else 'free'}"
+                              for p, c in sorted(seen.items()) if len(c) > 1)
             problems.append(f"{label}: duplicate positions in results ({dupes})")
     if key in config.RACE_SESSIONS:
         # The session watcher tries a race minutes after its scheduled end. One that overran (red flag,

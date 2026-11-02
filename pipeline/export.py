@@ -157,9 +157,14 @@ def settle_quali_ties(rows: list[dict]) -> None:
     for pos, group in sorted(by_pos.items()):
         if len(group) < 2:
             continue
-        group.sort(key=_knockout_key)
+        if all(_knockout_key(g)[0] != 1 for g in group):
+            group.sort(key=_knockout_key)
+        elif all(g.get("best") is not None for g in group):
+            group.sort(key=lambda g: g["best"])     # segment times missing: fastest lap of the session
+        else:
+            continue
         need = list(range(pos + 1, pos + len(group)))
-        if any(p in taken for p in need) or any(_knockout_key(g)[0] == 1 for g in group):
+        if any(p in taken for p in need):
             continue
         for row, p in zip(group[1:], need):
             row["pos"] = p

@@ -52,3 +52,11 @@ def test_quali_tie_left_alone_when_next_slot_is_taken():
             {"code": "C", "pos": 9, "q": [1, 1, 77.2]}]
     settle_quali_ties(rows)
     assert [r["pos"] for r in rows] == [8, 8, 9]
+
+
+def test_quali_tie_uses_best_lap_when_segment_times_missing():
+    from pipeline.export import settle_quali_ties
+    rows = [{"code": "LIN", "pos": 8, "q": None, "best": 77.117},
+            {"code": "LAW", "pos": 8, "q": [None, None, None], "best": 77.029}]
+    settle_quali_ties(rows)
+    assert {r["code"]: r["pos"] for r in rows} == {"LAW": 8, "LIN": 9}
