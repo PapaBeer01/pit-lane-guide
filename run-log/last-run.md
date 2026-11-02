@@ -10,5 +10,5 @@
 
 ## Problems
 
-- Round 19 Q: duplicate positions in results
+- Round 19 Q: duplicate positions in results (P8: LIN (8.0), LAW (8.0))
 - upgrades_found=0
