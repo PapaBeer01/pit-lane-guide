@@ -18,7 +18,7 @@ import pandas as pd
 
 from . import config
 from .checks import check_session
-from .export import _sec, drivers_from_results, fill_race_status, export_circuit, export_telemetry, session_payload
+from .export import _sec, clean_driver, drivers_from_results, fill_race_status, fill_result_teams, export_circuit, export_telemetry, session_payload
 from .store import read_json, write_json
 
 log = logging.getLogger("pipeline")
@@ -342,7 +342,10 @@ def run(now: datetime | None = None, year: int = config.SEASON) -> list[str]:
                 for d in payload.pop("drivers"):
                     old = drivers.get(d["code"])
                     if not old or (old.get("as_of") or "") <= sess["start"]:
-                        drivers[d["code"]] = {**d, "as_of": sess["start"]}   # newest team/colour wins
+                        # newest team/colour wins, but a field F1 left blank keeps the value we already had
+                        known = {k: v for k, v in d.items() if v}
+                        drivers[d["code"]] = {**d, **clean_driver(old or {}), **known, "as_of": sess["start"]}
+                fill_result_teams(payload["results"], drivers)
                 write_json(path, payload)
                 published += 1
                 expected = max(expected or 0, len(payload["results"]))

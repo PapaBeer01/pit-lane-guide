@@ -1,5 +1,5 @@
 // Data room: the raw model output behind every prediction, to inspect and download.
-// Not linked from the menus (#/data). The site is public, so anyone with the link can open it.
+// In the menu under 'Our predictions' (#/data).
 import { icon } from "../icons.js";
 import { deliver } from "../snapshot.js";
 import { driverTag, empty, eventByRound, h, load, pct, section, SESSION_LABEL } from "../ui.js";
@@ -41,7 +41,7 @@ export default async function dataRoom(route) {
     h("select", { class: "select", onchange: (e) => onchange(e.target.value) }, options.map(([v, t]) => h("option", { value: v, selected: String(v) === String(value) }, t))));
   const head = h("div", { style: { display: "grid", gap: "8px" } },
     h("h1", {}, "Data room"),
-    h("p", { class: "muted" }, "Everything behind each prediction: the numbers the model started from, every driver's chance of every position, and all 4,000 simulated sessions to download. Not linked from the menus; anyone with this link can open it."),
+    h("p", { class: "muted" }, "Everything behind each prediction: the numbers the model started from, every driver's chance of every position, and all 4,000 simulated sessions to download."),
     h("div", { class: "panel", style: { display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" } },
       pick("Race", rnd, rounds.map((r) => [r, `${r}. ${(eventByRound(r)?.name || `Round ${r}`).replace(" Grand Prix", "")}`]), (v) => go(v)),
       pick("Session", target, targets.map((t) => [t, SESSION_LABEL[t]]), (v) => go(rnd, v))));

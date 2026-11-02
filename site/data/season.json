@@ -1561,6 +1561,31 @@
    ]
   },
   {
+   "code": "HIR",
+   "num": "50",
+   "first": "Ryo",
+   "last": "Hirakawa",
+   "name": "Ryo Hirakawa",
+   "team": "Haas F1 Team",
+   "color": "#9C9FA2",
+   "country": null,
+   "as_of": "2026-11-01T20:00:00Z",
+   "teams": [
+    "Haas F1 Team"
+   ],
+   "race_rounds": [
+    19
+   ],
+   "current": true,
+   "stints": [
+    {
+     "team": "Haas F1 Team",
+     "from": 19,
+     "to": 19
+    }
+   ]
+  },
+  {
    "code": "OCO",
    "num": "31",
    "first": "Esteban",
@@ -1803,32 +1828,6 @@
    "race_rounds": [],
    "current": false,
    "stints": []
-  },
-  {
-   "code": "HIR",
-   "num": "50",
-   "first": "None",
-   "last": "None",
-   "name": "None None",
-   "team": "None",
-   "color": "#None",
-   "country": null,
-   "as_of": "2026-11-01T20:00:00Z",
-   "teams": [
-    "Haas F1 Team",
-    "None"
-   ],
-   "race_rounds": [
-    19
-   ],
-   "current": true,
-   "stints": [
-    {
-     "team": "None",
-     "from": 19,
-     "to": 19
-    }
-   ]
   },
   {
    "code": "LAW",

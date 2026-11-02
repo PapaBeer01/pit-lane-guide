@@ -14,7 +14,7 @@ const routes = {
   learn: () => import("./pages/learn.js"),
   accuracy: () => import("./pages/accuracy.js"),
   teardown: () => import("./pages/teardown.js"),
-  data: () => import("./pages/data.js"),          // Data room: not in the menus
+  data: () => import("./pages/data.js"),          // Data room (menu: Our predictions)
 };
 // The menu: one button, one grouped drop-down. Learn topics link straight to their explainer
 // (#/learn/<topic>); their titles match the TOPICS list in pages/learn.js.
@@ -42,6 +42,7 @@ function menuGroups() {
     ["Our predictions", [
       [`learn/${slug("How our predictions work")}`, "How they work", "gauge", "The model in plain words"],
       ["accuracy", "How accurate they are", "target", "Every prediction, scored"],
+      ["data", "Data room", "layers", "The raw numbers behind every prediction, to download"],
     ]],
     ["Learn F1", [
       ["teardown", "Inside a 2026 F1 car", "wrench", "Spin it, take it apart, tap any part"],

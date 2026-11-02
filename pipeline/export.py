@@ -50,28 +50,40 @@ def _num(v, nd=1):
         return None
 
 
+def _txt(v) -> str:
+    """Text field from FastF1, with its missing values (None, NaN, "None", "nan") as ""."""
+    if v is None:
+        return ""
+    try:
+        if pd.isna(v):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    t = str(v).strip()
+    return "" if t.lower() in ("none", "nan", "nat", "<na>") else t
+
+
 def drivers_from_results(results: pd.DataFrame) -> list[dict]:
+    """Driver details from a session. Fields F1 left out are blank, so they never overwrite good ones."""
     out = []
     for _, r in results.iterrows():
-        color = str(r.get("TeamColor") or "").strip()
-        if color and not color.startswith("#"):
-            color = "#" + color
+        first, last = _txt(r.get("FirstName")), _txt(r.get("LastName"))
         out.append({
-            "code": str(r["Abbreviation"]),
-            "num": str(r.get("DriverNumber") or "") or None,
-            "first": str(r.get("FirstName") or ""),
-            "last": str(r.get("LastName") or ""),
-            "name": str(r.get("FullName") or r["Abbreviation"]),
-            "team": str(r.get("TeamName") or ""),
-            "color": color or "#888888",
-            "country": str(r.get("CountryCode") or "") or None,
+            "code": _txt(r["Abbreviation"]),
+            "num": _txt(r.get("DriverNumber")) or None,
+            "first": first,
+            "last": last,
+            "name": _txt(r.get("FullName")) or " ".join(x for x in (first, last) if x),
+            "team": _txt(r.get("TeamName")),
+            "color": _color(r.get("TeamColor")) or "",
+            "country": _txt(r.get("CountryCode")) or None,
         })
     return out
 
 
 def _color(v) -> str | None:
-    c = str(v or "").strip()
-    if not c or c.lower() == "nan":
+    c = _txt(v).lstrip("#")
+    if not c:
         return None
     return c if c.startswith("#") else "#" + c
 
@@ -108,7 +120,7 @@ def export_results(results: pd.DataFrame, key: str, laps: pd.DataFrame | None = 
             "best": best.get(code),
             "laps": laps_done,
             # the team this driver drove for in this session (substitutes and mid-season moves)
-            "team": str(r.get("TeamName") or "") or None,
+            "team": _txt(r.get("TeamName")) or None,
             "color": _color(r.get("TeamColor")),
         })
     # Practice sessions have no official position: order by best lap
@@ -359,3 +371,29 @@ def fill_race_status(results: pd.DataFrame, laps: pd.DataFrame | None,
             status.append("Retired")
     out["Status"] = status
     return out
+
+
+def clean_driver(d: dict) -> dict:
+    """Drop blank and "None"/"nan" values from a stored driver record."""
+    out = {}
+    for k, v in d.items():
+        if isinstance(v, str):
+            t = v.strip()
+            if not t or t.lower() in ("none", "nan", "#none", "#nan", "none none"):
+                continue
+            if k == "name" and set(t.split()) <= {"None", "nan"}:
+                continue
+        elif v is None:
+            continue
+        out[k] = v
+    return out
+
+
+def fill_result_teams(results: list[dict], drivers: dict[str, dict]) -> None:
+    """A result row with no team (F1 left it out) takes the driver's team and colour from the roster."""
+    for r in results:
+        d = drivers.get(r.get("code")) or {}
+        if not r.get("team") and d.get("team"):
+            r["team"] = d["team"]
+        if not r.get("color") and d.get("color"):
+            r["color"] = d["color"]
