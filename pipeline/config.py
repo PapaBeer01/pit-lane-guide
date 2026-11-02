@@ -32,6 +32,7 @@ SESSION_MINUTES = {"FP1": 60, "FP2": 60, "FP3": 60, "SQ": 45, "S": 60, "Q": 60, 
 # Wait this long after a session's scheduled end before the first try. F1's archive is usually ready
 # within minutes; a try that comes too early just finds nothing and the session watcher tries again.
 READY_AFTER_MINUTES = 5
+RECHECK_GIVE_UP_HOURS = 48      # a published session whose re-check keeps failing stops being re-checked after this
 WATCH_LEAD_HOURS = 5                     # the session watcher starts watching a session this long ahead
 WATCH_GIVE_UP_HOURS = 4                  # ...and stops chasing it this long after its scheduled end
 WATCH_RETRY_MINUTES = 5                  # gap between update runs while results are awaited

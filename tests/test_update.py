@@ -171,6 +171,29 @@ def test_bad_session_is_not_published(fake_env, monkeypatch):
     assert (config.DATA_DIR / "events" / "1" / "Q.json").exists()
 
 
+def test_failed_recheck_keeps_published_session_quietly(fake_env, monkeypatch):
+    """A re-check that fails its checks keeps the published file, isn't a failed run, and stops after 48 h."""
+    import fastf1
+    from pipeline.update import run
+    monkeypatch.setattr(config, "MAX_SESSIONS_PER_RUN", 200)
+    run(now=datetime(2026, 3, 7, 7, 0, tzinfo=timezone.utc), year=2026)          # qualifying (05:30) just ended
+    q_path = config.DATA_DIR / "events" / "1" / "Q.json"
+    good = read_json(q_path)
+
+    class Dupes(FakeSession):
+        def __init__(self, name, rng):
+            super().__init__(name, rng)
+            if name == "Qualifying":
+                self.results.loc[self.results.index[1], "Position"] = 3.0   # P2 driver also on P3, P4 taken: like Mexico
+    rng = np.random.default_rng(3)
+    monkeypatch.setattr(fastf1, "get_session", lambda y, r, name: Dupes(name, rng))
+    problems = run(now=datetime(2026, 3, 7, 20, 0, tzinfo=timezone.utc), year=2026)      # 12-h re-check
+    assert not any("duplicate" in p for p in problems)
+    assert read_json(q_path)["results"] == good["results"] and not read_json(q_path)["final"]
+    run(now=datetime(2026, 3, 9, 9, 0, tzinfo=timezone.utc), year=2026)                  # > 48 h after
+    assert read_json(q_path)["final"] is True and read_json(q_path)["results"] == good["results"]
+
+
 def test_sign_in_explains_missing_secrets(monkeypatch):
     from pipeline.update import sign_in
     monkeypatch.delenv("F1_USERNAME", raising=False)
