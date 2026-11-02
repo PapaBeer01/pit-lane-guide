@@ -7,6 +7,7 @@ import {warmComposer} from 'teardown-kit/warm.js';
 import {BUILD, CAMS, createConsole, drawScreen, SYS} from './console.js';
 import {blend, camAt, camName, DURATION, explodeAt, garageAt, LAP_START, makeConsoleFrame, makeCursor, SCRIPT, sysAt, VIEW_FN} from './film.js';
 import {LAP_D, LAP_TIME, stateAt, timeAtDist} from './kin.js';
+import {createEngineSound} from './sound.js';
 import {createStage, loadDetail, loadGearbox, loadReal} from './stage.js';
 
 const W = 1600;
@@ -32,6 +33,8 @@ html,body{background:#ecedef;overflow:hidden;margin:0}
 .tourchip{position:absolute;left:800px;top:36px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;height:22px;padding:0 11px;border:1px solid #e1e3e6;background:rgba(255,255,255,.95);color:#16181b;font:600 8.8px Inter,sans-serif;letter-spacing:1.3px;white-space:nowrap;cursor:pointer;pointer-events:auto}
 .tourchip i{display:block;width:6px;height:6px;border-radius:50%;background:#d6182b}
 .tourchip.on i{animation:blink 1.2s steps(2) infinite}
+.soundchip{left:1090px;transform:none}
+.soundchip.on{background:#16181b;color:#fff;border-color:#16181b}
 @keyframes blink{50%{opacity:.15}}
 .back{position:fixed;left:12px;top:10px;z-index:90;font:700 12px/1 Inter,sans-serif;color:#16181b;background:rgba(255,255,255,.92);border:1px solid #d9dbdf;border-radius:999px;padding:8px 12px;text-decoration:none}
 .turn{position:fixed;left:0;right:0;bottom:18px;text-align:center;font:600 12px/1.4 Inter,sans-serif;letter-spacing:.5px;color:#5d636c;display:none;padding:0 16px}
@@ -104,6 +107,22 @@ export async function runLive() {
   const tourChip = document.createElement('div');
   tourChip.className = 'tourchip';
   ui.root.appendChild(tourChip);
+  // engine sound from the lap's numbers (sound.js): silent until tapped, as browsers require
+  const engine = createEngineSound();
+  const soundChip = document.createElement('div');
+  soundChip.className = 'tourchip soundchip';
+  soundChip.setAttribute('role', 'button');
+  const paintSound = () => {
+    soundChip.classList.toggle('on', engine.on);
+    soundChip.textContent = engine.on ? '♪ ENGINE SOUND ON' : '♪ ENGINE SOUND';
+  };
+  paintSound();
+  ui.root.appendChild(soundChip);
+  soundChip.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    engine.toggle();
+    paintSound();
+  });
   const note = document.createElement('div');
   note.className = 'turn';
   note.textContent = 'Turn your phone sideways for the full teardown';
@@ -159,7 +178,7 @@ export async function runLive() {
     else startTour();
   });
   addEventListener('pointerdown', (e) => {
-    if (e.target !== tourChip && e.target !== back) takeOver();
+    if (e.target !== tourChip && e.target !== soundChip && e.target !== back) takeOver();
   });
 
   // ------------------------------------------------------------ controls
@@ -352,6 +371,7 @@ export async function runLive() {
     cam.az += wrap(tgt.az - cam.az) * k;
     for (const key of ['tx', 'ty', 'tz', 'el', 'd', 'sx', 'sy']) cam[key] += (tgt[key] - cam[key]) * k;
     const s = stateAt(lapT);
+    engine.update(s, {rate: AP.on ? 1 : PLAYS[playI], running: (AP.on || !paused) && !document.hidden});
     st.frame(s, {...cam, az: cam.az * D2R, el: cam.el * D2R}, {explode: ex, garage: ga, solo, drawScreen});
     ui.root.style.display = hidden ? 'none' : '';
     frameConsole(T, {

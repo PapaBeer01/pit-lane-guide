@@ -8,6 +8,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {warmComposer} from 'teardown-kit/warm.js';
 import {drawScreen} from './console.js';
 import {LAP_TIME, stateAt} from './kin.js';
+import {createEngineSound} from './sound.js';
 import {buildTrack, poseOnTrack} from './track.js';
 import CIRCUIT from './circuit.json';
 import {createStage, loadDetail, loadGearbox, loadReal} from './stage.js';
@@ -189,7 +190,19 @@ export async function runExplore() {
   // on track: chase, onboard or helicopter camera
   const camSeg = el('div', {class: 'seg', role: 'group', 'aria-label': 'Camera', style: 'display:none'});
   for (const [k, t] of [['chase', 'Chase'], ['onboard', 'Onboard'], ['heli', 'Helicopter']]) camSeg.appendChild(el('button', {type: 'button', 'data-k': k, 'aria-pressed': k === 'chase'}, t));
-  bar.append(seg, drive, wheelBtn, camSeg);
+  // engine sound: off until tapped (browsers need a tap to play), shown while driving
+  const soundBtn = el('button', {class: 'chip', type: 'button', 'aria-pressed': 'false', style: 'display:none'}, '<i>♪</i><span>Sound on</span>');
+  bar.append(seg, drive, wheelBtn, camSeg, soundBtn);
+  const engine = createEngineSound();
+  const paintSound = () => {
+    soundBtn.setAttribute('aria-pressed', String(engine.on));
+    soundBtn.querySelector('span').textContent = engine.on ? 'Sound off' : 'Sound on';
+  };
+  soundBtn.addEventListener('click', () => {
+    engine.toggle();
+    paintSound();
+    try { localStorage.setItem('rb22-sound', engine.on ? '1' : '0'); } catch { /* storage unavailable */ }
+  });
   const hud = el('div', {class: 'xhud', 'aria-live': 'off'});
   const sheet = el('div', {class: 'sheet', role: 'dialog', 'aria-live': 'polite'});
   const hint = el('div', {class: 'hint'}, 'Drag to turn · pinch to zoom · tap a dot');
@@ -268,6 +281,7 @@ export async function runExplore() {
     cam.updateProjectionMatrix();
     controls.enabled = !on;
     camSeg.style.display = on ? '' : 'none';
+    soundBtn.style.display = on ? '' : 'none';
     pins.forEach((p) => (p.el.style.display = on ? 'none' : ''));
     Object.assign(st.sun.shadow.camera, on ? {left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 120} : {left: -4.2, right: 4.2, top: 4.2, bottom: -4.2, near: 1, far: 20});
     st.sun.shadow.camera.updateProjectionMatrix();
@@ -287,6 +301,11 @@ export async function runExplore() {
     drive.setAttribute('aria-pressed', String(driving));
     drive.querySelector('i').textContent = driving ? '❚❚' : '▶';
     drive.querySelector('span').textContent = driving ? 'Stop' : 'Drive a lap';
+    // this click counts as the tap browsers need: bring the sound back if it was on last time
+    let want = false;
+    try { want = localStorage.getItem('rb22-sound') === '1'; } catch { /* storage unavailable */ }
+    if (driving && want && !engine.on) engine.enable();
+    paintSound();
     hud.classList.toggle('on', driving);
     // the HUD takes the bottom edge while driving (the credits are on the page below, too)
     credit.style.display = driving ? 'none' : '';
@@ -374,6 +393,7 @@ export async function runExplore() {
     last = now;
     if (driving) lapT = (lapT + dt) % LAP_TIME;
     const s = stateAt(lapT);
+    engine.update(s, {running: driving && !document.hidden});
     ex += ((mode === 'exploded' ? 1 : 0) - ex) * (1 - Math.exp(-dt / 0.4));
     // covers off: a steady 1.6 s sweep of the cut (back on: half that)
     ga = mode === 'garage' ? Math.min(1, ga + dt / 1.6) : Math.max(0, ga - dt / 0.8);
