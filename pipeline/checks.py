@@ -39,7 +39,12 @@ def check_session(payload: dict, expected_drivers: int | None) -> list[str]:
         if 1 not in positions:
             problems.append(f"{label}: no driver classified P1 (session may still be provisional)")
         if len(positions) != len(set(positions)):
-            problems.append(f"{label}: duplicate positions in results")
+            seen: dict = {}
+            for r in res:
+                if r["pos"] is not None:
+                    seen.setdefault(r["pos"], []).append(f"{r.get('code')} ({r.get('status') or r.get('class') or '-'})")
+            dupes = "; ".join(f"P{p}: {', '.join(c)}" for p, c in sorted(seen.items()) if len(c) > 1)
+            problems.append(f"{label}: duplicate positions in results ({dupes})")
     if key in config.RACE_SESSIONS:
         # The session watcher tries a race minutes after its scheduled end. One that overran (red flag,
         # long safety car) can still be running then: never publish it before someone has taken the flag.
