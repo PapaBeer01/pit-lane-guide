@@ -16,6 +16,8 @@ from . import config
 from .store import read_json
 
 RACE_KEYS = ("SQ", "S", "Q", "R")
+# F1's timing data sometimes leaves a stand-in's name blank (Hirakawa at Mexico City 2026): fill it here
+KNOWN_NAMES = {"HIR": ("Ryo", "Hirakawa"), "CAM": ("Rafael", "Câmara")}
 ALL_KEYS = ("FP1", "FP2", "FP3", "SQ", "S", "Q", "R")
 
 
@@ -64,4 +66,10 @@ def build_roster(drivers: dict[str, dict], data_dir=None) -> dict[str, dict]:
             else:
                 stints.append({"team": team, "from": rnd, "to": rnd})
         d["stints"] = stints
+        blank = lambda v: not v or str(v).strip() in ("None", "nan", "None None", code)
+        if blank(d.get("name")) and not blank(d.get("first")) and not blank(d.get("last")):
+            d["name"] = f"{d['first']} {d['last']}"                    # F1 sent "None None" as the full name
+        if code in KNOWN_NAMES and (blank(d.get("name")) or blank(d.get("last"))):
+            first, last = KNOWN_NAMES[code]
+            d["first"], d["last"], d["name"] = first, last, f"{first} {last}"
     return out

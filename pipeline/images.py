@@ -79,6 +79,7 @@ def driver_keys(d: dict) -> set[str]:
     keys = {norm(d.get("code", ""))}
     if d.get("last"):
         keys.add(norm(d["last"]))
+        keys.add(norm(d["last"])[:3])                 # F1 codes are usually the surname's first 3 letters
     if d.get("name"):
         keys.add(norm(d["name"]))
     if d.get("num"):

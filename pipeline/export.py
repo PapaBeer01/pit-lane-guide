@@ -73,7 +73,7 @@ def drivers_from_results(results: pd.DataFrame) -> list[dict]:
             "num": _txt(r.get("DriverNumber")) or None,
             "first": first,
             "last": last,
-            "name": _txt(r.get("FullName")) or " ".join(x for x in (first, last) if x),
+            "name": (_txt(r.get("FullName")) if _txt(r.get("FullName")) not in ("None None", "None", "nan") else "") or " ".join(x for x in (first, last) if x),
             "team": _txt(r.get("TeamName")),
             "color": _color(r.get("TeamColor")) or "",
             "country": _txt(r.get("CountryCode")) or None,
