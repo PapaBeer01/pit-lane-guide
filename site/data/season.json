@@ -1,7 +1,7 @@
 {
  "year": 2026,
  "sample": false,
- "updated": "2026-11-07T15:56:17Z",
+ "updated": "2026-11-07T20:51:35Z",
  "events": [
   {
    "round": 1,
@@ -872,7 +872,8 @@
     {
      "key": "Q",
      "start": "2026-11-07T18:00:00Z",
-     "done": false
+     "done": true,
+     "tel": true
     },
     {
      "key": "R",
@@ -1024,7 +1025,7 @@
    "team": "Alpine",
    "color": "#00A1E8",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Alpine"
    ],
@@ -1047,14 +1048,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Alpine",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1067,7 +1069,7 @@
    "team": "Alpine",
    "color": "#00A1E8",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Alpine"
    ],
@@ -1090,14 +1092,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Alpine",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1125,7 +1128,7 @@
    "team": "Aston Martin",
    "color": "#229971",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Aston Martin"
    ],
@@ -1148,14 +1151,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Aston Martin",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1183,7 +1187,7 @@
    "team": "Aston Martin",
    "color": "#229971",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Aston Martin"
    ],
@@ -1206,14 +1210,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Aston Martin",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1226,7 +1231,7 @@
    "team": "Audi",
    "color": "#F50537",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Audi"
    ],
@@ -1249,14 +1254,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Audi",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1269,7 +1275,7 @@
    "team": "Audi",
    "color": "#F50537",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Audi"
    ],
@@ -1292,14 +1298,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Audi",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1327,7 +1334,7 @@
    "team": "Cadillac",
    "color": "#909090",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Cadillac"
    ],
@@ -1350,14 +1357,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Cadillac",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1385,7 +1393,7 @@
    "team": "Cadillac",
    "color": "#909090",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Cadillac"
    ],
@@ -1408,14 +1416,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Cadillac",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1443,7 +1452,7 @@
    "team": "Ferrari",
    "color": "#ED1131",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Ferrari"
    ],
@@ -1466,14 +1475,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Ferrari",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1486,7 +1496,7 @@
    "team": "Ferrari",
    "color": "#ED1131",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Ferrari"
    ],
@@ -1509,14 +1519,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Ferrari",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1529,7 +1540,7 @@
    "team": "Haas F1 Team",
    "color": "#9C9FA2",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Haas F1 Team"
    ],
@@ -1552,14 +1563,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Haas F1 Team",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1572,11 +1584,21 @@
    "team": "Haas F1 Team",
    "color": "#9C9FA2",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
-   "teams": [],
-   "race_rounds": [],
-   "current": false,
-   "stints": []
+   "as_of": "2026-11-07T18:00:00Z",
+   "teams": [
+    "Haas F1 Team"
+   ],
+   "race_rounds": [
+    20
+   ],
+   "current": true,
+   "stints": [
+    {
+     "team": "Haas F1 Team",
+     "from": 20,
+     "to": 20
+    }
+   ]
   },
   {
    "code": "HIR",
@@ -1594,7 +1616,7 @@
    "race_rounds": [
     19
    ],
-   "current": true,
+   "current": false,
    "stints": [
     {
      "team": "Haas F1 Team",
@@ -1669,7 +1691,7 @@
    "team": "McLaren",
    "color": "#F47600",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "McLaren"
    ],
@@ -1692,14 +1714,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "McLaren",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1712,7 +1735,7 @@
    "team": "McLaren",
    "color": "#F47600",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "McLaren"
    ],
@@ -1735,14 +1758,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "McLaren",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1755,7 +1779,7 @@
    "team": "Mercedes",
    "color": "#00D7B6",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Mercedes"
    ],
@@ -1778,14 +1802,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Mercedes",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1798,7 +1823,7 @@
    "team": "Mercedes",
    "color": "#00D7B6",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Mercedes"
    ],
@@ -1821,14 +1846,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Mercedes",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1856,7 +1882,7 @@
    "team": "Racing Bulls",
    "color": "#6C98FF",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Racing Bulls",
     "Red Bull Racing"
@@ -1880,7 +1906,8 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
@@ -1897,7 +1924,7 @@
     {
      "team": "Racing Bulls",
      "from": 15,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1910,7 +1937,7 @@
    "team": "Racing Bulls",
    "color": "#6C98FF",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Racing Bulls"
    ],
@@ -1933,14 +1960,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Racing Bulls",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -1995,7 +2023,7 @@
    "team": "Red Bull Racing",
    "color": "#4781D7",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Red Bull Racing"
    ],
@@ -2015,14 +2043,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Red Bull Racing",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -2050,7 +2079,7 @@
    "team": "Red Bull Racing",
    "color": "#4781D7",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Red Bull Racing"
    ],
@@ -2073,14 +2102,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Red Bull Racing",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -2093,7 +2123,7 @@
    "team": "Williams",
    "color": "#1868DB",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Williams"
    ],
@@ -2116,14 +2146,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Williams",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   },
@@ -2151,7 +2182,7 @@
    "team": "Williams",
    "color": "#1868DB",
    "country": null,
-   "as_of": "2026-11-07T14:30:00Z",
+   "as_of": "2026-11-07T18:00:00Z",
    "teams": [
     "Williams"
    ],
@@ -2174,14 +2205,15 @@
     16,
     17,
     18,
-    19
+    19,
+    20
    ],
    "current": true,
    "stints": [
     {
      "team": "Williams",
      "from": 1,
-     "to": 19
+     "to": 20
     }
    ]
   }
