@@ -11,4 +11,4 @@
 ## Problems
 
 - F1's servers blocked this request (HTTP 403, before checking the sign-in) for round 21 FP1. Nothing was loaded this run. F1 appears to block GitHub's own servers (FastF1 issue #988); the workflow's Cloudflare WARP step should route around this, so check whether that step connected.
-- upgrades_found=1
+- upgrades_found=0
