@@ -10,5 +10,5 @@
 
 ## Problems
 
-- Round 21 FP1: only 0 of 22 drivers have a timed lap
+- F1's servers blocked this request (HTTP 403, before checking the sign-in) for round 21 Q. Nothing was loaded this run. F1 appears to block GitHub's own servers (FastF1 issue #988); the workflow's Cloudflare WARP step should route around this, so check whether that step connected.
 - upgrades_found=0
